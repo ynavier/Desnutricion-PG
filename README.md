@@ -107,7 +107,7 @@ Los dashboards se conectan a BigQuery (`proyecto.desnutricion.*`) y cubren cuatr
 | --- | --- |
 | 1 | Grupo etario con mayor tasa de desnutrición |
 | 2 | Tasa de desnutrición por etnia |
-| 3 | Tasa por esquema de vacunación |
+| 3 | Tasa por estracto socieconomico |
 | 4 | Tasa por seguimiento de crecimiento y desarrollo (C&D) |
 | 5 | Tasa por nivel educativo del cuidador |
 
