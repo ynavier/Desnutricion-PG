@@ -95,7 +95,7 @@ Los dashboards se conectan a BigQuery (`proyecto.desnutricion.*`) y cubren cuatr
 | 2 | Tasa de desnutrición (%) |
 | 3 | Tasa de desnutrición por municipio(%) |
 | 4 | Distribución por tipo de desnutrición |
-| 5 | Tendencia mensual de casos (2020–2025) |
+| 5 | Tendencia anual de casos (2020–2025) |
 
 ---
 
