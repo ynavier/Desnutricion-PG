@@ -293,7 +293,7 @@ FLUJO DEL ROL ANL
    - Normalización
    - Eliminación de duplicados
    - Validación
-5. Selección de modelos ML:
+5. Selección de modelos ML (Con posibilidad de ajuste manual en los parámetros):
    - Random Forest
    - Gradient Boosting
    - Regresión Logística
@@ -419,8 +419,7 @@ Backend:
 - REST API
 
 Base de datos:
-- PostgreSQL
-- Firebase (opcional)
+- Supabase
 
 Machine Learning:
 - Python

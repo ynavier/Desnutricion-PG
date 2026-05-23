@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  * {
+    @apply border-neutral-border;
+  }
+  body {
+    @apply bg-neutral-bg text-neutral-text font-sans antialiased;
+  }
+}
+
+@layer components {
+  /* ── Claymorphism ─────────────────────────────── */
+  .clay-card {
+    background: linear-gradient(145deg, #ffffff, #f0f5fb);
+    border-radius: 20px;
+    border: none;
+    box-shadow:
+      6px 6px 18px rgba(13, 71, 161, 0.08),
+      -4px -4px 12px rgba(255, 255, 255, 0.95),
+      inset 0 1px 0 rgba(255, 255, 255, 1),
+      inset 0 -1px 0 rgba(13, 71, 161, 0.04);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .clay-card:hover {
+    transform: translateY(-4px) scale(1.01);
+    box-shadow:
+      10px 14px 28px rgba(13, 71, 161, 0.13),
+      -4px -4px 12px rgba(255, 255, 255, 0.95),
+      inset 0 1px 0 rgba(255, 255, 255, 1);
+  }
+
+  .clay-btn {
+    border-radius: 14px;
+    box-shadow:
+      0 6px 16px rgba(25, 118, 210, 0.35),
+      0 2px 4px rgba(25, 118, 210, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .clay-btn:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 10px 24px rgba(25, 118, 210, 0.4),
+      0 4px 8px rgba(25, 118, 210, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  }
+
+  .clay-btn:active {
+    transform: translateY(1px);
+    box-shadow:
+      0 3px 8px rgba(25, 118, 210, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+
+  .clay-btn-outline {
+    border-radius: 14px;
+    box-shadow:
+      4px 4px 12px rgba(0, 0, 0, 0.06),
+      -2px -2px 8px rgba(255, 255, 255, 0.9),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .clay-btn-outline:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      6px 6px 16px rgba(0, 0, 0, 0.09),
+      -2px -2px 8px rgba(255, 255, 255, 0.9),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+
+  .clay-btn-outline:active {
+    transform: translateY(1px);
+  }
+
+  .book-card {
+    position: relative;
+    border-radius: 20px;
+    background: linear-gradient(145deg, #ffffff, #f0f5fb);
+    box-shadow:
+      8px 8px 20px rgba(13, 71, 161, 0.10),
+      -4px -4px 12px rgba(255, 255, 255, 0.95),
+      inset 0 1px 0 rgba(255, 255, 255, 1);
+    transform-style: preserve-3d;
+    perspective: 2000px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .book-cover {
+    top: 0;
+    left: 0;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: transform 0.5s ease, box-shadow 0.5s ease;
+    transform-origin: left center;
+    box-shadow: 2px 2px 18px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .book-card:hover .book-cover {
+    transform: rotateY(-80deg);
+    box-shadow: 4px 4px 24px rgba(0, 0, 0, 0.18);
+  }
+
+  .btn-primary {
+    @apply bg-clinical-blue-md hover:bg-clinical-blue text-white font-medium px-4 py-2 rounded-lg transition-colors duration-200;
+  }
+
+  .card {
+    @apply bg-neutral-card border border-neutral-border rounded-xl shadow-sm;
+  }
+
+  .input-clinical {
+    @apply w-full border border-neutral-border rounded-lg px-3 py-2 text-sm text-neutral-text placeholder-neutral-sub
+           focus:outline-none focus:ring-2 focus:ring-clinical-blue-md focus:border-transparent
+           bg-white transition-all duration-200;
+  }
+}
