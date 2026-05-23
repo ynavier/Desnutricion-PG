@@ -14,7 +14,9 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (error) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status
+    const detail = error.response?.data?.detail ?? ''
+    if (status === 401 || (status === 403 && (detail === 'Not authenticated' || detail === 'Perfil no encontrado'))) {
       localStorage.removeItem('auth_user')
       localStorage.removeItem('auth_token')
       window.location.href = '/login'

@@ -26,7 +26,9 @@ const glassInput = {
   background: 'rgba(255, 255, 255, 0.55)',
   backdropFilter: 'blur(8px)',
   WebkitBackdropFilter: 'blur(8px)',
-  border: '1px solid rgba(255, 255, 255, 0.7)',
+  borderWidth: '1px',
+  borderStyle: 'solid',
+  borderColor: 'rgba(255, 255, 255, 0.7)',
   borderRadius: '12px',
   outline: 'none',
   width: '100%',
@@ -47,28 +49,16 @@ export default function LoginPage() {
   const [error,    setError]    = useState('')
   const [loading,  setLoading]  = useState(false)
 
-  const demoUsers = {
-    'cli@demo.pe':  { role: 'CLI', nombre: 'Dra. Ana Torres',    email: 'cli@demo.pe'  },
-    'anl@demo.pe':  { role: 'ANL', nombre: 'Lic. Carlos Ramos',  email: 'anl@demo.pe'  },
-  }
-
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
     setLoading(true)
 
-    // Acceso demo sin backend
-    const demoUser = demoUsers[email.toLowerCase()]
-    if (demoUser && password === 'demo1234') {
-      login(demoUser, 'demo-token')
-      navigate(demoUser.role === 'ANL' ? '/anl' : '/cli', { replace: true })
-      return
-    }
-
     try {
       const { data } = await api.post('/auth/login', { email, password })
-      login(data.user, data.token)
-      navigate(data.user.role === 'ANL' ? '/anl' : '/cli', { replace: true })
+      const userData = { ...data.user, role: data.user.rol }
+      login(userData, data.access_token)
+      navigate(userData.role === 'ANL' ? '/anl' : '/cli', { replace: true })
     } catch (err) {
       setError(
         err.response?.data?.detail ||

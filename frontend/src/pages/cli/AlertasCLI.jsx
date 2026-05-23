@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Bell, TrendingDown, AlertTriangle, Clock, UserX } from 'lucide-react'
+import api from '../../services/api'
 
 const fadeUp = {
   hidden:  { opacity: 0, y: 16 },
@@ -14,19 +15,51 @@ const nivelConfig = {
   risk:     { label: 'Riesgo',   color: '#B8860B', bg: 'rgba(255,193,7,0.10)',  border: '#FBC02D' },
 }
 
-const alertas = [
-  { id: 1, paciente: 'Diego Mamani H.',   tipo: 'Desnutrición severa detectada', nivel: 'severe',   icon: AlertTriangle, tiempo: 'Hace 5 h', leida: false },
-  { id: 2, paciente: 'Carlos Mendoza R.', tipo: 'Riesgo alto de desnutrición',   nivel: 'moderate', icon: TrendingDown,  tiempo: 'Hace 1 h', leida: false },
-  { id: 3, paciente: 'Sofía Quispe T.',   tipo: 'Tendencia negativa de peso',    nivel: 'moderate', icon: TrendingDown,  tiempo: 'Hace 3 h', leida: false },
-  { id: 4, paciente: 'Lucía Flores C.',   tipo: 'Sin seguimiento > 30 días',     nivel: 'mild',     icon: Clock,         tiempo: 'Hace 1 d', leida: false },
-  { id: 5, paciente: 'Mateo Huanca P.',   tipo: 'Riesgo nutricional moderado',   nivel: 'risk',     icon: Bell,          tiempo: 'Hace 2 d', leida: true  },
-  { id: 6, paciente: 'Andrés Torres L.',  tipo: 'Control programado pendiente',  nivel: 'risk',     icon: UserX,         tiempo: 'Hace 3 d', leida: true  },
-]
+const NIVEL_ICON = {
+  severe: AlertTriangle, moderate: TrendingDown,
+  mild: Clock, risk: Bell,
+}
+
+function formatTiempo(isoStr) {
+  if (!isoStr) return ''
+  const diffH = Math.floor((Date.now() - new Date(isoStr)) / 3600000)
+  if (diffH < 1) return 'Hace menos de 1 h'
+  if (diffH < 24) return `Hace ${diffH} h`
+  const diffD = Math.floor(diffH / 24)
+  return diffD === 1 ? 'Ayer' : `Hace ${diffD} d`
+}
 
 const tabs = ['Todas', 'Sin leer', 'Críticas']
 
 export default function AlertasCLI() {
-  const [tab, setTab] = useState('Todas')
+  const [tab,     setTab]     = useState('Todas')
+  const [alertas, setAlertas] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    api.get('/alertas')
+      .then(({ data }) => setAlertas(data.map(a => ({
+        id:       a.id,
+        paciente: a.pacientes ? `${a.pacientes.nombre} ${a.pacientes.apellidos}` : `Paciente #${a.paciente_id}`,
+        tipo:     a.tipo,
+        nivel:    a.nivel,
+        icon:     NIVEL_ICON[a.nivel] ?? Bell,
+        tiempo:   formatTiempo(a.created_at),
+        leida:    a.leida,
+      }))))
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [])
+
+  async function marcarLeida(id) {
+    await api.patch(`/alertas/${id}/leer`).catch(() => {})
+    setAlertas(prev => prev.map(a => a.id === id ? { ...a, leida: true } : a))
+  }
+
+  async function marcarTodas() {
+    await api.patch('/alertas/leer-todas').catch(() => {})
+    setAlertas(prev => prev.map(a => ({ ...a, leida: true })))
+  }
 
   const filtered = alertas.filter(a => {
     if (tab === 'Sin leer') return !a.leida
@@ -41,15 +74,22 @@ export default function AlertasCLI() {
 
       {/* Header */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp} className="mb-8">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-neutral-text">Alertas</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-neutral-text">Alertas</h1>
+            {sinLeer > 0 && (
+              <span className="text-xs font-bold px-2.5 py-1 rounded-full text-white"
+                style={{ background: '#E53935' }}>
+                {sinLeer} nuevas
+              </span>
+            )}
+          </div>
           {sinLeer > 0 && (
-            <span
-              className="text-xs font-bold px-2.5 py-1 rounded-full text-white"
-              style={{ background: '#E53935' }}
-            >
-              {sinLeer} nuevas
-            </span>
+            <button onClick={marcarTodas}
+              className="text-xs font-medium px-3 py-1.5 rounded-xl transition-colors"
+              style={{ background: 'rgba(79,180,210,0.08)', color: '#4FB4D2' }}>
+              Marcar todas como leídas
+            </button>
           )}
         </div>
         <p className="text-sm text-neutral-sub mt-1">Notificaciones de riesgo nutricional activas</p>
@@ -76,7 +116,16 @@ export default function AlertasCLI() {
         ))}
       </motion.div>
 
+      {loading && (
+        <div className="py-12 flex justify-center">
+          <div className="w-7 h-7 border-4 border-t-transparent rounded-full animate-spin"
+            style={{ borderColor: '#4FB4D2', borderTopColor: 'transparent' }} />
+        </div>
+      )}
+
       {/* Lista */}
+      {!loading && (
+      <>
       <div className="flex flex-col gap-3">
         {filtered.map(({ id, paciente, tipo, nivel, icon: Icon, tiempo, leida }, i) => {
           const n = nivelConfig[nivel]
@@ -87,8 +136,9 @@ export default function AlertasCLI() {
               initial="hidden"
               animate="visible"
               variants={fadeUp}
-              className="clay-card p-5 flex items-start gap-4 cursor-pointer"
-              style={!leida ? { borderLeft: `3px solid ${n.border}` } : {}}
+              className="clay-card p-5 flex items-start gap-4"
+              style={!leida ? { borderLeft: `3px solid ${n.border}`, cursor: 'pointer' } : {}}
+              onClick={() => !leida && marcarLeida(id)}
             >
               <div
                 className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -128,6 +178,8 @@ export default function AlertasCLI() {
         <div className="py-20 text-center text-sm text-neutral-sub">
           No hay alertas en esta categoría.
         </div>
+      )}
+      </>
       )}
 
     </div>

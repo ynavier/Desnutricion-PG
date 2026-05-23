@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import api from '../../services/api'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Plus, AlertTriangle, Brain,
@@ -27,61 +28,96 @@ function zScoreColor(z) {
   return '#E53935'
 }
 
-// ─── Mock data ────────────────────────────────────────────────────────────────
+// ─── Helpers API ─────────────────────────────────────────────────────────────
 
-const mockPacientes = {
-  1: {
-    nombre: 'Carlos Mendoza R.', sexo: 'M', edad: '2a 3m',
-    fechaNacimiento: '15 feb 2024', zona: 'Lima Norte',
-    establecimiento: 'C.S. Comas', estado: 'risk',
-    peso: 10.2, talla: 84, imc: 14.4, zScore: -1.8,
-    prediccion: { probabilidad: 72, modelo: 'Random Forest', confianza: 'Alta' },
-    alertas: [
-      { tipo: 'Tendencia negativa de peso',  nivel: 'moderate', tiempo: 'Hace 1 h' },
-      { tipo: 'Riesgo alto de desnutrición', nivel: 'moderate', tiempo: 'Hace 3 h' },
-    ],
-    recomendaciones: [
-      'Aumentar frecuencia de controles a mensual',
-      'Reforzar alimentación complementaria rica en proteínas y hierro',
-      'Derivar a nutricionista para evaluación especializada',
-      'Verificar factores socioeconómicos del hogar',
-      'Monitorear curva de crecimiento en próximo control',
-    ],
-    historial: [
-      { fecha: '20 may 2026', peso: 10.2, talla: 84, imc: 14.4, zScore: -1.8, estado: 'risk',     obs: 'Tendencia negativa' },
-      { fecha: '15 feb 2026', peso: 9.8,  talla: 81, imc: 14.9, zScore: -1.5, estado: 'risk',     obs: '' },
-      { fecha: '10 nov 2025', peso: 9.1,  talla: 78, imc: 14.9, zScore: -1.2, estado: 'adequate', obs: 'Control rutinario' },
-      { fecha: '05 ago 2025', peso: 8.4,  talla: 74, imc: 15.3, zScore: -0.8, estado: 'adequate', obs: '' },
-      { fecha: '20 may 2025', peso: 7.8,  talla: 70, imc: 15.9, zScore: -0.5, estado: 'adequate', obs: 'Control rutinario' },
-    ],
-  },
-  2: {
-    nombre: 'Sofía Quispe T.', sexo: 'F', edad: '1a 8m',
-    fechaNacimiento: '10 sep 2024', zona: 'San Juan de Lurigancho',
-    establecimiento: 'C.S. Zarate', estado: 'moderate',
-    peso: 8.8, talla: 78, imc: 14.5, zScore: -2.4,
-    prediccion: { probabilidad: 88, modelo: 'XGBoost', confianza: 'Muy alta' },
-    alertas: [
-      { tipo: 'Desnutrición moderada confirmada', nivel: 'moderate', tiempo: 'Hace 3 h' },
-    ],
-    recomendaciones: [
-      'Referencia urgente a nutricionista y pediatra',
-      'Iniciar suplementación con micronutrientes',
-      'Coordinar apoyo alimentario con programa social',
-      'Visita domiciliaria en 15 días',
-    ],
-    historial: [
-      { fecha: '19 may 2026', peso: 8.8,  talla: 78, imc: 14.5, zScore: -2.4, estado: 'moderate', obs: 'Derivada a nutricionista' },
-      { fecha: '10 feb 2026', peso: 8.5,  talla: 76, imc: 14.7, zScore: -2.1, estado: 'moderate', obs: '' },
-      { fecha: '05 nov 2025', peso: 8.0,  talla: 73, imc: 15.0, zScore: -1.8, estado: 'risk',     obs: '' },
-    ],
-  },
-  3: { nombre: 'Andrés Torres L.', sexo: 'M', edad: '3a 5m', fechaNacimiento: '05 dic 2022', zona: 'Miraflores', establecimiento: 'C.S. Miraflores', estado: 'adequate', peso: 13.5, talla: 95, imc: 14.9, zScore: -0.4, prediccion: { probabilidad: 12, modelo: 'Random Forest', confianza: 'Alta' }, alertas: [], recomendaciones: ['Mantener controles rutinarios cada 3 meses', 'Continuar con dieta balanceada'], historial: [{ fecha: '21 may 2026', peso: 13.5, talla: 95, imc: 14.9, zScore: -0.4, estado: 'adequate', obs: 'Control rutinario' }, { fecha: '20 feb 2026', peso: 13.0, talla: 93, imc: 15.0, zScore: -0.3, estado: 'adequate', obs: '' }] },
-  4: { nombre: 'Lucía Flores C.', sexo: 'F', edad: '4a 1m', fechaNacimiento: '20 abr 2022', zona: 'Villa El Salvador', establecimiento: 'C.S. VES', estado: 'mild', peso: 14.1, talla: 99, imc: 14.4, zScore: -2.1, prediccion: { probabilidad: 61, modelo: 'Gradient Boosting', confianza: 'Media' }, alertas: [{ tipo: 'Sin seguimiento > 30 días', nivel: 'mild', tiempo: 'Hace 1 d' }], recomendaciones: ['Aumentar frecuencia de controles', 'Suplementar con hierro y vitamina A', 'Orientación nutricional a la madre'], historial: [{ fecha: '18 may 2026', peso: 14.1, talla: 99, imc: 14.4, zScore: -2.1, estado: 'mild', obs: '' }, { fecha: '10 feb 2026', peso: 13.8, talla: 97, imc: 14.6, zScore: -1.9, estado: 'mild', obs: '' }] },
-  5: { nombre: 'Diego Mamani H.', sexo: 'M', edad: '0a 11m', fechaNacimiento: '01 jun 2025', zona: 'Ate Vitarte', establecimiento: 'C.S. Vitarte', estado: 'severe', peso: 7.2, talla: 70, imc: 14.7, zScore: -3.5, prediccion: { probabilidad: 95, modelo: 'XGBoost', confianza: 'Muy alta' }, alertas: [{ tipo: 'Desnutrición severa detectada', nivel: 'severe', tiempo: 'Hace 5 h' }, { tipo: 'Prioridad clínica alta', nivel: 'severe', tiempo: 'Hace 5 h' }], recomendaciones: ['URGENTE: Derivación hospitalaria inmediata', 'Evaluación pediátrica en menos de 24 horas', 'Iniciar protocolo de recuperación nutricional', 'Notificar a autoridad de salud pública'], historial: [{ fecha: '17 may 2026', peso: 7.2, talla: 70, imc: 14.7, zScore: -3.5, estado: 'severe', obs: 'Derivación urgente' }, { fecha: '10 abr 2026', peso: 7.0, talla: 68, imc: 15.2, zScore: -3.1, estado: 'severe', obs: '' }] },
-  6: { nombre: 'Valentina Cruz M.', sexo: 'F', edad: '2a 7m', fechaNacimiento: '20 oct 2023', zona: 'Surco', establecimiento: 'C.S. Surco', estado: 'adequate', peso: 11.8, talla: 88, imc: 15.2, zScore: -0.2, prediccion: { probabilidad: 8, modelo: 'Random Forest', confianza: 'Alta' }, alertas: [], recomendaciones: ['Continuar con controles rutinarios', 'Mantener alimentación equilibrada'], historial: [{ fecha: '22 may 2026', peso: 11.8, talla: 88, imc: 15.2, zScore: -0.2, estado: 'adequate', obs: 'Control rutinario' }] },
-  7: { nombre: 'Mateo Huanca P.', sexo: 'M', edad: '1a 2m', fechaNacimiento: '20 mar 2025', zona: 'Villa María del Triunfo', establecimiento: 'C.S. VMT', estado: 'risk', peso: 9.1, talla: 74, imc: 16.6, zScore: -1.3, prediccion: { probabilidad: 48, modelo: 'Regresión Logística', confianza: 'Media' }, alertas: [{ tipo: 'Riesgo nutricional', nivel: 'risk', tiempo: 'Hace 2 d' }], recomendaciones: ['Control mensual recomendado', 'Orientación sobre lactancia y alimentación complementaria'], historial: [{ fecha: '15 may 2026', peso: 9.1, talla: 74, imc: 16.6, zScore: -1.3, estado: 'risk', obs: '' }] },
-  8: { nombre: 'Isabella Ramos L.', sexo: 'F', edad: '3a 9m', fechaNacimiento: '15 ago 2022', zona: 'San Borja', establecimiento: 'C.S. San Borja', estado: 'adequate', peso: 14.8, talla: 97, imc: 15.7, zScore: -0.1, prediccion: { probabilidad: 5, modelo: 'Random Forest', confianza: 'Alta' }, alertas: [], recomendaciones: ['Control rutinario en 3 meses', 'Estado nutricional óptimo'], historial: [{ fecha: '22 may 2026', peso: 14.8, talla: 97, imc: 15.7, zScore: -0.1, estado: 'adequate', obs: 'Control rutinario' }] },
+const MESES_ES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
+
+function clasNombreToEstado(nombre) {
+  if (!nombre) return 'adequate'
+  const n = nombre.toLowerCase()
+  if (n.includes('severa')) return 'severe'
+  if (n.includes('moderada')) return 'moderate'
+  if (n === 'normal bajo') return 'mild'
+  if (n === 'normal') return 'adequate'
+  return 'risk'
+}
+
+function formatFechaLarga(iso) {
+  if (!iso) return '—'
+  const [y, mo, d] = iso.split('-')
+  return `${parseInt(d)} ${MESES_ES[parseInt(mo) - 1]} ${y}`
+}
+
+function formatFechaCorta(iso) {
+  if (!iso) return '—'
+  const [y, mo, d] = iso.split('-')
+  return `${parseInt(d)} ${MESES_ES[parseInt(mo) - 1]} ${y}`
+}
+
+function formatTiempo(isoStr) {
+  if (!isoStr) return ''
+  const diffH = Math.floor((Date.now() - new Date(isoStr)) / 3600000)
+  if (diffH < 1) return 'Hace menos de 1 h'
+  if (diffH < 24) return `Hace ${diffH} h`
+  const diffD = Math.floor(diffH / 24)
+  return diffD === 1 ? 'Ayer' : `Hace ${diffD} d`
+}
+
+function mesesATexto(m) { return `${Math.floor((m||0)/12)}a ${(m||0)%12}m` }
+
+function genRecomendaciones(estado) {
+  const map = {
+    severe:   ['URGENTE: Derivación hospitalaria inmediata', 'Evaluación pediátrica en < 24 horas', 'Iniciar protocolo de recuperación nutricional', 'Notificar a autoridad de salud pública'],
+    moderate: ['Referencia urgente a nutricionista y pediatra', 'Iniciar suplementación con micronutrientes', 'Coordinar apoyo alimentario con programa social', 'Visita domiciliaria en 15 días'],
+    mild:     ['Aumentar frecuencia de controles a mensual', 'Suplementar con hierro y vitamina A', 'Orientación nutricional a la madre', 'Verificar factores socioeconómicos'],
+    risk:     ['Control mensual recomendado', 'Reforzar alimentación complementaria', 'Orientación sobre lactancia y alimentación', 'Monitorear curva de crecimiento'],
+    adequate: ['Mantener controles rutinarios cada 3 meses', 'Continuar con dieta balanceada', 'Estado nutricional dentro de parámetros normales'],
+  }
+  return map[estado] ?? map.adequate
+}
+
+function siNoToInt(v)  { return v === 'Sí' ? 1 : 2 }
+function rutaToInt(v)  {
+  return ({ 'Demanda espontánea': 1, Captación: 2, Referencia: 3 })[v] ?? null
+}
+
+function mapPacienteDetalle(p) {
+  const uc    = p.ultimo_control
+  const estado = clasNombreToEstado(p.estado_nutricional)
+  return {
+    id:              p.id,
+    nombre:          `${p.nombre} ${p.apellidos}`,
+    sexo:            p.sexo,
+    edad:            mesesATexto(p.edad_meses),
+    fechaNacimiento: formatFechaLarga(p.fecha_nac),
+    zona:            p.zona || '—',
+    establecimiento: p.establecimiento || '—',
+    estado,
+    peso:    uc?.peso_act   ?? '—',
+    talla:   uc?.talla_act  ?? '—',
+    imc:     uc?.imc        ? parseFloat(uc.imc).toFixed(1) : '—',
+    zScore:  uc?.zscore_pt  ?? '—',
+    prediccion: {
+      probabilidad: uc ? Math.round((uc.prob_desnutrido || 0) * 100) : 0,
+      modelo:       uc?.modelo_usado || 'Random Forest',
+      confianza:    uc ? (uc.prob_desnutrido > 0.8 ? 'Muy alta' : uc.prob_desnutrido > 0.6 ? 'Alta' : 'Media') : '—',
+    },
+    alertas: (p.alertas || []).map(a => ({
+      tipo:   a.tipo,
+      nivel:  a.nivel,
+      tiempo: formatTiempo(a.created_at),
+    })),
+    recomendaciones: genRecomendaciones(estado),
+    historial: (p.controles || []).map(c => ({
+      fecha:  formatFechaCorta(c.fecha),
+      peso:   c.peso_act,
+      talla:  c.talla_act ?? '—',
+      imc:    c.imc ? parseFloat(c.imc).toFixed(1) : '—',
+      zScore: c.zscore_pt ?? '—',
+      estado: clasNombreToEstado(c.clas_nombre),
+      obs:    c.observaciones || '',
+    })),
+  }
 }
 
 const factoresSociales = [
@@ -131,18 +167,19 @@ function ChartTooltip({ active, payload, label }) {
 
 // ─── Drawer Nuevo Control ────────────────────────────────────────────────────
 
-function NuevoControlDrawer({ paciente, onClose }) {
+function NuevoControlDrawer({ paciente, onClose, onControlAdded }) {
   const [form, setForm] = useState({
-    // Antropométrico
-    peso: '', talla: '', perBraqui: '', zona: paciente.zona,
-    // Signos clínicos
+    peso: '', talla: '', perBraqui: '',
     edema: '', delgadez: '', palidez: '',
     pielReseca: '', hiperpigm: '', cambiosCabello: '',
-    // Estado clínico
     enfermedades: [], apetito: '', micronutrientes: '',
+    ruta_atenc: '',
     factores: [], observaciones: '',
   })
-  const [submitted, setSubmitted] = useState(false)
+  const [submitted,  setSubmitted]  = useState(false)
+  const [saving,     setSaving]     = useState(false)
+  const [apiError,   setApiError]   = useState('')
+  const [prediccion, setPrediccion] = useState(null)
 
   const imc = form.peso && form.talla
     ? (parseFloat(form.peso) / Math.pow(parseFloat(form.talla) / 100, 2)).toFixed(1)
@@ -166,9 +203,36 @@ function NuevoControlDrawer({ paciente, onClose }) {
     }))
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
-    setSubmitted(true)
+    setSaving(true)
+    setApiError('')
+    try {
+      const { data } = await api.post(`/pacientes/${paciente.id}/controles`, {
+        peso_act:        parseFloat(form.peso),
+        talla_act:       form.talla     ? parseFloat(form.talla)     : undefined,
+        per_braqui:      form.perBraqui ? parseFloat(form.perBraqui) : undefined,
+        edema:           siNoToInt(form.edema),
+        delgadez:        siNoToInt(form.delgadez),
+        palidez:         siNoToInt(form.palidez),
+        piel_rese:       siNoToInt(form.pielReseca),
+        hiperpigm:       siNoToInt(form.hiperpigm),
+        cambios_cabello: siNoToInt(form.cambiosCabello),
+        ruta_atenc:      rutaToInt(form.ruta_atenc),
+        apetito:         form.apetito       || undefined,
+        micronutrientes: form.micronutrientes ? siNoToInt(form.micronutrientes) : undefined,
+        enfermedades:    form.enfermedades,
+        factores_sociales: form.factores,
+        observaciones:   form.observaciones || undefined,
+      })
+      setPrediccion(data)
+      setSubmitted(true)
+      onControlAdded?.()
+    } catch (err) {
+      setApiError(err.response?.data?.detail || 'Error al registrar control.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -205,8 +269,19 @@ function NuevoControlDrawer({ paciente, onClose }) {
               <CheckCircle className="w-7 h-7" style={{ color: '#52C41A' }} />
             </div>
             <div className="text-center">
-              <p className="font-bold text-neutral-text mb-1">Control registrado</p>
-              <p className="text-xs text-neutral-sub">Los datos han sido guardados correctamente.</p>
+              <p className="font-bold text-neutral-text mb-2">Control registrado</p>
+              {prediccion && (
+                <>
+                  <p className="text-base font-black mb-1"
+                    style={{ color: statusConfig[clasNombreToEstado(prediccion.clas_nombre)]?.color }}>
+                    {prediccion.clas_nombre}
+                  </p>
+                  <p className="text-xs text-neutral-sub">
+                    Prob. desnutrición: {Math.round(prediccion.prob_desnutrido * 100)}%
+                    {' · '}{prediccion.modelo_usado?.replace('modelo_', 'Modelo ').replace('_rf', ' RF')}
+                  </p>
+                </>
+              )}
             </div>
             <button onClick={onClose}
               className="clay-btn text-white font-semibold px-6 py-2.5 text-sm mt-2">
@@ -353,6 +428,23 @@ function NuevoControlDrawer({ paciente, onClose }) {
                   ))}
                 </div>
               </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Ruta de atención</label>
+                <div className="flex gap-2">
+                  {['Demanda espontánea', 'Captación', 'Referencia'].map(v => (
+                    <button key={v} type="button"
+                      onClick={() => setForm(p => ({ ...p, ruta_atenc: v }))}
+                      className="flex-1 py-2 rounded-xl text-xs font-medium transition-all"
+                      style={form.ruta_atenc === v
+                        ? { background: '#4FB4D2', color: '#fff' }
+                        : { background: '#F1F5F9', color: '#64748B' }
+                      }>
+                      {v}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Zona geográfica */}
@@ -409,10 +501,15 @@ function NuevoControlDrawer({ paciente, onClose }) {
               />
             </div>
 
-            <button type="submit"
-              className="clay-btn text-white font-semibold py-3 text-sm flex items-center justify-center gap-2 mt-auto">
-              <Plus className="w-4 h-4" />
-              Guardar control
+            {apiError && (
+              <p className="text-xs px-3 py-2 rounded-xl"
+                style={{ background: 'rgba(229,57,53,0.08)', color: '#E53935' }}>
+                {apiError}
+              </p>
+            )}
+            <button type="submit" disabled={saving}
+              className="clay-btn text-white font-semibold py-3 text-sm flex items-center justify-center gap-2 mt-auto disabled:opacity-60">
+              {saving ? 'Guardando...' : <><Plus className="w-4 h-4" />Guardar control</>}
             </button>
 
           </form>
@@ -428,9 +525,31 @@ export default function DetallePaciente() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [showDrawer, setShowDrawer] = useState(false)
+  const [paciente,   setPaciente]   = useState(null)
+  const [loading,    setLoading]    = useState(true)
+  const [notFound,   setNotFound]   = useState(false)
 
-  const paciente = mockPacientes[parseInt(id)]
-  if (!paciente) {
+  function fetchPaciente() {
+    api.get(`/pacientes/${id}`)
+      .then(({ data }) => setPaciente(mapPacienteDetalle(data)))
+      .catch(err => {
+        if (err.response?.status === 404) setNotFound(true)
+      })
+      .finally(() => setLoading(false))
+  }
+
+  useEffect(() => { fetchPaciente() }, [id])
+
+  if (loading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin"
+          style={{ borderColor: '#4FB4D2', borderTopColor: 'transparent' }} />
+      </div>
+    )
+  }
+
+  if (notFound || !paciente) {
     return (
       <div className="px-8 py-8 flex flex-col items-center justify-center min-h-[60vh] text-center">
         <p className="text-neutral-sub text-sm">Paciente no encontrado.</p>
@@ -443,8 +562,8 @@ export default function DetallePaciente() {
   }
 
   const chartData = [...paciente.historial].reverse().map(c => ({
-    fecha: c.fecha.split(' ').slice(0, 2).join(' '),
-    peso:  c.peso,
+    fecha:  c.fecha.split(' ').slice(0, 2).join(' '),
+    peso:   c.peso,
     zScore: c.zScore,
   }))
 
@@ -682,6 +801,7 @@ export default function DetallePaciente() {
           <NuevoControlDrawer
             paciente={paciente}
             onClose={() => setShowDrawer(false)}
+            onControlAdded={fetchPaciente}
           />
         )}
       </AnimatePresence>

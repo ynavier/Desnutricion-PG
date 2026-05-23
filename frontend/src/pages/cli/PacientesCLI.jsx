@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Plus, ChevronRight, X, CheckCircle, User, MapPin, Scale } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import api from '../../services/api'
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 
@@ -33,6 +34,14 @@ const zonas = [
   'Comas', 'Villa María del Triunfo', 'Callao', 'Otra',
 ]
 
+const departamentos = [
+  'Amazonas', 'Áncash', 'Apurímac', 'Arequipa', 'Ayacucho', 'Cajamarca',
+  'Callao', 'Cusco', 'Huancavelica', 'Huánuco', 'Ica', 'Junín',
+  'La Libertad', 'Lambayeque', 'Lima', 'Loreto', 'Madre de Dios',
+  'Moquegua', 'Pasco', 'Piura', 'Puno', 'San Martín', 'Tacna',
+  'Tumbes', 'Ucayali',
+]
+
 const establecimientos = [
   'C.S. Comas', 'C.S. Zarate', 'C.S. Miraflores', 'C.S. VES',
   'C.S. Vitarte', 'C.S. Surco', 'C.S. VMT', 'C.S. San Borja',
@@ -48,16 +57,57 @@ const factoresSociales = [
   'Inseguridad alimentaria',
 ]
 
-const pacientes = [
-  { id: 1, nombre: 'Carlos Mendoza R.',  sexo: 'M', edad: '2a 3m',  peso: '10.2 kg', talla: '84 cm',  estado: 'risk',     control: '20 may 2026' },
-  { id: 2, nombre: 'Sofía Quispe T.',    sexo: 'F', edad: '1a 8m',  peso: '8.8 kg',  talla: '78 cm',  estado: 'moderate', control: '19 may 2026' },
-  { id: 3, nombre: 'Andrés Torres L.',   sexo: 'M', edad: '3a 5m',  peso: '13.5 kg', talla: '95 cm',  estado: 'adequate', control: '21 may 2026' },
-  { id: 4, nombre: 'Lucía Flores C.',    sexo: 'F', edad: '4a 1m',  peso: '14.1 kg', talla: '99 cm',  estado: 'mild',     control: '18 may 2026' },
-  { id: 5, nombre: 'Diego Mamani H.',    sexo: 'M', edad: '0a 11m', peso: '7.2 kg',  talla: '70 cm',  estado: 'severe',   control: '17 may 2026' },
-  { id: 6, nombre: 'Valentina Cruz M.',  sexo: 'F', edad: '2a 7m',  peso: '11.8 kg', talla: '88 cm',  estado: 'adequate', control: '22 may 2026' },
-  { id: 7, nombre: 'Mateo Huanca P.',    sexo: 'M', edad: '1a 2m',  peso: '9.1 kg',  talla: '74 cm',  estado: 'risk',     control: '15 may 2026' },
-  { id: 8, nombre: 'Isabella Ramos L.',  sexo: 'F', edad: '3a 9m',  peso: '14.8 kg', talla: '97 cm',  estado: 'adequate', control: '22 may 2026' },
-]
+// ─── Helpers API ─────────────────────────────────────────────────────────────
+
+function clasNombreToEstado(nombre) {
+  if (!nombre) return 'adequate'
+  const n = nombre.toLowerCase()
+  if (n.includes('severa')) return 'severe'
+  if (n.includes('moderada')) return 'moderate'
+  if (n === 'normal bajo') return 'mild'
+  if (n === 'normal') return 'adequate'
+  return 'risk'
+}
+
+function mesesATexto(m) {
+  return `${Math.floor((m || 0) / 12)}a ${(m || 0) % 12}m`
+}
+
+const MESES_ES = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
+
+function formatFechaCorta(iso) {
+  if (!iso) return '-'
+  const [y, mo, d] = iso.split('-')
+  return `${parseInt(d)} ${MESES_ES[parseInt(mo) - 1]} ${y}`
+}
+
+function siNoToInt(v)   { return v === 'Sí' ? 1 : 2 }
+function vacunasToInt(v){ return v === 'No' ? 2 : 1 }
+function zonaToInt(v)   { return v === 'Rural' ? 2 : 1 }
+function etniaToInt(v)  {
+  return ({ Mestizo: 1, Indígena: 2, Afroperuano: 3, Blanco: 4, Otro: 5 })[v] ?? null
+}
+function estratoToInt(v){ return v ? parseInt(v) || null : null }
+function educToInt(v)   {
+  return ({
+    'Sin educación': 1, 'Primaria incompleta': 2, 'Primaria completa': 3,
+    'Secundaria incompleta': 4, 'Secundaria completa': 5, 'Superior': 6,
+  })[v] ?? null
+}
+
+function mapPacienteRow(p) {
+  const uc = p.ultimo_control
+  return {
+    id:      p.id,
+    nombre:  `${p.nombre} ${p.apellidos}`,
+    sexo:    p.sexo,
+    edad:    mesesATexto(p.edad_meses),
+    peso:    uc ? `${uc.peso_act} kg` : '-',
+    talla:   uc ? `${uc.talla_act} cm` : '-',
+    estado:  clasNombreToEstado(p.estado_nutricional),
+    control: uc ? formatFechaCorta(uc.fecha) : 'Sin control',
+  }
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -101,9 +151,11 @@ function SeccionTitle({ icon: Icon, label }) {
 
 // ─── Drawer Nuevo Paciente ────────────────────────────────────────────────────
 
-function NuevoPacienteDrawer({ onClose }) {
+function NuevoPacienteDrawer({ onClose, onCreated }) {
   const [step,      setStep]      = useState(1) // 1: personal, 2: ubicación, 3: control
   const [submitted, setSubmitted] = useState(false)
+  const [saving,    setSaving]    = useState(false)
+  const [apiError,  setApiError]  = useState('')
 
   const [form, setForm] = useState({
     // Datos personales
@@ -112,8 +164,9 @@ function NuevoPacienteDrawer({ onClose }) {
     // Antecedentes neonatales
     pesoNacer: '', tallaNacer: '', edadGestacional: '',
     lactancia: '', edadComplem: '', vacunasAlDia: '',
+    crec_dllo: '', carne_vac: '', gp_pobicbf: '',
     // Ubicación y social
-    tipoZona: '', zona: '', establecimiento: '',
+    tipoZona: '', zona: '', departamento: '', establecimiento: '',
     estrato: '', educacionMadre: '', menoresHogar: '',
     factores: [],
     // Primer control (opcional)
@@ -136,9 +189,45 @@ function NuevoPacienteDrawer({ onClose }) {
     }))
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
-    setSubmitted(true)
+    setSaving(true)
+    setApiError('')
+    try {
+      await api.post('/pacientes', {
+        nombre:           form.nombre,
+        apellidos:        form.apellidos,
+        dni:              form.dni || undefined,
+        fecha_nac:        form.fechaNac,
+        sexo:             form.sexo,
+        per_etn_:         etniaToInt(form.etnia),
+        peso_nac:         form.pesoNacer      ? parseFloat(form.pesoNacer)      : undefined,
+        edad_ges:         form.edadGestacional? parseFloat(form.edadGestacional): undefined,
+        t_lechem:         form.lactancia      ? parseFloat(form.lactancia)      : undefined,
+        e_complem:        form.edadComplem    ? parseFloat(form.edadComplem)    : undefined,
+        esq_vac:          vacunasToInt(form.vacunasAlDia),
+        carne_vac:        siNoToInt(form.carne_vac),
+        crec_dllo:        siNoToInt(form.crec_dllo),
+        gp_pobicbf:       siNoToInt(form.gp_pobicbf),
+        area_:            zonaToInt(form.tipoZona),
+        cod_dpto_o:       form.departamento   || undefined,
+        zona:             form.zona,
+        establecimiento:  form.establecimiento,
+        estrato_:         estratoToInt(form.estrato),
+        niv_educat:       educToInt(form.educacionMadre),
+        menores:          form.menoresHogar   ? parseFloat(form.menoresHogar)   : undefined,
+        factores_sociales: form.factores,
+        peso_act:         form.peso  ? parseFloat(form.peso)  : undefined,
+        talla_act:        form.talla ? parseFloat(form.talla) : undefined,
+        observaciones:    form.observaciones  || undefined,
+      })
+      setSubmitted(true)
+      onCreated?.()
+    } catch (err) {
+      setApiError(err.response?.data?.detail || 'Error al registrar paciente. Intenta de nuevo.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const steps = [
@@ -189,7 +278,7 @@ function NuevoPacienteDrawer({ onClose }) {
                 className="clay-btn-outline px-5 py-2.5 text-sm font-medium text-neutral-sub border border-neutral-border rounded-xl">
                 Cerrar
               </button>
-              <button onClick={() => { setSubmitted(false); setStep(1); setForm({ nombre: '', apellidos: '', dni: '', fechaNac: '', sexo: '', etnia: '', pesoNacer: '', tallaNacer: '', edadGestacional: '', lactancia: '', edadComplem: '', vacunasAlDia: '', tipoZona: '', zona: '', establecimiento: '', estrato: '', educacionMadre: '', menoresHogar: '', factores: [], peso: '', talla: '', observaciones: '' }) }}
+              <button onClick={() => { setSubmitted(false); setStep(1); setForm({ nombre: '', apellidos: '', dni: '', fechaNac: '', sexo: '', etnia: '', pesoNacer: '', tallaNacer: '', edadGestacional: '', lactancia: '', edadComplem: '', vacunasAlDia: '', crec_dllo: '', carne_vac: '', gp_pobicbf: '', tipoZona: '', zona: '', departamento: '', establecimiento: '', estrato: '', educacionMadre: '', menoresHogar: '', factores: [], peso: '', talla: '', observaciones: '' }) }}
                 className="clay-btn text-white font-semibold px-5 py-2.5 text-sm">
                 Registrar otro
               </button>
@@ -358,6 +447,26 @@ function NuevoPacienteDrawer({ onClose }) {
                       ))}
                     </div>
                   </div>
+
+                  {[
+                    { key: 'carne_vac',  label: 'Tiene carné de vacunación' },
+                    { key: 'crec_dllo',  label: 'Asiste a control de crecimiento y desarrollo' },
+                    { key: 'gp_pobicbf', label: 'Pertenece a programa de apoyo nutricional (ICBF/social)' },
+                  ].map(({ key, label }) => (
+                    <div key={key} className="flex items-center justify-between px-4 py-3 rounded-xl border border-neutral-border">
+                      <span className="text-xs text-neutral-sub">{label}</span>
+                      <div className="flex gap-2">
+                        {['Sí', 'No'].map(v => (
+                          <button key={v} type="button" onClick={() => set(key, v)}
+                            className="px-3 py-1 rounded-lg text-xs font-medium transition-all"
+                            style={form[key] === v
+                              ? { background: '#4FB4D2', color: '#fff' }
+                              : { background: '#F1F5F9', color: '#64748B' }
+                            }>{v}</button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </motion.div>
               )}
 
@@ -389,6 +498,15 @@ function NuevoPacienteDrawer({ onClose }) {
                       className="input-clinical">
                       <option value="">Seleccionar zona...</option>
                       {zonas.map(z => <option key={z} value={z}>{z}</option>)}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Departamento de origen</label>
+                    <select required value={form.departamento} onChange={e => set('departamento', e.target.value)}
+                      className="input-clinical">
+                      <option value="">Seleccionar departamento...</option>
+                      {departamentos.map(d => <option key={d} value={d}>{d}</option>)}
                     </select>
                   </div>
 
@@ -498,6 +616,12 @@ function NuevoPacienteDrawer({ onClose }) {
               )}
 
               {/* Navegación entre pasos */}
+              {apiError && (
+                <p className="text-xs px-3 py-2 rounded-xl"
+                  style={{ background: 'rgba(229,57,53,0.08)', color: '#E53935' }}>
+                  {apiError}
+                </p>
+              )}
               <div className="flex gap-3 mt-auto pt-2">
                 {step > 1 && (
                   <button type="button" onClick={() => setStep(s => s - 1)}
@@ -516,10 +640,9 @@ function NuevoPacienteDrawer({ onClose }) {
                     Siguiente
                   </button>
                 ) : (
-                  <button type="submit"
-                    className="flex-1 clay-btn text-white font-semibold py-2.5 text-sm flex items-center justify-center gap-2">
-                    <CheckCircle className="w-4 h-4" />
-                    Registrar paciente
+                  <button type="submit" disabled={saving}
+                    className="flex-1 clay-btn text-white font-semibold py-2.5 text-sm flex items-center justify-center gap-2 disabled:opacity-60">
+                    {saving ? 'Guardando...' : <><CheckCircle className="w-4 h-4" />Registrar paciente</>}
                   </button>
                 )}
               </div>
@@ -539,6 +662,18 @@ export default function PacientesCLI() {
   const [query,        setQuery]        = useState('')
   const [filtroEstado, setFiltroEstado] = useState('todos')
   const [showDrawer,   setShowDrawer]   = useState(false)
+  const [pacientes,    setPacientes]    = useState([])
+  const [loadingList,  setLoadingList]  = useState(true)
+
+  function fetchPacientes() {
+    setLoadingList(true)
+    api.get('/pacientes')
+      .then(({ data }) => setPacientes(data.map(mapPacienteRow)))
+      .catch(() => {})
+      .finally(() => setLoadingList(false))
+  }
+
+  useEffect(() => { fetchPacientes() }, [])
 
   const filtered = pacientes.filter(p => {
     const matchNombre = p.nombre.toLowerCase().includes(query.toLowerCase())
@@ -554,7 +689,7 @@ export default function PacientesCLI() {
         className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold text-neutral-text">Pacientes</h1>
-          <p className="text-sm text-neutral-sub mt-1">{pacientes.length} pacientes registrados</p>
+          <p className="text-sm text-neutral-sub mt-1">{loadingList ? 'Cargando...' : `${pacientes.length} pacientes registrados`}</p>
         </div>
         <button
           onClick={() => setShowDrawer(true)}
@@ -639,7 +774,12 @@ export default function PacientesCLI() {
 
       {/* Drawer */}
       <AnimatePresence>
-        {showDrawer && <NuevoPacienteDrawer onClose={() => setShowDrawer(false)} />}
+        {showDrawer && (
+          <NuevoPacienteDrawer
+            onClose={() => setShowDrawer(false)}
+            onCreated={fetchPacientes}
+          />
+        )}
       </AnimatePresence>
 
     </div>

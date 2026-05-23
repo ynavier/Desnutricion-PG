@@ -1,0 +1,177 @@
+{
+  "version": "1.0.0",
+  "fecha_entrenamiento": "2026-05-23T16:29:03.526316",
+  "algoritmo": "RandomForestClassifier",
+  "target": "clas_peso",
+  "clases": {
+    "1": "Desnut. severa",
+    "2": "Desnut. moderada",
+    "3": "Normal bajo",
+    "4": "Normal",
+    "5": "Sobrepeso",
+    "6": "Obesidad"
+  },
+  "modelo_A": {
+    "descripcion": "Con IMC — para clínicas con báscula y tallímetro",
+    "n_features": 25,
+    "features": [
+      "edad_meses",
+      "per_etn_",
+      "estrato_",
+      "area_",
+      "cod_dpto_o",
+      "niv_educat",
+      "menores",
+      "gp_pobicbf",
+      "peso_nac",
+      "edad_ges",
+      "peso_act",
+      "per_braqui",
+      "imc",
+      "t_lechem",
+      "e_complem",
+      "crec_dllo",
+      "esq_vac",
+      "carne_vac",
+      "edema",
+      "delgadez",
+      "palidez",
+      "piel_rese",
+      "hiperpigm",
+      "cambios_cabello",
+      "ruta_atenc"
+    ],
+    "cols_escalar": [
+      "peso_act",
+      "per_braqui",
+      "t_lechem",
+      "menores",
+      "peso_nac",
+      "edad_meses",
+      "imc",
+      "edad_ges",
+      "e_complem"
+    ],
+    "metricas": {
+      "accuracy": 0.8311,
+      "f1_weighted": 0.8204,
+      "f1_macro": 0.5706,
+      "recall_severa": 0.5918
+    }
+  },
+  "modelo_B": {
+    "descripcion": "Sin IMC — fallback para zonas rurales sin equipos completos",
+    "n_features": 24,
+    "features": [
+      "edad_meses",
+      "per_etn_",
+      "estrato_",
+      "area_",
+      "cod_dpto_o",
+      "niv_educat",
+      "menores",
+      "gp_pobicbf",
+      "peso_nac",
+      "edad_ges",
+      "peso_act",
+      "per_braqui",
+      "t_lechem",
+      "e_complem",
+      "crec_dllo",
+      "esq_vac",
+      "carne_vac",
+      "edema",
+      "delgadez",
+      "palidez",
+      "piel_rese",
+      "hiperpigm",
+      "cambios_cabello",
+      "ruta_atenc"
+    ],
+    "cols_escalar": [
+      "peso_act",
+      "per_braqui",
+      "t_lechem",
+      "menores",
+      "peso_nac",
+      "edad_meses",
+      "edad_ges",
+      "e_complem"
+    ],
+    "metricas": {
+      "accuracy": 0.7636,
+      "f1_weighted": 0.7435,
+      "f1_macro": 0.374,
+      "recall_severa": 0.3776
+    }
+  },
+  "preprocesamiento": {
+    "cod_dpto_o": {
+      "tipo": "LabelEncoder",
+      "clases": [
+        "11",
+        "11.0",
+        "15",
+        "15.0",
+        "20",
+        "20.0",
+        "25",
+        "25.0",
+        "44",
+        "44.0",
+        "47",
+        "47.0",
+        "52",
+        "52.0",
+        "68",
+        "68.0",
+        "D0",
+        "nan"
+      ],
+      "codigos": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17
+      ]
+    },
+    "imputacion": {
+      "estratificada": [
+        "per_braqui",
+        "niv_educat",
+        "menores",
+        "t_lechem",
+        "e_complem"
+      ],
+      "valor_fijo": {
+        "gp_pobicbf": 2
+      },
+      "moda": [
+        "crec_dllo",
+        "esq_vac",
+        "carne_vac",
+        "edema",
+        "delgadez",
+        "palidez",
+        "piel_rese",
+        "hiperpigm",
+        "ruta_atenc"
+      ]
+    },
+    "escalado": "RobustScaler"
+  }
+}
