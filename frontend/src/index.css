@@ -11,59 +11,61 @@
   }
   body {
     @apply bg-neutral-bg text-neutral-text font-sans antialiased;
+    font-family: 'Nunito', system-ui, sans-serif;
   }
 }
 
 @layer components {
   /* ── Claymorphism ─────────────────────────────── */
   .clay-card {
-    background: linear-gradient(145deg, #ffffff, #f0f5fb);
+    background: linear-gradient(145deg, #ffffff, #eaf6fb);
     border-radius: 20px;
     border: none;
     box-shadow:
-      6px 6px 18px rgba(13, 71, 161, 0.08),
+      6px 6px 18px rgba(79, 180, 210, 0.10),
       -4px -4px 12px rgba(255, 255, 255, 0.95),
       inset 0 1px 0 rgba(255, 255, 255, 1),
-      inset 0 -1px 0 rgba(13, 71, 161, 0.04);
+      inset 0 -1px 0 rgba(79, 180, 210, 0.04);
     transition: transform 0.25s ease, box-shadow 0.25s ease;
   }
 
   .clay-card:hover {
     transform: translateY(-4px) scale(1.01);
     box-shadow:
-      10px 14px 28px rgba(13, 71, 161, 0.13),
+      10px 14px 28px rgba(79, 180, 210, 0.18),
       -4px -4px 12px rgba(255, 255, 255, 0.95),
       inset 0 1px 0 rgba(255, 255, 255, 1);
   }
 
   .clay-btn {
     border-radius: 14px;
+    background: linear-gradient(135deg, #4FB4D2, #6EC6E0);
     box-shadow:
-      0 6px 16px rgba(25, 118, 210, 0.35),
-      0 2px 4px rgba(25, 118, 210, 0.2),
-      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      0 6px 16px rgba(79, 180, 210, 0.40),
+      0 2px 4px rgba(79, 180, 210, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.30);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
   .clay-btn:hover {
     transform: translateY(-3px);
     box-shadow:
-      0 10px 24px rgba(25, 118, 210, 0.4),
-      0 4px 8px rgba(25, 118, 210, 0.25),
-      inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      0 10px 24px rgba(79, 180, 210, 0.50),
+      0 4px 8px rgba(79, 180, 210, 0.30),
+      inset 0 1px 0 rgba(255, 255, 255, 0.30);
   }
 
   .clay-btn:active {
     transform: translateY(1px);
     box-shadow:
-      0 3px 8px rgba(25, 118, 210, 0.3),
-      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      0 3px 8px rgba(79, 180, 210, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.20);
   }
 
   .clay-btn-outline {
     border-radius: 14px;
     box-shadow:
-      4px 4px 12px rgba(0, 0, 0, 0.06),
+      4px 4px 12px rgba(79, 180, 210, 0.10),
       -2px -2px 8px rgba(255, 255, 255, 0.9),
       inset 0 1px 0 rgba(255, 255, 255, 0.8);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -72,7 +74,7 @@
   .clay-btn-outline:hover {
     transform: translateY(-2px);
     box-shadow:
-      6px 6px 16px rgba(0, 0, 0, 0.09),
+      6px 6px 16px rgba(79, 180, 210, 0.15),
       -2px -2px 8px rgba(255, 255, 255, 0.9),
       inset 0 1px 0 rgba(255, 255, 255, 0.8);
   }
@@ -84,9 +86,9 @@
   .book-card {
     position: relative;
     border-radius: 20px;
-    background: linear-gradient(145deg, #ffffff, #f0f5fb);
+    background: linear-gradient(145deg, #ffffff, #eaf6fb);
     box-shadow:
-      8px 8px 20px rgba(13, 71, 161, 0.10),
+      8px 8px 20px rgba(79, 180, 210, 0.12),
       -4px -4px 12px rgba(255, 255, 255, 0.95),
       inset 0 1px 0 rgba(255, 255, 255, 1);
     transform-style: preserve-3d;

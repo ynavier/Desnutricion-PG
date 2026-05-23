@@ -80,26 +80,22 @@ function Navbar() {
   }, [])
 
   return (
-    <header
-      className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
-        scrolled || open ? 'bg-white/95 backdrop-blur border-b border-neutral-border shadow-sm' : ''
-      }`}
-    >
-      <div className="relative max-w-5xl mx-auto px-6 flex items-center justify-between" style={{ height: '60px' }}>
+    <header className="fixed top-0 inset-x-0 z-50 bg-white border-b border-neutral-border shadow-sm transition-all duration-300">
+      <div className="relative w-full px-3 sm:px-4 flex items-center justify-between" style={{ height: '60px' }}>
         {/* Logo — izquierda */}
-        <img src="/Logo.png" alt="Logo" className="w-9 h-9 object-contain" />
-
-        {/* Links — centrado en desktop con absolute */}
-        <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-7">
-          {navLinks.map(({ label, href }) => (
-            <a key={href} href={href} className="text-sm text-neutral-sub hover:text-neutral-text transition-colors">
-              {label}
-            </a>
-          ))}
-        </nav>
-
-        {/* Derecha */}
         <div className="flex items-center">
+          <img src="/Logo.png" alt="Logo" className="w-12 h-12 object-contain" />
+        </div>
+
+        <div className="flex items-center gap-6">
+          <nav className="hidden md:flex items-center gap-7">
+            {navLinks.map(({ label, href }) => (
+              <a key={href} href={href} className="text-sm text-neutral-sub hover:text-neutral-text transition-colors">
+                {label}
+              </a>
+            ))}
+          </nav>
+
           <Link
             to="/login"
             className="hidden md:flex items-center gap-1 text-sm font-medium text-clinical-blue-md hover:text-clinical-blue transition-colors"
@@ -107,6 +103,7 @@ function Navbar() {
             Ingresar
             <ChevronRight className="w-3.5 h-3.5" />
           </Link>
+
           <button
             className="md:hidden w-9 h-9 flex items-center justify-center text-neutral-sub hover:text-neutral-text transition-colors"
             onClick={() => setOpen(!open)}
@@ -147,17 +144,30 @@ function Navbar() {
 }
 
 const bubbles = [
-  { size: 560, x: '-12%', y: '-18%', color: '#1976D2', opacity: 0.22, blur: 60, duration: 10, delay: 0    },
-  { size: 420, x: '62%',  y: '45%',  color: '#0097A7', opacity: 0.20, blur: 55, duration: 13, delay: 1.5  },
-  { size: 340, x: '78%',  y: '-22%', color: '#0D47A1', opacity: 0.18, blur: 50, duration: 9,  delay: 0.8  },
-  { size: 300, x: '18%',  y: '60%',  color: '#1565C0', opacity: 0.20, blur: 50, duration: 11, delay: 2.5  },
-  { size: 240, x: '42%',  y: '25%',  color: '#0097A7', opacity: 0.16, blur: 45, duration: 8,  delay: 0.3  },
+  { size: 560, x: '-12%', y: '-18%', color: '#4FB4D2', opacity: 0.28, blur: 60, duration: 10, delay: 0    },
+  { size: 420, x: '62%',  y: '45%',  color: '#6FCF97', opacity: 0.24, blur: 55, duration: 13, delay: 1.5  },
+  { size: 340, x: '78%',  y: '-22%', color: '#81D4EA', opacity: 0.22, blur: 50, duration: 9,  delay: 0.8  },
+  { size: 300, x: '18%',  y: '60%',  color: '#4FB4D2', opacity: 0.24, blur: 50, duration: 11, delay: 2.5  },
+  { size: 240, x: '42%',  y: '25%',  color: '#6EC6E0', opacity: 0.20, blur: 45, duration: 8,  delay: 0.3  },
 ]
 
 function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center bg-gradient-to-b from-clinical-blue-lt to-neutral-bg overflow-hidden">
+    <section className="relative min-h-screen flex items-center justify-start overflow-hidden pt-[60px] bg-gradient-to-b from-clinical-blue-lt to-neutral-bg">
       {/* Burbujas animadas */}
+      <div className="absolute right-0 top-0 h-full w-1/2 overflow-hidden" style={{ zIndex: 0 }}>
+        <img
+          src="/1.jpeg"
+          alt="Fondo"
+          className="h-full w-full object-cover"
+          style={{
+            borderTopLeftRadius: '240px',
+            borderBottomLeftRadius: '240px',
+            maskImage: 'linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1) 38%)',
+            WebkitMaskImage: 'linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1) 38%)',
+          }}
+        />
+      </div>
       {bubbles.map(({ size, x, y, color, opacity, blur, duration, delay }, i) => (
         <motion.div
           key={i}
@@ -185,16 +195,18 @@ function Hero() {
         />
       ))}
 
-      <div className="relative max-w-3xl mx-auto px-6 text-center w-full">
+      <div className="relative z-10 w-7/12 pl-16 md:pl-24 lg:pl-40 pr-6 text-left">
         <motion.h1
           initial="hidden"
           animate="visible"
           variants={fadeUp}
-          className="text-4xl sm:text-5xl font-bold text-neutral-text leading-tight mb-5"
+          className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-[#1E293B] leading-[1.1] tracking-tight mb-6"
         >
-          Detección temprana de
+          Detección temprana
           <br />
-          <span className="text-clinical-blue-md">desnutrición infantil</span>
+          <span className="bg-gradient-to-r from-[#4FB4D2] to-[#6EC6E0] bg-clip-text text-transparent">
+            de desnutrición infantil
+          </span>
         </motion.h1>
 
         <motion.p
@@ -202,7 +214,7 @@ function Hero() {
           initial="hidden"
           animate="visible"
           variants={fadeUp}
-          className="text-neutral-sub text-base leading-relaxed mb-10 max-w-xl mx-auto"
+          className="text-neutral-sub text-base leading-relaxed mb-10 max-w-xl"
         >
           Sistema de apoyo clínico para identificar, clasificar y prevenir la desnutrición
           en niños menores de 5 años mediante análisis predictivo basado en indicadores antropométricos.
@@ -216,17 +228,17 @@ function Hero() {
         >
           <Link
             to="/login"
-            className="clay-btn inline-flex items-center gap-2 bg-clinical-blue-md hover:bg-clinical-blue text-white font-medium px-6 py-3 transition-colors duration-200 text-sm"
+            className="clay-btn inline-flex items-center gap-3 text-white font-semibold px-8 py-4 transition-colors duration-200 text-base"
           >
-            Acceder al sistema
-            <ChevronRight className="w-4 h-4" />
+            Acceder
+            <ChevronRight className="w-5 h-5" />
           </Link>
         </motion.div>
       </div>
 
       {/* Fade hacia la siguiente sección */}
       <div className="absolute bottom-0 inset-x-0 h-40 pointer-events-none"
-        style={{ background: 'linear-gradient(to bottom, transparent, #FAFCFF)' }}
+        style={{ background: 'linear-gradient(to bottom, transparent, #F5FAFC)' }}
       />
     </section>
   )
@@ -240,35 +252,35 @@ function PhotoFrame() {
       <div className="absolute pointer-events-none" style={{
         width: '90%', height: '90%',
         top: '-8%', left: '-6%',
-        background: '#1976D2', opacity: 0.13,
+        background: '#4FB4D2', opacity: 0.15,
         borderRadius: '62% 38% 46% 54% / 60% 44% 56% 40%',
         filter: 'blur(3px)',
       }} />
       <div className="absolute pointer-events-none" style={{
         width: '70%', height: '68%',
         bottom: '-6%', right: '-4%',
-        background: '#0097A7', opacity: 0.15,
+        background: '#6FCF97', opacity: 0.18,
         borderRadius: '40% 60% 55% 45% / 50% 62% 38% 50%',
         filter: 'blur(3px)',
       }} />
       <div className="absolute pointer-events-none" style={{
         width: '52%', height: '50%',
         top: '-4%', right: '-2%',
-        background: '#0D47A1', opacity: 0.10,
+        background: '#81D4EA', opacity: 0.12,
         borderRadius: '55% 45% 38% 62% / 48% 58% 42% 52%',
         filter: 'blur(2px)',
       }} />
       <div className="absolute pointer-events-none" style={{
         width: '44%', height: '42%',
         bottom: '4%', left: '-3%',
-        background: '#0097A7', opacity: 0.12,
+        background: '#6FCF97', opacity: 0.14,
         borderRadius: '70% 30% 60% 40% / 40% 65% 35% 60%',
         filter: 'blur(2px)',
       }} />
       <div className="absolute pointer-events-none" style={{
         width: '34%', height: '32%',
         top: '36%', right: '-4%',
-        background: '#1976D2', opacity: 0.09,
+        background: '#4FB4D2', opacity: 0.11,
         borderRadius: '45% 55% 70% 30% / 55% 40% 60% 45%',
         filter: 'blur(2px)',
       }} />
@@ -314,7 +326,7 @@ function Intro() {
           <div className="flex flex-wrap items-center gap-4">
             <Link
               to="/login"
-              className="clay-btn inline-flex items-center gap-2 bg-clinical-blue-md hover:bg-clinical-blue text-white font-medium px-6 py-3 transition-colors duration-200 text-base"
+              className="clay-btn inline-flex items-center gap-2 text-white font-medium px-6 py-3 transition-colors duration-200 text-base"
             >
               Acceder al sistema
               <ChevronRight className="w-4 h-4" />
@@ -373,7 +385,7 @@ function Features() {
               variants={fadeUp}
               className="clay-card p-7"
             >
-              <Icon className="w-7 h-7 text-clinical-blue-md mb-4" />
+              <Icon className="w-7 h-7 mb-4" style={{ color: '#4FB4D2' }} />
               <h3 className="font-semibold text-neutral-text text-base mb-2">{title}</h3>
               <p className="text-neutral-sub text-sm leading-relaxed">{description}</p>
             </motion.div>
@@ -416,8 +428,8 @@ function Roles() {
                 'Ver alertas de riesgo de desnutrición',
                 'Seguimiento de curva de crecimiento',
               ],
-              coverBg: 'linear-gradient(135deg, #DBEAFE, #BFDBFE)',
-              textColor: '#1E40AF',
+              coverBg: 'linear-gradient(135deg, #EAF6FB, #C8EAF4)',
+              textColor: '#1A7A9E',
             },
             {
               name: 'Analítico',
@@ -430,8 +442,8 @@ function Roles() {
                 'Generar reportes de salud pública',
                 'Identificar grupos de alta vulnerabilidad',
               ],
-              coverBg: 'linear-gradient(135deg, #BFDBFE, #93C5FD)',
-              textColor: '#1E40AF',
+              coverBg: 'linear-gradient(135deg, #DDF5EC, #B8E8CE)',
+              textColor: '#1A7A5E',
             },
           ].map(({ name, sub, description, items, coverBg, textColor }, i) => (
             <motion.div
@@ -489,7 +501,7 @@ function CTA() {
         </p>
         <Link
           to="/login"
-          className="clay-btn inline-flex items-center gap-2 bg-clinical-blue-md hover:bg-clinical-blue text-white font-medium px-8 py-4 transition-colors duration-200 text-base"
+          className="clay-btn inline-flex items-center gap-2 text-white font-medium px-8 py-4 transition-colors duration-200 text-base"
         >
           Ingresar al sistema
           <ChevronRight className="w-4 h-4" />
