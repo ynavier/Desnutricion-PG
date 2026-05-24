@@ -5,7 +5,7 @@ from app.database import supabase
 router = APIRouter(prefix='/alertas', tags=['alertas'])
 
 
-@router.get('/')
+@router.get('')
 async def listar_alertas(
     leida: bool | None = None,
     nivel: str | None = None,

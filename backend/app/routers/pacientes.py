@@ -1,3 +1,4 @@
+import traceback
 from fastapi import APIRouter, HTTPException, Depends, status
 from datetime import date
 from app.auth.dependencies import get_current_user, require_cli
@@ -51,7 +52,7 @@ def _generar_alertas(paciente_id: int, control_id: int, prediccion: dict,
         supabase.table('alertas').insert(alertas).execute()
 
 
-@router.get('/', response_model=list[PacienteOut])
+@router.get('', response_model=list[PacienteOut])
 async def listar_pacientes(
     q: str = '',
     estado: str = '',
@@ -83,7 +84,7 @@ async def listar_pacientes(
     return pacientes
 
 
-@router.post('/', status_code=status.HTTP_201_CREATED)
+@router.post('', status_code=status.HTTP_201_CREATED)
 async def crear_paciente(
     body: PacienteCreate,
     user: dict = Depends(require_cli),
@@ -98,53 +99,69 @@ async def crear_paciente(
         't_lechem': body.t_lechem, 'e_complem': body.e_complem,
         'esq_vac': body.esq_vac, 'carne_vac': body.carne_vac,
         'crec_dllo': body.crec_dllo, 'gp_pobicbf': body.gp_pobicbf or 2,
-        'area_': body.area_, 'cod_dpto_o': body.cod_dpto_o,
-        'zona': body.zona, 'establecimiento': body.establecimiento,
+        'cod_dpto_o': body.cod_dpto_o, 'municipio_proc': body.municipio_proc,
+        'area_': body.area_, 'dpto_residencia': body.dpto_residencia,
+        'municipio_res': body.municipio_res, 'zona': body.zona,
+        'establecimiento': body.establecimiento,
         'estrato_': body.estrato_, 'niv_educat': body.niv_educat,
         'menores': body.menores, 'factores_sociales': body.factores_sociales,
         'registrado_por': user['id'],
     }
 
-    res = supabase.table('pacientes').insert(fila).execute()
+    try:
+        res = supabase.table('pacientes').insert(fila).execute()
+    except Exception:
+        print(f'[PACIENTE] Error insertando paciente:\n{traceback.format_exc()}', flush=True)
+        raise HTTPException(status_code=500, detail='Error al guardar en base de datos')
+
     if not res.data:
+        print(f'[PACIENTE] Insert sin datos: {getattr(res, "error", None)}', flush=True)
         raise HTTPException(status_code=500, detail='Error al crear paciente')
 
     paciente_id = res.data[0]['id']
+    print(f'[PACIENTE] Paciente creado id={paciente_id}', flush=True)
 
     # Primer control si se proporcionaron datos antropométricos
     if body.peso_act:
-        datos_pred = {
-            'edad_meses': em, 'peso_act': body.peso_act,
-            'talla_act': body.talla_act, 'per_braqui': body.per_braqui,
-            'per_etn_': body.per_etn_, 'estrato_': body.estrato_,
-            'area_': body.area_, 'cod_dpto_o': body.cod_dpto_o,
-            'niv_educat': body.niv_educat, 'menores': body.menores,
-            'gp_pobicbf': body.gp_pobicbf or 2,
-            'peso_nac': body.peso_nac, 'edad_ges': body.edad_ges,
-            't_lechem': body.t_lechem, 'e_complem': body.e_complem,
-            'crec_dllo': body.crec_dllo, 'esq_vac': body.esq_vac,
-            'carne_vac': body.carne_vac,
-        }
-        pred    = predecir(datos_pred)
-        zscore  = calcular_zscore(body.peso_act, em, body.sexo)
-        imc     = pred.get('imc_calculado')
+        try:
+            datos_pred = {
+                'edad_meses': em, 'peso_act': body.peso_act,
+                'talla_act': body.talla_act, 'per_braqui': body.per_braqui,
+                'per_etn_': body.per_etn_, 'estrato_': body.estrato_,
+                'area_': body.area_, 'cod_dpto_o': body.cod_dpto_o,
+                'niv_educat': body.niv_educat, 'menores': body.menores,
+                'gp_pobicbf': body.gp_pobicbf or 2,
+                'peso_nac': body.peso_nac, 'edad_ges': body.edad_ges,
+                't_lechem': body.t_lechem, 'e_complem': body.e_complem,
+                'crec_dllo': body.crec_dllo, 'esq_vac': body.esq_vac,
+                'carne_vac': body.carne_vac,
+            }
+            pred   = predecir(datos_pred)
+            zscore = calcular_zscore(body.peso_act, em, body.sexo)
+            imc    = pred.get('imc_calculado')
+            print(f'[PACIENTE] Predicción: {pred["clas_nombre"]} (prob={pred["prob_desnutrido"]})', flush=True)
 
-        ctrl = {
-            'paciente_id': paciente_id, 'fecha': date.today().isoformat(),
-            'peso_act': body.peso_act, 'talla_act': body.talla_act,
-            'per_braqui': body.per_braqui, 'imc': imc,
-            'zscore_pt': zscore,
-            'clas_peso_pred': pred['clas_peso'],
-            'clas_nombre': pred['clas_nombre'],
-            'prob_desnutrido': pred['prob_desnutrido'],
-            'modelo_usado': pred['modelo_usado'],
-            'observaciones': body.observaciones,
-            'registrado_por': user['id'],
-        }
-        ctrl_res = supabase.table('controles').insert(ctrl).execute()
-        if ctrl_res.data:
-            _generar_alertas(paciente_id, ctrl_res.data[0]['id'],
-                             pred, zscore, user['id'])
+            ctrl = {
+                'paciente_id': paciente_id, 'fecha': date.today().isoformat(),
+                'peso_act': body.peso_act, 'talla_act': body.talla_act,
+                'per_braqui': body.per_braqui, 'imc': imc,
+                'zscore_pt': zscore,
+                'clas_peso_pred': pred['clas_peso'],
+                'clas_nombre': pred['clas_nombre'],
+                'prob_desnutrido': pred['prob_desnutrido'],
+                'modelo_usado': pred['modelo_usado'],
+                'observaciones': body.observaciones,
+                'registrado_por': user['id'],
+            }
+            ctrl_res = supabase.table('controles').insert(ctrl).execute()
+            if ctrl_res.data:
+                _generar_alertas(paciente_id, ctrl_res.data[0]['id'],
+                                 pred, zscore, user['id'])
+        except HTTPException:
+            raise
+        except Exception:
+            # El control falló pero el paciente ya fue creado — no revertir
+            print(f'[PACIENTE] Error en control/predicción:\n{traceback.format_exc()}', flush=True)
 
     return {'id': paciente_id, 'message': 'Paciente registrado'}
 

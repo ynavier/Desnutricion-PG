@@ -34,10 +34,14 @@ CREATE TABLE IF NOT EXISTS pacientes (
     carne_vac           INTEGER,
     crec_dllo           INTEGER,
     gp_pobicbf          INTEGER DEFAULT 2,
-    -- Ubicación
+    -- Procedencia (origen)
+    cod_dpto_o          TEXT,              -- departamento de procedencia
+    municipio_proc      TEXT,              -- municipio de procedencia
+    -- Residencia actual
     area_               INTEGER,           -- 1=Urbana 2=Rural
-    cod_dpto_o          TEXT,
-    zona                TEXT,
+    dpto_residencia     TEXT,              -- departamento de residencia
+    municipio_res       TEXT,              -- municipio de residencia
+    zona                TEXT,              -- legacy / zona general
     establecimiento     TEXT,
     -- Social
     estrato_            INTEGER,

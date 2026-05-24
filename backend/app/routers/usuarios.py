@@ -14,7 +14,7 @@ class UsuarioCreate(BaseModel):
     establecimiento: str | None = None
 
 
-@router.get('/')
+@router.get('')
 async def listar_usuarios(user: dict = Depends(require_anl)):
     res = supabase.table('profiles') \
         .select('id, nombre, email, rol, establecimiento, habilitado, created_at') \
@@ -24,7 +24,7 @@ async def listar_usuarios(user: dict = Depends(require_anl)):
     return res.data or []
 
 
-@router.post('/', status_code=status.HTTP_201_CREATED)
+@router.post('', status_code=status.HTTP_201_CREATED)
 async def crear_usuario(body: UsuarioCreate, user: dict = Depends(require_anl)):
     # Crear en Supabase Auth
     try:

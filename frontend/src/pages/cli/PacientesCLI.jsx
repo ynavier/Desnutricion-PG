@@ -28,24 +28,57 @@ const filterLabels = {
   severe:   'D. Severa',
 }
 
-const zonas = [
-  'Lima Norte', 'Lima Sur', 'Lima Este', 'Lima Centro',
-  'San Juan de Lurigancho', 'Villa El Salvador', 'Ate Vitarte',
-  'Comas', 'Villa María del Triunfo', 'Callao', 'Otra',
+const departamentos = [
+  'Amazonas', 'Antioquia', 'Arauca', 'Atlántico', 'Bogotá D.C.',
+  'Bolívar', 'Boyacá', 'Caldas', 'Caquetá', 'Casanare', 'Cauca',
+  'Cesar', 'Chocó', 'Córdoba', 'Cundinamarca', 'Guainía', 'Guaviare',
+  'Huila', 'La Guajira', 'Magdalena', 'Meta', 'Nariño',
+  'Norte de Santander', 'Putumayo', 'Quindío', 'Risaralda',
+  'San Andrés y Providencia', 'Santander', 'Sucre', 'Tolima',
+  'Valle del Cauca', 'Vaupés', 'Vichada',
 ]
 
-const departamentos = [
-  'Amazonas', 'Áncash', 'Apurímac', 'Arequipa', 'Ayacucho', 'Cajamarca',
-  'Callao', 'Cusco', 'Huancavelica', 'Huánuco', 'Ica', 'Junín',
-  'La Libertad', 'Lambayeque', 'Lima', 'Loreto', 'Madre de Dios',
-  'Moquegua', 'Pasco', 'Piura', 'Puno', 'San Martín', 'Tacna',
-  'Tumbes', 'Ucayali',
-]
+const municipiosPorDepartamento = {
+  'Amazonas':                ['Leticia', 'Puerto Nariño', 'El Encanto', 'La Chorrera', 'Mirití-Paraná', 'Otro'],
+  'Antioquia':               ['Medellín', 'Bello', 'Itagüí', 'Envigado', 'Apartadó', 'Turbo', 'Rionegro', 'Caucasia', 'Montería', 'Quibdó', 'Sabaneta', 'Copacabana', 'Girardota', 'La Estrella', 'Caldas', 'Otro'],
+  'Arauca':                  ['Arauca', 'Arauquita', 'Saravena', 'Tame', 'Fortul', 'Puerto Rondón', 'Cravo Norte', 'Otro'],
+  'Atlántico':               ['Barranquilla', 'Soledad', 'Malambo', 'Sabanalarga', 'Galapa', 'Puerto Colombia', 'Baranoa', 'Ponedera', 'Otro'],
+  'Bogotá D.C.':             ['Bogot�� D.C.', 'Otro'],
+  'Bolívar':                 ['Cartagena', 'Magangué', 'El Carmen de Bolívar', 'Mompox', 'Turbaco', 'Arjona', 'San Jacinto', 'Otro'],
+  'Boyacá':                  ['Tunja', 'Duitama', 'Sogamoso', 'Chiquinquirá', 'Monguí', 'Villa de Leyva', 'Paipa', 'Nobsa', 'Otro'],
+  'Caldas':                  ['Manizales', 'La Dorada', 'Riosucio', 'Chinchiná', 'Villamaría', 'Anserma', 'Aguadas', 'Salamina', 'Otro'],
+  'Caquetá':                 ['Florencia', 'San Vicente del Caguán', 'Puerto Rico', 'El Doncello', 'La Montañita', 'Belén de los Andaquíes', 'Otro'],
+  'Casanare':                ['Yopal', 'Aguazul', 'Villanueva', 'Tauramena', 'Paz de Ariporo', 'Trinidad', 'Hato Corozal', 'Otro'],
+  'Cauca':                   ['Popayán', 'Santander de Quilichao', 'Puerto Tejada', 'Patía', 'Corinto', 'Miranda', 'Buenos Aires', 'Otro'],
+  'Cesar':                   ['Valledupar', 'Aguachica', 'Bosconia', 'Codazzi', 'La Jagua de Ibirico', 'Pelaya', 'Chimichagua', 'Otro'],
+  'Chocó':                   ['Quibdó', 'Istmina', 'Tumaco', 'Condoto', 'Riosucio', 'Bahía Solano', 'Nuquí', 'Otro'],
+  'Córdoba':                 ['Montería', 'Cereté', 'Sahagún', 'Lorica', 'Montelíbano', 'Tierralta', 'Planeta Rica', 'Otro'],
+  'Cundinamarca':            ['Soacha', 'Facatativá', 'Zipaquirá', 'Chía', 'Fusagasugá', 'Madrid', 'Mosquera', 'Girardot', 'Cajicá', 'Otro'],
+  'Guainía':                 ['Inírida', 'Barranco Minas', 'Mapiripana', 'San Felipe', 'Puerto Colombia', 'Otro'],
+  'Guaviare':                ['San José del Guaviare', 'Calamar', 'El Retorno', 'Miraflores', 'Otro'],
+  'Huila':                   ['Neiva', 'Pitalito', 'Garzón', 'La Plata', 'Campoalegre', 'Palermo', 'Rivera', 'Otro'],
+  'La Guajira':              ['Riohacha', 'Maicao', 'Uribia', 'Manaure', 'Fonseca', 'San Juan del Cesar', 'Villanueva', 'Otro'],
+  'Magdalena':               ['Santa Marta', 'Ciénaga', 'Fundación', 'El Banco', 'Plato', 'Aracataca', 'Pivijay', 'Otro'],
+  'Meta':                    ['Villavicencio', 'Acacías', 'Granada', 'Puerto López', 'San Martín', 'Cumaral', 'Restrepo', 'Otro'],
+  'Nariño':                  ['Pasto', 'Tumaco', 'Ipiales', 'Túquerres', 'La Unión', 'Samaniego', 'El Charco', 'Otro'],
+  'Norte de Santander':      ['Cúcuta', 'Ocaña', 'Pamplona', 'Villa del Rosario', 'Los Patios', 'El Zulia', 'Tibú', 'Otro'],
+  'Putumayo':                ['Mocoa', 'Puerto Asís', 'Orito', 'Valle del Guamuez', 'Sibundoy', 'San Francisco', 'Otro'],
+  'Quindío':                 ['Armenia', 'Calarcá', 'Montenegro', 'Quimbaya', 'La Tebaida', 'Circasia', 'Filandia', 'Otro'],
+  'Risaralda':               ['Pereira', 'Dosquebradas', 'Santa Rosa de Cabal', 'La Virginia', 'Quinchía', 'Belén de Umbría', 'Otro'],
+  'San Andrés y Providencia':['San Andrés', 'Providencia', 'Santa Catalina', 'Otro'],
+  'Santander':               ['Bucaramanga', 'Floridablanca', 'Girón', 'Piedecuesta', 'Barrancabermeja', 'Socorro', 'San Gil', 'Otro'],
+  'Sucre':                   ['Sincelejo', 'Corozal', 'Sampués', 'San Marcos', 'Tolú', 'Morroa', 'Betulia', 'Otro'],
+  'Tolima':                  ['Ibagué', 'Espinal', 'Melgar', 'Honda', 'Líbano', 'Chaparral', 'Mariquita', 'Otro'],
+  'Valle del Cauca':         ['Cali', 'Buenaventura', 'Palmira', 'Tuluá', 'Buga', 'Cartago', 'Jamundí', 'Yumbo', 'Otro'],
+  'Vaupés':                  ['Mitú', 'Caruru', 'Pacoa', 'Papunaua', 'Taraira', 'Yavaraté', 'Otro'],
+  'Vichada':                 ['Puerto Carreño', 'La Primavera', 'Santa Rosalía', 'Cumaribo', 'Otro'],
+}
 
 const establecimientos = [
-  'C.S. Comas', 'C.S. Zarate', 'C.S. Miraflores', 'C.S. VES',
-  'C.S. Vitarte', 'C.S. Surco', 'C.S. VMT', 'C.S. San Borja',
-  'Hospital Nacional', 'Otro',
+  'ESE Hospital Local', 'ESE Hospital Regional', 'ESE Hospital Departamental',
+  'IPS Centro de Salud', 'IPS Clínica', 'Puesto de Salud',
+  'Hospital Universitario', 'Unidad Médica ICBF', 'Centro de Atención Primaria',
+  'Otro',
 ]
 
 const factoresSociales = [
@@ -165,8 +198,12 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
     pesoNacer: '', tallaNacer: '', edadGestacional: '',
     lactancia: '', edadComplem: '', vacunasAlDia: '',
     crec_dllo: '', carne_vac: '', gp_pobicbf: '',
-    // Ubicación y social
-    tipoZona: '', zona: '', departamento: '', establecimiento: '',
+    // Procedencia
+    dptoProcedencia: '', municipioProcedencia: '',
+    // Residencia
+    tipoZona: '', dptoResidencia: '', municipioResidencia: '',
+    establecimiento: '',
+    // Social
     estrato: '', educacionMadre: '', menoresHogar: '',
     factores: [],
     // Primer control (opcional)
@@ -191,6 +228,11 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
 
   async function handleSubmit(e) {
     e.preventDefault()
+    // Guardia: solo enviar en el paso 3
+    if (step < 3) {
+      setStep(s => s + 1)
+      return
+    }
     setSaving(true)
     setApiError('')
     try {
@@ -209,9 +251,12 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
         carne_vac:        siNoToInt(form.carne_vac),
         crec_dllo:        siNoToInt(form.crec_dllo),
         gp_pobicbf:       siNoToInt(form.gp_pobicbf),
+        cod_dpto_o:       form.dptoProcedencia   || undefined,
+        municipio_proc:   form.municipioProcedencia || undefined,
         area_:            zonaToInt(form.tipoZona),
-        cod_dpto_o:       form.departamento   || undefined,
-        zona:             form.zona,
+        dpto_residencia:  form.dptoResidencia   || undefined,
+        municipio_res:    form.municipioResidencia || undefined,
+        zona:             form.municipioResidencia || form.municipioProcedencia || undefined,
         establecimiento:  form.establecimiento,
         estrato_:         estratoToInt(form.estrato),
         niv_educat:       educToInt(form.educacionMadre),
@@ -278,7 +323,7 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
                 className="clay-btn-outline px-5 py-2.5 text-sm font-medium text-neutral-sub border border-neutral-border rounded-xl">
                 Cerrar
               </button>
-              <button onClick={() => { setSubmitted(false); setStep(1); setForm({ nombre: '', apellidos: '', dni: '', fechaNac: '', sexo: '', etnia: '', pesoNacer: '', tallaNacer: '', edadGestacional: '', lactancia: '', edadComplem: '', vacunasAlDia: '', crec_dllo: '', carne_vac: '', gp_pobicbf: '', tipoZona: '', zona: '', departamento: '', establecimiento: '', estrato: '', educacionMadre: '', menoresHogar: '', factores: [], peso: '', talla: '', observaciones: '' }) }}
+              <button onClick={() => { setSubmitted(false); setStep(1); setForm({ nombre: '', apellidos: '', dni: '', fechaNac: '', sexo: '', etnia: '', pesoNacer: '', tallaNacer: '', edadGestacional: '', lactancia: '', edadComplem: '', vacunasAlDia: '', crec_dllo: '', carne_vac: '', gp_pobicbf: '', dptoProcedencia: '', municipioProcedencia: '', tipoZona: '', dptoResidencia: '', municipioResidencia: '', establecimiento: '', estrato: '', educacionMadre: '', menoresHogar: '', factores: [], peso: '', talla: '', observaciones: '' }) }}
                 className="clay-btn text-white font-semibold px-5 py-2.5 text-sm">
                 Registrar otro
               </button>
@@ -474,10 +519,39 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
               {step === 2 && (
                 <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}
                   className="flex flex-col gap-4">
-                  <SeccionTitle icon={MapPin} label="Ubicación y establecimiento" />
+
+                  {/* — Procedencia — */}
+                  <SeccionTitle icon={MapPin} label="Lugar de procedencia" />
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Departamento</label>
+                      <select value={form.dptoProcedencia}
+                        onChange={e => { set('dptoProcedencia', e.target.value); set('municipioProcedencia', '') }}
+                        className="input-clinical">
+                        <option value="">Seleccionar...</option>
+                        {departamentos.map(d => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Municipio</label>
+                      <select value={form.municipioProcedencia}
+                        onChange={e => set('municipioProcedencia', e.target.value)}
+                        className="input-clinical"
+                        disabled={!form.dptoProcedencia}>
+                        <option value="">{form.dptoProcedencia ? 'Seleccionar...' : '— elige depto —'}</option>
+                        {(municipiosPorDepartamento[form.dptoProcedencia] || []).map(m => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* — Residencia — */}
+                  <div className="border-t border-neutral-border pt-4">
+                    <SeccionTitle icon={MapPin} label="Lugar de residencia actual" />
+                  </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-neutral-sub mb-2">Tipo de zona</label>
+                    <label className="block text-xs font-semibold text-neutral-sub mb-2">Área</label>
                     <div className="flex gap-3">
                       {['Urbana', 'Rural'].map(v => (
                         <button key={v} type="button" onClick={() => set('tipoZona', v)}
@@ -492,22 +566,26 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Zona geográfica</label>
-                    <select required value={form.zona} onChange={e => set('zona', e.target.value)}
-                      className="input-clinical">
-                      <option value="">Seleccionar zona...</option>
-                      {zonas.map(z => <option key={z} value={z}>{z}</option>)}
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Departamento de origen</label>
-                    <select required value={form.departamento} onChange={e => set('departamento', e.target.value)}
-                      className="input-clinical">
-                      <option value="">Seleccionar departamento...</option>
-                      {departamentos.map(d => <option key={d} value={d}>{d}</option>)}
-                    </select>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Departamento</label>
+                      <select required value={form.dptoResidencia}
+                        onChange={e => { set('dptoResidencia', e.target.value); set('municipioResidencia', '') }}
+                        className="input-clinical">
+                        <option value="">Seleccionar...</option>
+                        {departamentos.map(d => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Municipio</label>
+                      <select required value={form.municipioResidencia}
+                        onChange={e => set('municipioResidencia', e.target.value)}
+                        className="input-clinical"
+                        disabled={!form.dptoResidencia}>
+                        <option value="">{form.dptoResidencia ? 'Seleccionar...' : '— elige depto —'}</option>
+                        {(municipiosPorDepartamento[form.dptoResidencia] || []).map(m => <option key={m} value={m}>{m}</option>)}
+                      </select>
+                    </div>
                   </div>
 
                   <div>
@@ -629,22 +707,18 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
                     Atrás
                   </button>
                 )}
-                {step < 3 ? (
-                  <button type="button"
-                    onClick={() => {
-                      if (step === 1 && (!form.nombre || !form.apellidos || !form.fechaNac || !form.sexo)) return
-                      if (step === 2 && (!form.zona || !form.establecimiento)) return
-                      setStep(s => s + 1)
-                    }}
-                    className="flex-1 clay-btn text-white font-semibold py-2.5 text-sm">
-                    Siguiente
-                  </button>
-                ) : (
-                  <button type="submit" disabled={saving}
-                    className="flex-1 clay-btn text-white font-semibold py-2.5 text-sm flex items-center justify-center gap-2 disabled:opacity-60">
-                    {saving ? 'Guardando...' : <><CheckCircle className="w-4 h-4" />Registrar paciente</>}
-                  </button>
-                )}
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 clay-btn text-white font-semibold py-2.5 text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+                >
+                  {step < 3
+                    ? 'Siguiente'
+                    : saving
+                      ? 'Guardando...'
+                      : <><CheckCircle className="w-4 h-4" />Registrar paciente</>
+                  }
+                </button>
               </div>
 
             </form>
@@ -669,7 +743,9 @@ export default function PacientesCLI() {
     setLoadingList(true)
     api.get('/pacientes')
       .then(({ data }) => setPacientes(data.map(mapPacienteRow)))
-      .catch(() => {})
+      .catch((err) => {
+        console.error('[Pacientes] Error cargando:', err.response?.status, err.response?.data?.detail)
+      })
       .finally(() => setLoadingList(false))
   }
 

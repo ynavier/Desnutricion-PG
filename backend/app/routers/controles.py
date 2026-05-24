@@ -21,7 +21,7 @@ def _get_paciente(paciente_id: int) -> dict:
     return res.data
 
 
-@router.post('/', status_code=status.HTTP_201_CREATED, response_model=PrediccionOut)
+@router.post('', status_code=status.HTTP_201_CREATED, response_model=PrediccionOut)
 async def registrar_control(
     paciente_id: int,
     body: ControlCreate,
@@ -105,7 +105,7 @@ async def registrar_control(
     )
 
 
-@router.get('/', response_model=list[ControlOut])
+@router.get('', response_model=list[ControlOut])
 async def listar_controles(
     paciente_id: int,
     user: dict = Depends(require_cli),

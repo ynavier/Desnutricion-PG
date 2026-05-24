@@ -4,7 +4,7 @@ import api from '../../services/api'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Plus, AlertTriangle, Brain,
-  MapPin, Calendar, X, TrendingDown, CheckCircle,
+  MapPin, Calendar, X, TrendingDown, CheckCircle, Sparkles,
 } from 'lucide-react'
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -82,16 +82,25 @@ function rutaToInt(v)  {
 }
 
 function mapPacienteDetalle(p) {
-  const uc    = p.ultimo_control
+  const uc     = p.ultimo_control
   const estado = clasNombreToEstado(p.estado_nutricional)
   return {
     id:              p.id,
     nombre:          `${p.nombre} ${p.apellidos}`,
-    sexo:            p.sexo,
+    dni:             p.dni || '—',
+    sexo:            p.sexo === 'M' ? 'Masculino' : p.sexo === 'F' ? 'Femenino' : '—',
     edad:            mesesATexto(p.edad_meses),
     fechaNacimiento: formatFechaLarga(p.fecha_nac),
-    zona:            p.zona || '—',
     establecimiento: p.establecimiento || '—',
+    procedencia: {
+      departamento: p.cod_dpto_o    || '—',
+      municipio:    p.municipio_proc || '—',
+    },
+    residencia: {
+      departamento: p.dpto_residencia || '—',
+      municipio:    p.municipio_res   || '—',
+      area:         p.area_ === 1 ? 'Urbana' : p.area_ === 2 ? 'Rural' : '—',
+    },
     estado,
     peso:    uc?.peso_act   ?? '—',
     talla:   uc?.talla_act  ?? '—',
@@ -173,8 +182,7 @@ function NuevoControlDrawer({ paciente, onClose, onControlAdded }) {
     edema: '', delgadez: '', palidez: '',
     pielReseca: '', hiperpigm: '', cambiosCabello: '',
     enfermedades: [], apetito: '', micronutrientes: '',
-    ruta_atenc: '',
-    factores: [], observaciones: '',
+    ruta_atenc: '', factores: [], observaciones: '',
   })
   const [submitted,  setSubmitted]  = useState(false)
   const [saving,     setSaving]     = useState(false)
@@ -447,17 +455,6 @@ function NuevoControlDrawer({ paciente, onClose, onControlAdded }) {
               </div>
             </div>
 
-            {/* Zona geográfica */}
-            <div>
-              <label className="block text-xs font-bold text-neutral-text mb-1.5 uppercase tracking-wide">
-                Zona geográfica
-              </label>
-              <input type="text" placeholder="Lima Norte"
-                value={form.zona}
-                onChange={e => setForm(p => ({ ...p, zona: e.target.value }))}
-                className="input-clinical" />
-            </div>
-
             {/* Factores sociales */}
             <div>
               <p className="text-xs font-bold text-neutral-text mb-3 uppercase tracking-wide">
@@ -524,14 +521,44 @@ function NuevoControlDrawer({ paciente, onClose, onControlAdded }) {
 export default function DetallePaciente() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [showDrawer, setShowDrawer] = useState(false)
-  const [paciente,   setPaciente]   = useState(null)
-  const [loading,    setLoading]    = useState(true)
-  const [notFound,   setNotFound]   = useState(false)
+  const [showDrawer,    setShowDrawer]    = useState(false)
+  const [paciente,      setPaciente]      = useState(null)
+  const [loading,       setLoading]       = useState(true)
+  const [notFound,      setNotFound]      = useState(false)
+  const [recomendaciones, setRecomendaciones] = useState([])
+  const [loadingRecs,   setLoadingRecs]   = useState(false)
+  const [fuenteRecs,    setFuenteRecs]    = useState('estatica')
+
+  async function fetchRecomendaciones(rawData) {
+    setLoadingRecs(true)
+    const uc = rawData.controles?.[0]
+    try {
+      const { data } = await api.post('/recomendaciones', {
+        estado_nutricional: rawData.estado_nutricional,
+        edad_meses:         rawData.edad_meses,
+        sexo:               rawData.sexo,
+        zscore:             uc?.zscore_pt     ?? null,
+        prob_desnutrido:    uc?.prob_desnutrido ?? null,
+        factores_sociales:  rawData.factores_sociales || [],
+        alertas_activas:    (rawData.alertas || []).map(a => a.tipo),
+      })
+      setRecomendaciones(data.recomendaciones || [])
+      setFuenteRecs(data.fuente || 'estatica')
+    } catch {
+      // Mantiene las recomendaciones estáticas ya establecidas
+    } finally {
+      setLoadingRecs(false)
+    }
+  }
 
   function fetchPaciente() {
     api.get(`/pacientes/${id}`)
-      .then(({ data }) => setPaciente(mapPacienteDetalle(data)))
+      .then(({ data }) => {
+        const mapped = mapPacienteDetalle(data)
+        setPaciente(mapped)
+        setRecomendaciones(mapped.recomendaciones)   // estáticas como fallback
+        fetchRecomendaciones(data)                    // luego intenta con IA
+      })
       .catch(err => {
         if (err.response?.status === 404) setNotFound(true)
       })
@@ -592,7 +619,9 @@ export default function DetallePaciente() {
               </span>
               <span className="flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5" />
-                {paciente.zona}
+                {paciente.residencia.municipio !== '—'
+                  ? `${paciente.residencia.municipio}, ${paciente.residencia.departamento}`
+                  : paciente.residencia.departamento}
               </span>
               <span>{paciente.establecimiento}</span>
             </div>
@@ -622,6 +651,53 @@ export default function DetallePaciente() {
           </motion.div>
         ))}
       </div>
+
+      {/* Información del paciente */}
+      <motion.div custom={4} initial="hidden" animate="visible" variants={fadeUp}
+        className="clay-card p-6 mb-6">
+        <h2 className="text-sm font-bold text-neutral-text mb-4">Información del paciente</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          <div>
+            <p className="text-[10px] font-semibold text-neutral-sub uppercase tracking-wide mb-1">DNI / CC</p>
+            <p className="text-sm font-semibold text-neutral-text">{paciente.dni}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-neutral-sub uppercase tracking-wide mb-1">Sexo</p>
+            <p className="text-sm font-semibold text-neutral-text">{paciente.sexo}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-neutral-sub uppercase tracking-wide mb-1">Área</p>
+            <p className="text-sm font-semibold text-neutral-text">{paciente.residencia.area}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-semibold text-neutral-sub uppercase tracking-wide mb-1">Establecimiento</p>
+            <p className="text-sm font-semibold text-neutral-text truncate">{paciente.establecimiento}</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 pt-4 border-t border-neutral-border">
+          <div className="rounded-xl p-3.5 flex items-start gap-3"
+            style={{ background: 'rgba(79,180,210,0.06)', border: '1px solid rgba(79,180,210,0.12)' }}>
+            <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#4FB4D2' }} />
+            <div>
+              <p className="text-[10px] font-bold text-neutral-sub uppercase tracking-wide mb-1">Lugar de procedencia</p>
+              <p className="text-xs font-semibold text-neutral-text">{paciente.procedencia.departamento}</p>
+              <p className="text-xs text-neutral-sub">{paciente.procedencia.municipio}</p>
+            </div>
+          </div>
+          <div className="rounded-xl p-3.5 flex items-start gap-3"
+            style={{ background: 'rgba(111,207,151,0.06)', border: '1px solid rgba(111,207,151,0.15)' }}>
+            <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#6FCF97' }} />
+            <div>
+              <p className="text-[10px] font-bold text-neutral-sub uppercase tracking-wide mb-1">Lugar de residencia</p>
+              <p className="text-xs font-semibold text-neutral-text">{paciente.residencia.departamento}</p>
+              <p className="text-xs text-neutral-sub">
+                {paciente.residencia.municipio}
+                {paciente.residencia.area !== '—' && ` · ${paciente.residencia.area}`}
+              </p>
+            </div>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Gráfico + Estado/Predicción */}
       <div className="grid lg:grid-cols-3 gap-6 mb-6">
@@ -717,18 +793,47 @@ export default function DetallePaciente() {
         {/* Recomendaciones clínicas */}
         <motion.div custom={6} initial="hidden" animate="visible" variants={fadeUp}
           className="clay-card p-6">
-          <h2 className="text-sm font-bold text-neutral-text mb-4">Recomendaciones clínicas</h2>
-          <ul className="flex flex-col gap-3">
-            {paciente.recomendaciones.map((rec, i) => (
-              <li key={i} className="flex items-start gap-3 text-xs text-neutral-sub">
-                <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5"
-                  style={{ background: 'rgba(79,180,210,0.12)', color: '#4FB4D2' }}>
-                  {i + 1}
-                </span>
-                {rec}
-              </li>
-            ))}
-          </ul>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-sm font-bold text-neutral-text">Recomendaciones clínicas</h2>
+            {loadingRecs ? (
+              <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-full"
+                style={{ background: 'rgba(79,180,210,0.08)', color: '#4FB4D2' }}>
+                <div className="w-2.5 h-2.5 border-2 border-t-transparent rounded-full animate-spin"
+                  style={{ borderColor: '#4FB4D2', borderTopColor: 'transparent' }} />
+                Generando...
+              </span>
+            ) : fuenteRecs === 'ia' ? (
+              <span className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-full"
+                style={{ background: 'rgba(111,207,151,0.12)', color: '#3DAB6B' }}>
+                <Sparkles className="w-3 h-3" />
+                IA personalizada
+              </span>
+            ) : (
+              <span className="text-[10px] text-neutral-sub px-2 py-1 rounded-full"
+                style={{ background: '#F8FAFC' }}>
+                Estándar
+              </span>
+            )}
+          </div>
+          {loadingRecs && recomendaciones.length === 0 ? (
+            <div className="flex flex-col gap-3">
+              {[1, 2, 3, 4].map(n => (
+                <div key={n} className="h-4 rounded-lg animate-pulse" style={{ background: '#F1F5F9' }} />
+              ))}
+            </div>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {recomendaciones.map((rec, i) => (
+                <li key={i} className="flex items-start gap-3 text-xs text-neutral-sub">
+                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5"
+                    style={{ background: 'rgba(79,180,210,0.12)', color: '#4FB4D2' }}>
+                    {i + 1}
+                  </span>
+                  {rec}
+                </li>
+              ))}
+            </ul>
+          )}
         </motion.div>
 
         {/* Alertas del paciente */}

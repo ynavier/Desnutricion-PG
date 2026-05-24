@@ -22,10 +22,14 @@ class PacienteCreate(BaseModel):
     crec_dllo: Optional[int] = None
     gp_pobicbf: Optional[int] = 2
 
-    # Ubicación
+    # Procedencia
+    cod_dpto_o: Optional[str] = None        # departamento de procedencia
+    municipio_proc: Optional[str] = None    # municipio de procedencia
+    # Residencia actual
     area_: Optional[int] = None             # 1=Urbana 2=Rural
-    cod_dpto_o: Optional[str] = None
-    zona: Optional[str] = None
+    dpto_residencia: Optional[str] = None   # departamento de residencia
+    municipio_res: Optional[str] = None     # municipio de residencia
+    zona: Optional[str] = None              # legacy
     establecimiento: Optional[str] = None
 
     # Social
@@ -57,11 +61,19 @@ class PacienteOut(BaseModel):
 
 class PacienteDetalle(PacienteOut):
     per_etn_: Optional[int]
-    area_: Optional[int]
+    # Procedencia
     cod_dpto_o: Optional[str]
+    municipio_proc: Optional[str]
+    # Residencia
+    area_: Optional[int]
+    dpto_residencia: Optional[str]
+    municipio_res: Optional[str]
+    # Social
     estrato_: Optional[int]
     niv_educat: Optional[int]
     menores: Optional[float]
+    factores_sociales: Optional[list[str]]
+    # Neonatales
     peso_nac: Optional[float]
     edad_ges: Optional[float]
     t_lechem: Optional[float]
@@ -70,6 +82,5 @@ class PacienteDetalle(PacienteOut):
     crec_dllo: Optional[int]
     carne_vac: Optional[int]
     gp_pobicbf: Optional[int]
-    factores_sociales: Optional[list[str]]
     controles: list[dict] = []
     alertas: list[dict] = []
