@@ -350,9 +350,14 @@ export default function AlertasCLI() {
                   animate="visible"
                   variants={fadeUp}
                   onClick={() => setSeleccionada(alerta)}
-                  className="clay-card p-5 flex items-start gap-4 cursor-pointer hover:shadow-md transition-shadow"
-                  style={!leida ? { borderLeft: `3px solid ${n.border}` } : {}}
+                  className="clay-card p-5 flex items-start gap-4 cursor-pointer hover:shadow-md transition-shadow relative overflow-visible"
                 >
+                  {/* Punto rojo — centrado sobre el arco redondeado (r=20px → 6px desde cada borde) */}
+                  {!leida && (
+                    <span className="absolute top-1.5 right-1.5 w-3 h-3 rounded-full border-2 border-white translate-x-1/2 -translate-y-1/2"
+                      style={{ background: '#E53935' }} />
+                  )}
+
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
                     style={{ background: n.bg }}>
                     <Icon className="w-4 h-4" style={{ color: n.color }} />
@@ -361,10 +366,6 @@ export default function AlertasCLI() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <p className="text-sm font-semibold text-neutral-text">{paciente}</p>
-                      {!leida && (
-                        <span className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                          style={{ background: n.color }} />
-                      )}
                     </div>
                     <p className="text-xs text-neutral-sub">{tipo}</p>
                   </div>

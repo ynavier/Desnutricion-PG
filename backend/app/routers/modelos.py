@@ -1,7 +1,9 @@
 import traceback
+from pathlib import Path
 from fastapi import APIRouter, HTTPException, Depends
 
 from app.auth.dependencies import get_current_user, require_anl
+from app.config import settings
 from app.database import supabase
 from app.ml.loader import load_models
 
@@ -56,7 +58,7 @@ async def activar_modelo(
             status_code=500,
             detail=(
                 f'Modelo activado en BD pero falló la carga: '
-                f'archivo "{modelo.get("archivo_A")}" no encontrado en /models'
+                f'archivo "{modelo.get("archivo_a")}" no encontrado en /models'
             ),
         )
 
@@ -65,3 +67,86 @@ async def activar_modelo(
         'message': f'Modelo "{modelo["nombre"]}" activado correctamente',
         'modelo': modelo,
     }
+
+
+@router.delete('/{modelo_id}', status_code=204)
+async def eliminar_modelo(modelo_id: int, user: dict = Depends(require_anl)):
+    """Elimina un modelo de la BD y borra sus archivos .joblib del disco."""
+    res = supabase.table('modelos_ml').select('*').eq('id', modelo_id).single().execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail='Modelo no encontrado')
+
+    modelo = res.data
+    if modelo.get('activo'):
+        raise HTTPException(
+            status_code=422,
+            detail='No se puede eliminar el modelo activo. Activa otro modelo primero.',
+        )
+
+    # Borrar archivos .joblib del disco
+    d = Path(settings.models_dir)
+    for col in ['archivo_a', 'archivo_b', 'scaler_a', 'scaler_b']:
+        fname = modelo.get(col)
+        if fname:
+            f = d / fname
+            if f.exists():
+                f.unlink(missing_ok=True)
+
+    # Borrar le_dpto si está registrado en metricas
+    metricas = modelo.get('metricas') or {}
+    le_f = metricas.get('le_dpto')
+    if le_f:
+        f = d / le_f
+        if f.exists():
+            f.unlink(missing_ok=True)
+
+    supabase.table('modelos_ml').delete().eq('id', modelo_id).execute()
+    print(f'[MODELOS] Modelo #{modelo_id} "{modelo["nombre"]}" eliminado por {user["email"]}', flush=True)
+
+
+# ── Archivos huérfanos ─────────────────────────────────────────────────────────
+
+# Archivos base que NUNCA se borran aunque no estén en la BD
+_ARCHIVOS_PROTEGIDOS = {
+    'modelo_A_rf.joblib', 'modelo_B_rf.joblib',
+    'scaler_A.joblib', 'scaler_B.joblib',
+    'le_dpto.joblib', 'model_metadata.json',
+}
+
+@router.post('/limpiar-huerfanos')
+async def limpiar_huerfanos(user: dict = Depends(require_anl)):
+    """
+    Detecta y elimina archivos .joblib en /models que no están referenciados
+    por ningún registro activo en la BD (huérfanos de entrenamientos fallidos).
+    Nunca borra los archivos base protegidos.
+    """
+    d = Path(settings.models_dir)
+    if not d.exists():
+        return {'borrados': [], 'total': 0}
+
+    # Recopilar todos los archivos referenciados en la BD
+    res = supabase.table('modelos_ml').select(
+        'archivo_a, archivo_b, scaler_a, scaler_b, metricas'
+    ).execute()
+
+    archivos_en_bd: set[str] = set()
+    for rec in (res.data or []):
+        for col in ['archivo_a', 'archivo_b', 'scaler_a', 'scaler_b']:
+            if rec.get(col):
+                archivos_en_bd.add(rec[col])
+        met = rec.get('metricas') or {}
+        if met.get('le_dpto'):
+            archivos_en_bd.add(met['le_dpto'])
+
+    # Escanear disco
+    borrados = []
+    for f in d.iterdir():
+        if f.suffix not in ('.joblib',) or f.name in _ARCHIVOS_PROTEGIDOS:
+            continue
+        if f.name not in archivos_en_bd:
+            f.unlink(missing_ok=True)
+            borrados.append(f.name)
+            print(f'[MODELOS] Huérfano eliminado: {f.name}', flush=True)
+
+    print(f'[MODELOS] Limpieza: {len(borrados)} archivo(s) huérfano(s) eliminados por {user["email"]}', flush=True)
+    return {'borrados': borrados, 'total': len(borrados)}

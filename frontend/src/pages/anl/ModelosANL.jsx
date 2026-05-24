@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { CheckCircle, Star, TrendingUp, AlertTriangle, RefreshCw } from 'lucide-react'
+import { CheckCircle, Star, TrendingUp, AlertTriangle, RefreshCw, Trash2, X, FolderX } from 'lucide-react'
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip } from 'recharts'
 import api from '../../services/api'
 
@@ -57,11 +57,14 @@ function SkeletonCard() {
 }
 
 export default function ModelosANL() {
-  const [models,     setModels]     = useState([])
-  const [selectedId, setSelectedId] = useState(null)
-  const [loading,    setLoading]    = useState(true)
-  const [activating, setActivating] = useState(false)
-  const [toast,      setToast]      = useState('')
+  const [models,        setModels]        = useState([])
+  const [selectedId,    setSelectedId]    = useState(null)
+  const [loading,       setLoading]       = useState(true)
+  const [activating,    setActivating]    = useState(false)
+  const [toast,         setToast]         = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(null)
+  const [deleting,      setDeleting]      = useState(false)
+  const [cleaning,      setCleaning]      = useState(false)
 
   function fetchModels() {
     setLoading(true)
@@ -75,7 +78,48 @@ export default function ModelosANL() {
       .finally(() => setLoading(false))
   }
 
-  useEffect(() => { fetchModels() }, [])
+  useEffect(() => {
+    fetchModels()
+    const onVisible = () => { if (!document.hidden) fetchModels() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [])
+
+  async function handleLimpiarHuerfanos() {
+    setCleaning(true)
+    try {
+      const { data } = await api.post('/modelos/limpiar-huerfanos')
+      const n = data.total
+      setToast(
+        n === 0
+          ? 'No se encontraron archivos huérfanos'
+          : `${n} archivo${n > 1 ? 's' : ''} huérfano${n > 1 ? 's' : ''} eliminado${n > 1 ? 's' : ''}`
+      )
+      setTimeout(() => setToast(''), 4000)
+    } catch (err) {
+      setToast(err.response?.data?.detail || 'Error al limpiar archivos')
+      setTimeout(() => setToast(''), 4000)
+    } finally {
+      setCleaning(false)
+    }
+  }
+
+  async function handleEliminar(id) {
+    setDeleting(true)
+    try {
+      await api.delete(`/modelos/${id}`)
+      setModels(prev => prev.filter(m => m.id !== id))
+      if (selectedId === id) setSelectedId(null)
+      setToast('Modelo eliminado correctamente')
+      setTimeout(() => setToast(''), 3000)
+    } catch (err) {
+      setToast(err.response?.data?.detail || 'Error al eliminar el modelo')
+      setTimeout(() => setToast(''), 4000)
+    } finally {
+      setDeleting(false)
+      setConfirmDelete(null)
+    }
+  }
 
   async function handleActivar(id) {
     setActivating(true)
@@ -117,12 +161,26 @@ export default function ModelosANL() {
             Compara métricas y activa el modelo para el panel clínico
           </p>
         </div>
-        <button onClick={fetchModels}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-          style={{ background: '#F7F9FC', color: '#54606E', border: '1px solid #E0E6ED' }}>
-          <RefreshCw className="w-3.5 h-3.5" />
-          Recargar
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleLimpiarHuerfanos}
+            disabled={cleaning}
+            title="Eliminar archivos .joblib sin registro en la BD"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all disabled:opacity-60"
+            style={{ background: '#FFF3E0', color: '#E65100', border: '1px solid #FFE0B2' }}>
+            {cleaning
+              ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+              : <FolderX className="w-3.5 h-3.5" />
+            }
+            {cleaning ? 'Limpiando...' : 'Limpiar huérfanos'}
+          </button>
+          <button onClick={fetchModels}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
+            style={{ background: '#F7F9FC', color: '#54606E', border: '1px solid #E0E6ED' }}>
+            <RefreshCw className="w-3.5 h-3.5" />
+            Recargar
+          </button>
+        </div>
       </div>
 
       {/* Toast */}
@@ -145,20 +203,59 @@ export default function ModelosANL() {
               const met = flatMetrics(m.metricas)
               return (
                 <div key={m.id}
-                  onClick={() => setSelectedId(m.id)}
+                  onClick={() => { if (confirmDelete !== m.id) setSelectedId(m.id) }}
                   className="cursor-pointer transition-all rounded-2xl p-4"
                   style={{
                     background: selectedId === m.id ? 'rgba(79,180,210,0.06)' : '#fff',
                     border: `1px solid ${selectedId === m.id ? 'rgba(79,180,210,0.4)' : '#E0E6ED'}`,
                   }}>
+
+                  {/* Confirmación de eliminación */}
+                  {confirmDelete === m.id ? (
+                    <div className="flex flex-col gap-2" onClick={e => e.stopPropagation()}>
+                      <p className="text-xs font-semibold" style={{ color: '#E53935' }}>
+                        ¿Eliminar "{m.nombre}"?
+                      </p>
+                      <p className="text-[11px]" style={{ color: '#54606E' }}>
+                        Se borrarán los archivos del disco. Esta acción no se puede deshacer.
+                      </p>
+                      <div className="flex gap-2 mt-1">
+                        <button
+                          onClick={() => handleEliminar(m.id)}
+                          disabled={deleting}
+                          className="flex-1 py-1 rounded-lg text-xs font-bold transition-all disabled:opacity-60"
+                          style={{ background: '#E53935', color: '#fff' }}>
+                          {deleting ? 'Eliminando...' : 'Sí, eliminar'}
+                        </button>
+                        <button
+                          onClick={() => setConfirmDelete(null)}
+                          className="px-3 py-1 rounded-lg text-xs font-medium"
+                          style={{ background: '#F0F0F0', color: '#54606E' }}>
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                  <>
                   <div className="flex items-start justify-between mb-3">
                     <p className="text-xs font-bold" style={{ color: '#1A1F2B' }}>{m.nombre}</p>
-                    {m.activo && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                        style={{ background: 'rgba(111,207,151,0.15)', color: '#3DAB6B' }}>
-                        Activo
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1.5">
+                      {m.activo && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                          style={{ background: 'rgba(111,207,151,0.15)', color: '#3DAB6B' }}>
+                          Activo
+                        </span>
+                      )}
+                      {!m.activo && (
+                        <button
+                          onClick={e => { e.stopPropagation(); setConfirmDelete(m.id) }}
+                          className="p-1 rounded-lg transition-all opacity-40 hover:opacity-100"
+                          title="Eliminar modelo"
+                          style={{ color: '#E53935' }}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="space-y-1.5">
                     {Object.entries(metricLabels).map(([key, label]) => (
@@ -179,6 +276,8 @@ export default function ModelosANL() {
                         F1: {(met.f1_weighted * 100).toFixed(1)}%
                       </p>
                     </div>
+                  )}
+                  </>
                   )}
                 </div>
               )

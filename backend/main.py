@@ -12,6 +12,9 @@ from app.routers.alertas import router as alertas_router
 from app.routers.usuarios import router as usuarios_router
 from app.routers.recomendaciones import router as recomendaciones_router
 from app.routers.modelos import router as modelos_router
+from app.routers.estadisticas import router as estadisticas_router
+from app.routers.entrenamiento import router as entrenamiento_router
+from app.routers.datasets import router as datasets_router
 
 
 @asynccontextmanager
@@ -33,7 +36,12 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         print(f'[ML] No se pudo consultar modelo activo en BD: {e}', flush=True)
 
-    load_models(modelo_activo)   # None → carga RF por defecto
+    try:
+        load_models(modelo_activo)
+    except Exception as e:
+        print(f'[ML] ⚠ No se pudieron cargar los modelos: {e}', flush=True)
+        print('[ML] El backend arrancará sin modelos cargados. '
+              'Activa un modelo desde el panel ANL → Modelos ML.', flush=True)
 
     yield
 
@@ -61,6 +69,9 @@ app.include_router(alertas_router)
 app.include_router(usuarios_router)
 app.include_router(recomendaciones_router)
 app.include_router(modelos_router)
+app.include_router(estadisticas_router)
+app.include_router(entrenamiento_router)
+app.include_router(datasets_router)
 
 
 @app.get('/')

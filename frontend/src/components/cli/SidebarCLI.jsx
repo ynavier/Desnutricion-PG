@@ -1,16 +1,33 @@
+import { useState, useEffect } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Users, Bell, LogOut } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
+import api from '../../services/api'
 
 const navItems = [
   { label: 'Inicio',    to: '/cli',          icon: LayoutDashboard, end: true },
   { label: 'Pacientes', to: '/cli/pacientes', icon: Users },
-  { label: 'Alertas',   to: '/cli/alertas',   icon: Bell },
+  { label: 'Alertas',   to: '/cli/alertas',   icon: Bell, badge: true },
 ]
 
 export default function SidebarCLI() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [sinLeer, setSinLeer] = useState(0)
+
+  useEffect(() => {
+    function fetchSinLeer() {
+      api.get('/alertas')
+        .then(({ data }) => setSinLeer(data.filter(a => !a.leida).length))
+        .catch(() => {})
+    }
+    fetchSinLeer()
+
+    // Refrescar cuando el usuario vuelve a la pestaña
+    const onVisible = () => { if (!document.hidden) fetchSinLeer() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [])
 
   function handleLogout() {
     logout()
@@ -31,7 +48,7 @@ export default function SidebarCLI() {
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
-        {navItems.map(({ label, to, icon: Icon, end }) => (
+        {navItems.map(({ label, to, icon: Icon, end, badge }) => (
           <NavLink
             key={to}
             to={to}
@@ -44,12 +61,17 @@ export default function SidebarCLI() {
               }`
             }
             style={({ isActive }) =>
-              isActive
-                ? { background: '#EAF6FB', color: '#4FB4D2' }
-                : {}
+              isActive ? { background: '#EAF6FB', color: '#4FB4D2' } : {}
             }
           >
-            <Icon className="w-4 h-4 flex-shrink-0" />
+            {/* Icono con badge opcional */}
+            <div className="relative flex-shrink-0">
+              <Icon className="w-4 h-4" />
+              {badge && sinLeer > 0 && (
+                <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full"
+                  style={{ background: '#E53935' }} />
+              )}
+            </div>
             {label}
           </NavLink>
         ))}

@@ -12,7 +12,9 @@ class Settings(BaseSettings):
 
     google_api_key: str = ''
 
-    models_dir: Path = Path('../models')
+    models_dir:     Path = Path('../models')
+    data_uploads_dir: Path = Path('../data/uploads')   # archivos subidos por usuarios
+    data_proc_dir:  Path = Path('../data/processed')   # CSVs procesados por ETL
     app_env: str = 'development'
     cors_origins: str = 'http://localhost:5173'
 

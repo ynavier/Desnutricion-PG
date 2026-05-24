@@ -6,33 +6,15 @@ Pipeline (mismo orden que en notebook 05):
   2. Imputar nulos con valores por defecto del entrenamiento
   3. Escalar columnas numéricas con RobustScaler
   4. Predecir con RandomForest (Modelo A si hay IMC, Modelo B si no)
+
+IMPORTANTE: FEATURES_A/B, COLS_ESCALAR e IMPUTE_MODA se importan de etl.py
+para garantizar que predictor y entrenamiento siempre usen las mismas columnas.
 """
 
 import numpy as np
 import pandas as pd
 from app.ml.loader import ml
-
-FEATURES_A = [
-    'edad_meses', 'per_etn_', 'estrato_', 'area_', 'cod_dpto_o',
-    'niv_educat', 'menores', 'gp_pobicbf', 'peso_nac', 'edad_ges',
-    'peso_act', 'per_braqui', 'imc',
-    't_lechem', 'e_complem',
-    'crec_dllo', 'esq_vac', 'carne_vac',
-    'edema', 'delgadez', 'palidez', 'piel_rese', 'hiperpigm',
-    'cambios_cabello', 'ruta_atenc',
-]
-
-FEATURES_B = [f for f in FEATURES_A if f != 'imc']
-
-COLS_ESCALAR = ['peso_act', 'per_braqui', 't_lechem', 'menores',
-                'peso_nac', 'edad_meses', 'imc', 'edad_ges', 'e_complem']
-
-# Valores de imputación extraídos del entrenamiento (notebook 05)
-IMPUTE_MODA = {
-    'crec_dllo': 2.0, 'esq_vac': 1.0, 'carne_vac': 2.0,
-    'edema': 2.0, 'delgadez': 1.0, 'palidez': 2.0,
-    'piel_rese': 1.0, 'hiperpigm': 2.0, 'ruta_atenc': 1.0,
-}
+from app.services.etl import FEATURES_A, FEATURES_B, COLS_ESC_A as COLS_ESCALAR, IMPUTE_MODA
 
 CLASES = {
     1: 'Desnut. severa',
@@ -68,6 +50,12 @@ def predecir(datos: dict) -> dict:
            Si talla_act está presente, se calcula IMC y se usa Modelo A.
     Retorna: dict con predicción, probabilidades, modelo usado.
     """
+    if ml.modelo_A is None or ml.modelo_B is None:
+        raise RuntimeError(
+            'No hay ningún modelo cargado. '
+            'Ve al panel ANL → Modelos ML, entrena un modelo y actívalo.'
+        )
+
     peso  = float(datos.get('peso_act', 0))
     talla = float(datos.get('talla_act') or 0)
 
