@@ -11,6 +11,10 @@ import {
   ChevronRight,
   Menu,
   X,
+  Brain,
+  AlertTriangle,
+  Clock,
+  Leaf,
 } from 'lucide-react'
 
 const fadeUp = {
@@ -65,8 +69,9 @@ const features = [
 
 const navLinks = [
   { label: 'Introducción',    href: '#intro' },
+  { label: 'Desnutrición',    href: '#desnutricion' },
   { label: 'Funcionalidades', href: '#funcionalidades' },
-  { label: 'Roles',           href: '#roles' },
+  { label: 'Plataforma',      href: '#roles' },
 ]
 
 function Navbar() {
@@ -83,8 +88,12 @@ function Navbar() {
     <header className="fixed top-0 inset-x-0 z-50 bg-white border-b border-neutral-border shadow-sm transition-all duration-300">
       <div className="relative w-full px-3 sm:px-4 flex items-center justify-between" style={{ height: '60px' }}>
         {/* Logo — izquierda */}
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
           <img src="/Logo.png" alt="Logo" className="w-12 h-12 object-contain" />
+          <span className="text-lg font-bold tracking-wide">
+            <span style={{ color: '#1A1F2B' }}>NI</span>
+            <span style={{ color: '#4FB4D2' }}>VI</span>
+          </span>
         </div>
 
         <div className="flex items-center gap-6">
@@ -300,7 +309,7 @@ function PhotoFrame() {
 
 function Intro() {
   return (
-    <section id="intro" className="py-32 bg-neutral-bg">
+    <section id="intro" className="relative py-32 bg-neutral-bg">
       <div className="max-w-7xl mx-auto px-8 grid md:grid-cols-2 gap-20 items-center">
 
         <motion.div
@@ -351,13 +360,255 @@ function Intro() {
         </motion.div>
 
       </div>
+      <div className="absolute bottom-0 inset-x-0 h-28 pointer-events-none"
+        style={{ background: 'linear-gradient(to bottom, transparent, #ffffff)' }} />
+    </section>
+  )
+}
+
+// ─── Sección 1: Sobre la desnutrición ────────────────────────────────────────
+
+function SobreDesnutricion() {
+  return (
+    <section id="desnutricion" className="relative py-28 bg-white">
+      <div className="max-w-7xl mx-auto px-8">
+
+        <div className="grid md:grid-cols-2 gap-20 items-center">
+
+          {/* Texto */}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp}
+          >
+            <h2 className="text-4xl font-bold text-neutral-text leading-snug mb-6">
+              Cuidar la nutrición infantil es proteger el desarrollo y el futuro
+            </h2>
+            <p className="text-neutral-sub text-base leading-relaxed mb-5">
+              La desnutrición infantil es una condición que afecta a millones de niños menores de 5 años
+              y representa uno de los principales desafíos de salud pública. Durante los primeros años
+              de vida, el cuerpo y el cerebro atraviesan etapas fundamentales de crecimiento, por lo que
+              una alimentación inadecuada puede generar consecuencias físicas y cognitivas que impactan
+              el desarrollo integral del niño.
+            </p>
+            <p className="text-neutral-sub text-base leading-relaxed">
+              La falta de nutrientes esenciales no solo afecta el peso y la talla, sino también la
+              capacidad del organismo para defenderse de enfermedades. Los niños con desnutrición
+              suelen presentar mayor vulnerabilidad a infecciones, retrasos en el crecimiento y
+              dificultades en el aprendizaje.
+            </p>
+          </motion.div>
+
+          {/* Tarjeta destacada: 1 000 días */}
+          <motion.div
+            custom={1}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp}
+            className="flex flex-col gap-6"
+          >
+            <div className="clay-card p-8">
+              <Clock className="w-6 h-6 mb-5" style={{ color: '#4FB4D2' }} />
+              <h3 className="text-2xl font-bold text-neutral-text mb-3">Los primeros 1 000 días</h3>
+              <p className="text-neutral-sub text-sm leading-relaxed">
+                Desde el embarazo hasta los 2 años, esta etapa es crítica para el crecimiento
+                y el desarrollo cerebral. Una nutrición adecuada en este período fortalece el
+                sistema inmunológico y sienta las bases del bienestar a largo plazo.
+              </p>
+            </div>
+
+            <div className="clay-card p-6">
+              <p className="text-sm text-neutral-sub leading-relaxed">
+                La atención temprana puede mejorar significativamente la calidad de vida y
+                favorecer un desarrollo saludable durante toda la infancia.
+              </p>
+            </div>
+          </motion.div>
+
+        </div>
+      </div>
+      <div className="absolute bottom-0 inset-x-0 h-28 pointer-events-none"
+        style={{ background: 'linear-gradient(to bottom, transparent, #F5FAFC)' }} />
+    </section>
+  )
+}
+
+// ─── Sección 2: Detección temprana ───────────────────────────────────────────
+
+const signos = [
+  'Bajo peso para la edad',
+  'Retraso en el crecimiento',
+  'Fatiga o debilidad frecuente',
+  'Pérdida de apetito',
+  'Enfermedades recurrentes',
+]
+
+function DeteccionTemprana() {
+  return (
+    <section className="relative py-28"
+      style={{ background: 'linear-gradient(to bottom, #F5FAFC, #EAF6FB)' }}>
+      <div className="max-w-7xl mx-auto px-8">
+
+        <div className="grid md:grid-cols-2 gap-20 items-center">
+
+          {/* Signos visuales */}
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp}
+            className="order-2 md:order-1"
+          >
+            <div className="clay-card p-8">
+              <p className="text-xs font-bold uppercase tracking-widest mb-6" style={{ color: '#E53935' }}>
+                Signos de alerta
+              </p>
+              <ul className="flex flex-col gap-0">
+                {signos.map((s, i) => (
+                  <li key={s}
+                    className={`flex items-center gap-4 py-4 text-sm font-medium text-neutral-text ${i < signos.length - 1 ? 'border-b border-neutral-border' : ''}`}>
+                    <span className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white"
+                      style={{ background: `rgba(229,57,53,${0.55 + i * 0.10})` }}>
+                      {i + 1}
+                    </span>
+                    {s}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </motion.div>
+
+          {/* Texto */}
+          <motion.div
+            custom={1}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={fadeUp}
+            className="order-1 md:order-2"
+          >
+            <h2 className="text-4xl font-bold text-neutral-text leading-snug mb-6">
+              La importancia de la detección temprana
+            </h2>
+            <p className="text-neutral-sub text-base leading-relaxed mb-5">
+              Identificar los signos de riesgo a tiempo permite actuar de manera oportuna
+              y reducir complicaciones futuras. En muchos casos, los síntomas pueden pasar
+              desapercibidos durante las primeras etapas, por lo que el seguimiento constante
+              del crecimiento infantil es fundamental.
+            </p>
+            <p className="text-neutral-sub text-base leading-relaxed">
+              La atención temprana puede mejorar significativamente la calidad de vida
+              y favorecer un desarrollo saludable durante la infancia.
+            </p>
+          </motion.div>
+
+        </div>
+      </div>
+      <div className="absolute bottom-0 inset-x-0 h-28 pointer-events-none"
+        style={{ background: 'linear-gradient(to bottom, transparent, #F5FAFC)' }} />
+    </section>
+  )
+}
+
+// ─── Sección 3: Factores, Consecuencias, Prevención ──────────────────────────
+
+const bloquesInfo = [
+  {
+    icon: AlertTriangle,
+    title: 'Factores que influyen en la desnutrición',
+    color: '#FB8C00',
+    bg: 'rgba(251,140,0,0.08)',
+    border: 'rgba(251,140,0,0.18)',
+    body: [
+      'Las dificultades de acceso a alimentos nutritivos, las enfermedades frecuentes y la falta de seguimiento médico son algunas de las principales causas.',
+      'También influyen la inseguridad alimentaria, el acceso limitado a servicios de salud y la falta de educación nutricional en el entorno familiar.',
+      'La prevención requiere un enfoque integral que involucre el cuidado médico, el acompañamiento social y la orientación nutricional.',
+    ],
+  },
+  {
+    icon: Brain,
+    title: 'Consecuencias en el desarrollo infantil',
+    color: '#E53935',
+    bg: 'rgba(229,57,53,0.07)',
+    border: 'rgba(229,57,53,0.15)',
+    body: [
+      'Cuando no se trata adecuadamente, la desnutrición puede afectar el desarrollo físico, cognitivo y emocional del niño.',
+      'Sus efectos pueden extenderse hasta la adolescencia y la adultez, impactando el rendimiento escolar y la capacidad de aprendizaje.',
+      'Los primeros 1 000 días de vida representan la ventana más crítica: el daño en esta etapa puede ser difícil de revertir.',
+    ],
+  },
+  {
+    icon: Leaf,
+    title: 'La prevención puede marcar la diferencia',
+    color: '#3DAB6B',
+    bg: 'rgba(111,207,151,0.09)',
+    border: 'rgba(111,207,151,0.22)',
+    body: [
+      'La lactancia materna, una alimentación balanceada y los controles médicos periódicos cumplen un papel clave en la protección de la salud infantil.',
+      'La promoción de hábitos saludables y el seguimiento oportuno del crecimiento son fundamentales para reducir el riesgo.',
+      'Garantizar una nutrición adecuada en la infancia contribuye al bienestar de toda la comunidad.',
+    ],
+  },
+]
+
+function FactoresConsPrev() {
+  return (
+    <section className="relative py-28 bg-neutral-bg">
+      <div className="max-w-7xl mx-auto px-8">
+
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={fadeUp}
+          className="text-center mb-14"
+        >
+          <h2 className="text-4xl font-bold text-neutral-text mb-4">
+            Factores, consecuencias y prevención
+          </h2>
+          <p className="text-neutral-sub text-base max-w-xl mx-auto">
+            Comprender las causas y el impacto de la desnutrición es el primer paso
+            para actuar a tiempo y de manera efectiva.
+          </p>
+        </motion.div>
+
+        <div className="grid md:grid-cols-3 gap-6">
+          {bloquesInfo.map(({ icon: Icon, title, color, body }, i) => (
+            <motion.div
+              key={title}
+              custom={i}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={fadeUp}
+              className="clay-card p-7 flex flex-col gap-5"
+            >
+              <Icon className="w-6 h-6" style={{ color }} />
+              <h3 className="font-semibold text-neutral-text text-base leading-snug">{title}</h3>
+              <ul className="flex flex-col gap-3">
+                {body.map((line, j) => (
+                  <li key={j} className="flex items-start gap-2.5 text-sm text-neutral-sub leading-relaxed">
+                    <span className="mt-1.5 w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: color }} />
+                    {line}
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          ))}
+        </div>
+
+      </div>
+      <div className="absolute bottom-0 inset-x-0 h-28 pointer-events-none"
+        style={{ background: 'linear-gradient(to bottom, transparent, #F5FAFC)' }} />
     </section>
   )
 }
 
 function Features() {
   return (
-    <section id="funcionalidades" className="py-32 bg-neutral-bg">
+    <section id="funcionalidades" className="relative py-32 bg-neutral-bg">
       <div className="max-w-7xl mx-auto px-8">
         <motion.div
           initial="hidden"
@@ -392,99 +643,104 @@ function Features() {
           ))}
         </div>
       </div>
+      <div className="absolute bottom-0 inset-x-0 h-28 pointer-events-none"
+        style={{ background: 'linear-gradient(to bottom, transparent, #ffffff)' }} />
     </section>
   )
 }
 
-function Roles() {
+const plataformaItems = [
+  { icon: Activity,    label: 'Seguimiento antropométrico' },
+  { icon: ShieldCheck, label: 'Evaluación nutricional infantil' },
+  { icon: Bell,        label: 'Alertas de riesgo' },
+  { icon: BarChart3,   label: 'Análisis epidemiológico' },
+  { icon: FileText,    label: 'Reportes e indicadores de salud' },
+]
+
+function Plataforma() {
   return (
-    <section id="roles" className="py-32 bg-white border-t border-neutral-border">
-      <div className="max-w-7xl mx-auto px-8">
+    <section id="roles" className="relative py-32 bg-white">
+      <style>{`
+        @keyframes marquee-loop {
+          from { transform: translateX(0); }
+          to   { transform: translateX(-50%); }
+        }
+        .marquee-track {
+          display: flex;
+          width: max-content;
+          animation: marquee-loop 18s linear infinite;
+        }
+        .marquee-track:hover { animation-play-state: paused; }
+      `}</style>
+
+      {/* Texto centrado */}
+      <div className="max-w-4xl mx-auto px-8 text-center mb-12">
         <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
           variants={fadeUp}
-          className="text-center mb-14"
         >
-          <h2 className="text-4xl font-bold text-neutral-text mb-4">
-            Dos perfiles, un mismo objetivo
+          <h2 className="text-4xl md:text-5xl font-bold text-neutral-text leading-tight mb-8">
+            Una solución enfocada en prevención
+            <br />y seguimiento nutricional
           </h2>
-          <p className="text-neutral-sub text-base max-w-lg mx-auto">
-            Accesos diferenciados para el personal clínico y el equipo de análisis nutricional.
+          <div className="w-14 h-px mx-auto mb-8" style={{ background: 'rgba(79,180,210,0.30)' }} />
+          <p className="text-neutral-sub text-base leading-relaxed max-w-2xl mx-auto">
+            Diseñada para facilitar el monitoreo del crecimiento infantil, apoyar la detección
+            temprana de desnutrición y fortalecer el análisis de información nutricional en
+            contextos clínicos y poblacionales.
           </p>
         </motion.div>
+      </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {[
-            {
-              name: 'Clínico',
-              sub: 'Médicos y nutricionistas',
-              description:
-                'Registra controles, evalúa el estado nutricional de cada niño y recibe alertas cuando un paciente entra en zona de riesgo.',
-              items: [
-                'Registrar datos antropométricos',
-                'Consultar diagnóstico nutricional',
-                'Ver alertas de riesgo de desnutrición',
-                'Seguimiento de curva de crecimiento',
-              ],
-              coverBg: 'linear-gradient(135deg, #EAF6FB, #C8EAF4)',
-              textColor: '#1A7A9E',
-            },
-            {
-              name: 'Analítico',
-              sub: 'Epidemiólogos y salud pública',
-              description:
-                'Analiza la prevalencia de desnutrición, compara modelos predictivos y gestiona la información poblacional.',
-              items: [
-                'Analizar prevalencia por zona geográfica',
-                'Entrenar modelos de predicción nutricional',
-                'Generar reportes de salud pública',
-                'Identificar grupos de alta vulnerabilidad',
-              ],
-              coverBg: 'linear-gradient(135deg, #DDF5EC, #B8E8CE)',
-              textColor: '#1A7A5E',
-            },
-          ].map(({ name, sub, description, items, coverBg, textColor }, i) => (
-            <motion.div
-              key={name}
-              custom={i}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              variants={fadeUp}
-              className="book-card"
-              style={{ height: '300px' }}
+      {/* Looping tag carousel — alineado con el título, bordes difuminados */}
+      <div className="max-w-4xl mx-auto overflow-hidden py-5 mb-12"
+        style={{
+          maskImage: 'linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%)',
+        }}
+      >
+        <div className="marquee-track">
+          {[...plataformaItems, ...plataformaItems].map(({ icon: Icon, label }, i) => (
+            <div
+              key={i}
+              className="flex items-center gap-2.5 flex-shrink-0 mx-3 px-5 py-2.5 rounded-full text-sm font-medium"
+              style={{ background: '#F1F5F9', color: '#475569', border: '1px solid #E2E8F0' }}
             >
-              {/* Interior — visible cuando la portada se abre */}
-              <div className="w-full h-full pl-14 pr-8 py-8 flex flex-col justify-center">
-                <p className="text-neutral-sub text-sm leading-relaxed mb-5">{description}</p>
-                <ul className="space-y-2.5">
-                  {items.map((item) => (
-                    <li key={item} className="flex items-center gap-3 text-sm text-neutral-text">
-                      <span className="w-1.5 h-1.5 rounded-full bg-clinical-blue-md flex-shrink-0" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Portada — rota al hacer hover */}
-              <div className="book-cover" style={{ background: coverBg }}>
-                <span className="text-xs font-medium uppercase tracking-widest" style={{ color: textColor, opacity: 0.6 }}>{sub}</span>
-                <span className="text-2xl font-bold" style={{ color: textColor }}>{name}</span>
-              </div>
-            </motion.div>
+              <Icon className="w-4 h-4 flex-shrink-0" style={{ color: '#64748B' }} />
+              {label}
+            </div>
           ))}
         </div>
       </div>
+
+      {/* Botón */}
+      <div className="text-center">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={fadeUp}
+        >
+          <Link
+            to="/login"
+            className="clay-btn inline-flex items-center gap-2 text-white font-medium px-8 py-4 text-base"
+          >
+            Acceder al sistema
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </motion.div>
+      </div>
+      <div className="absolute bottom-0 inset-x-0 h-28 pointer-events-none"
+        style={{ background: 'linear-gradient(to bottom, transparent, #F5FAFC)' }} />
     </section>
   )
 }
 
 function CTA() {
   return (
-    <section className="py-32 bg-neutral-bg border-t border-neutral-border">
+    <section className="relative py-32 bg-neutral-bg">
       <motion.div
         initial="hidden"
         whileInView="visible"
@@ -507,6 +763,8 @@ function CTA() {
           <ChevronRight className="w-4 h-4" />
         </Link>
       </motion.div>
+      <div className="absolute bottom-0 inset-x-0 h-28 pointer-events-none"
+        style={{ background: 'linear-gradient(to bottom, transparent, #ffffff)' }} />
     </section>
   )
 }
@@ -545,8 +803,11 @@ export default function LandingPage() {
       <main>
         <Hero />
         <Intro />
+        <SobreDesnutricion />
+        <DeteccionTemprana />
+        <FactoresConsPrev />
         <Features />
-        <Roles />
+        <Plataforma />
         <CTA />
       </main>
       <Footer />
