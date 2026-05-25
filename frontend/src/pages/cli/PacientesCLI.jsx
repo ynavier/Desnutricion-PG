@@ -161,8 +161,7 @@ function edadTexto(e) {
 function StatusBadge({ estado }) {
   const s = statusConfig[estado] ?? statusConfig.risk
   return (
-    <span className="text-xs font-medium px-2.5 py-1 rounded-full"
-      style={{ color: s.color, background: s.bg }}>
+    <span className="text-xs font-medium" style={{ color: s.color }}>
       {s.label}
     </span>
   )
@@ -226,15 +225,40 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
     }))
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault()
-    // Guardia: solo enviar en el paso 3
+  function validateStep(currentStep) {
+    if (currentStep === 1) {
+      if (!form.nombre.trim()) return 'El nombre es obligatorio.'
+      if (!form.apellidos.trim()) return 'Los apellidos son obligatorios.'
+      if (!form.fechaNac) return 'La fecha de nacimiento es obligatoria.'
+      if (!form.sexo) return 'El sexo es obligatorio.'
+      
+      const edadCalc = calcularEdad(form.fechaNac)
+      if (edadCalc && edadCalc.totalMeses > 60) {
+        return 'El paciente debe ser menor de 5 años (60 meses).'
+      }
+    } else if (currentStep === 2) {
+      if (!form.tipoZona) return 'Debe seleccionar el tipo de área (Urbana o Rural).'
+      if (!form.dptoResidencia) return 'El departamento de residencia es obligatorio.'
+      if (!form.municipioResidencia) return 'El municipio de residencia es obligatorio.'
+      if (!form.establecimiento) return 'El establecimiento de salud es obligatorio.'
+    }
+    return ''
+  }
+
+  async function handleNextStep() {
+    setApiError('')
+    const errorMsg = validateStep(step)
+    if (errorMsg) {
+      setApiError(errorMsg)
+      return
+    }
+
     if (step < 3) {
       setStep(s => s + 1)
       return
     }
+
     setSaving(true)
-    setApiError('')
     try {
       await api.post('/pacientes', {
         nombre:           form.nombre,
@@ -285,13 +309,13 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
     <>
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/25 z-50"
+        className="fixed inset-0 bg-slate-900/30 backdrop-blur-[2px] z-50"
         onClick={onClose}
       />
       <motion.div
         initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-        className="fixed right-0 top-0 h-screen w-full max-w-lg bg-white z-50 flex flex-col shadow-2xl"
+        className="fixed right-0 top-0 h-screen w-full max-w-lg bg-white/90 backdrop-blur-md border-l border-white/40 z-50 flex flex-col shadow-2xl"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-border flex-shrink-0">
@@ -362,7 +386,7 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
               ))}
             </div>
 
-            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
+            <form onSubmit={e => e.preventDefault()} className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
 
               {/* ── Paso 1: Datos personales ── */}
               {step === 1 && (
@@ -373,13 +397,13 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2 sm:col-span-1">
                       <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Nombre(s)</label>
-                      <input type="text" placeholder="Ej. Carlos" required
+                      <input type="text" placeholder="Ej. Carlos"
                         value={form.nombre} onChange={e => set('nombre', e.target.value)}
                         className="input-clinical" />
                     </div>
                     <div className="col-span-2 sm:col-span-1">
                       <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Apellidos</label>
-                      <input type="text" placeholder="Ej. Mendoza Ramos" required
+                      <input type="text" placeholder="Ej. Mendoza Ramos"
                         value={form.apellidos} onChange={e => set('apellidos', e.target.value)}
                         className="input-clinical" />
                     </div>
@@ -394,16 +418,16 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
 
                   <div>
                     <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Fecha de nacimiento</label>
-                    <input type="date" required
+                    <input type="date"
                       max={new Date().toISOString().split('T')[0]}
                       value={form.fechaNac} onChange={e => set('fechaNac', e.target.value)}
                       className="input-clinical" />
                     {edad && (
                       <div className="mt-2 flex items-center gap-2">
-                        <span className="text-xs px-2.5 py-1 rounded-full font-medium"
+                        <span className="text-xs font-medium"
                           style={menorDe5
-                            ? { background: 'rgba(79,180,210,0.10)', color: '#4FB4D2' }
-                            : { background: 'rgba(229,57,53,0.10)', color: '#E53935' }
+                            ? { color: '#4FB4D2' }
+                            : { color: '#E53935' }
                           }>
                           {edadTexto(edad)}
                         </span>
@@ -569,7 +593,7 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Departamento</label>
-                      <select required value={form.dptoResidencia}
+                      <select value={form.dptoResidencia}
                         onChange={e => { set('dptoResidencia', e.target.value); set('municipioResidencia', '') }}
                         className="input-clinical">
                         <option value="">Seleccionar...</option>
@@ -578,7 +602,7 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Municipio</label>
-                      <select required value={form.municipioResidencia}
+                      <select value={form.municipioResidencia}
                         onChange={e => set('municipioResidencia', e.target.value)}
                         className="input-clinical"
                         disabled={!form.dptoResidencia}>
@@ -590,7 +614,7 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
 
                   <div>
                     <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Establecimiento de salud</label>
-                    <select required value={form.establecimiento} onChange={e => set('establecimiento', e.target.value)}
+                    <select value={form.establecimiento} onChange={e => set('establecimiento', e.target.value)}
                       className="input-clinical">
                       <option value="">Seleccionar establecimiento...</option>
                       {establecimientos.map(e => <option key={e} value={e}>{e}</option>)}
@@ -708,7 +732,8 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
                   </button>
                 )}
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={handleNextStep}
                   disabled={saving}
                   className="flex-1 clay-btn text-white font-semibold py-2.5 text-sm flex items-center justify-center gap-2 disabled:opacity-60"
                 >
@@ -787,10 +812,10 @@ export default function PacientesCLI() {
         <div className="flex gap-2 flex-wrap">
           {Object.keys(filterLabels).map(f => (
             <button key={f} onClick={() => setFiltroEstado(f)}
-              className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${filtroEstado !== f ? 'hover:bg-neutral-bg' : ''}`}
               style={filtroEstado === f
-                ? { background: '#4FB4D2', color: '#fff' }
-                : { background: 'rgba(79,180,210,0.08)', color: '#64748B' }
+                ? { background: 'rgba(79,180,210,0.08)', color: '#1A1F2B', boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.92), inset 0 -2px 4px rgba(0,0,0,0.06), 0 4px 14px rgba(0,0,0,0.09), 0 1px 4px rgba(0,0,0,0.05)' }
+                : { color: '#54606E' }
               }>
               {filterLabels[f]}
             </button>
@@ -801,7 +826,8 @@ export default function PacientesCLI() {
       {/* Tabla */}
       <motion.div custom={2} initial="hidden" animate="visible" variants={fadeUp}
         className="clay-card overflow-hidden">
-        <table className="w-full">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[500px] sm:min-w-full">
           <thead>
             <tr className="border-b border-neutral-border">
               <th className="text-left text-xs font-semibold text-neutral-sub px-6 py-3.5">Paciente</th>
@@ -841,6 +867,7 @@ export default function PacientesCLI() {
             ))}
           </tbody>
         </table>
+        </div>
         {filtered.length === 0 && (
           <div className="py-16 text-center text-sm text-neutral-sub">
             No se encontraron pacientes.

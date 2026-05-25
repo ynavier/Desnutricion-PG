@@ -61,7 +61,11 @@ export default function SidebarCLI() {
               }`
             }
             style={({ isActive }) =>
-              isActive ? { background: '#EAF6FB', color: '#4FB4D2' } : {}
+              isActive ? {
+                background: '#EAF6FB',
+                color: '#4FB4D2',
+                boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.92), inset 0 -2px 4px rgba(0,0,0,0.06), 0 4px 14px rgba(0,0,0,0.09), 0 1px 4px rgba(0,0,0,0.05)',
+              } : {}
             }
           >
             {/* Icono con badge opcional */}
