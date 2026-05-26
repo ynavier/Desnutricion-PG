@@ -4,6 +4,7 @@ import HomeCLI from './HomeCLI'
 import PacientesCLI from './PacientesCLI'
 import DetallePaciente from './DetallePaciente'
 import AlertasCLI from './AlertasCLI'
+import ChatAsistente from '../../components/cli/ChatAsistente'
 
 export default function DashboardCLI() {
   return (
@@ -17,6 +18,7 @@ export default function DashboardCLI() {
           <Route path="alertas" element={<AlertasCLI />} />
         </Routes>
       </main>
+      <ChatAsistente />
     </div>
   )
 }
