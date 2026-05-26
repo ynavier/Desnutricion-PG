@@ -52,6 +52,49 @@ SYSTEM_PROMPT = (
 MAX_HISTORY = 20  # Máximo de mensajes en el historial
 
 
+async def extraer_nombre_paciente(mensaje: str) -> str | None:
+    """
+    Usa Groq para detectar si el mensaje menciona un paciente por nombre.
+    Retorna el nombre completo (ej: 'María García') o None si no hay ninguno.
+    Llama con max_tokens=20 para que sea rápido y económico.
+    """
+    if not settings.groq_api_key:
+        return None
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            resp = await client.post(
+                GROQ_URL,
+                headers={
+                    'Authorization': f'Bearer {settings.groq_api_key}',
+                    'Content-Type': 'application/json',
+                },
+                json={
+                    'model': GROQ_MODEL,
+                    'messages': [
+                        {
+                            'role': 'system',
+                            'content': (
+                                'Eres un extractor de nombres. Tu única tarea es identificar el nombre '
+                                'propio de un paciente específico en el mensaje clínico. '
+                                'Responde EXCLUSIVAMENTE con el nombre completo (ej: "María García") '
+                                'o con la palabra exacta NINGUNO si no hay nombre de paciente. '
+                                'No incluyas artículos (el/la), títulos, cargo ni explicaciones.'
+                            ),
+                        },
+                        {'role': 'user', 'content': mensaje[:500]},
+                    ],
+                    'temperature': 0.0,
+                    'max_tokens': 20,
+                },
+            )
+        if resp.status_code == 200:
+            texto = resp.json()['choices'][0]['message']['content'].strip()
+            return None if texto.upper().startswith('NINGUNO') else texto
+    except Exception as e:
+        print(f'[CHAT-IA] Error en extracción de nombre: {e}', flush=True)
+    return None
+
+
 async def chat_responder(
     mensaje: str,
     historial: list[dict] | None = None,
