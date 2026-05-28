@@ -60,5 +60,9 @@ logs/
 Thumbs.db
 desktop.ini
 
+# Node
+frontend/node_modules/
+node_modules/
+
 # Claude Code
 .claude/
