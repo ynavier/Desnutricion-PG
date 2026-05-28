@@ -1,0 +1,79 @@
+name: Deploy Backend → Cloud Run
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+
+env:
+  REGION:  us-central1
+  SERVICE: nutrivigilancia-api
+  IMAGE:   us-central1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/nutrivigilancia/backend
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker → Artifact Registry
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+      - name: Build & push image
+        working-directory: backend
+        run: |
+          docker build \
+            -t ${{ env.IMAGE }}:${{ github.sha }} \
+            -t ${{ env.IMAGE }}:latest \
+            .
+          docker push ${{ env.IMAGE }}:${{ github.sha }}
+          docker push ${{ env.IMAGE }}:latest
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.SERVICE }} \
+            --image "${{ env.IMAGE }}:${{ github.sha }}" \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --memory 1Gi \
+            --cpu 1 \
+            --min-instances 0 \
+            --max-instances 3 \
+            --timeout 120 \
+            --service-account "${{ secrets.GCP_RUN_SA }}" \
+            --add-volume "name=persistent,type=cloud-storage,bucket=${{ secrets.GCP_DATA_BUCKET }}" \
+            --add-volume-mount "volume=persistent,mount-path=/app/persistent" \
+            --set-env-vars "\
+          APP_ENV=production,\
+          MODELS_DIR=/app/persistent/models,\
+          DATA_UPLOADS_DIR=/app/persistent/uploads,\
+          DATA_PROC_DIR=/app/persistent/processed,\
+          CORS_ORIGINS=${{ secrets.CORS_ORIGINS }},\
+          SUPABASE_URL=${{ secrets.SUPABASE_URL }},\
+          SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }},\
+          SUPABASE_SERVICE_KEY=${{ secrets.SUPABASE_SERVICE_KEY }},\
+          SUPABASE_JWT_SECRET=${{ secrets.SUPABASE_JWT_SECRET }},\
+          GROQ_API_KEY=${{ secrets.GROQ_API_KEY }},\
+          GOOGLE_API_KEY=${{ secrets.GOOGLE_API_KEY }}"
+
+      - name: Print service URL
+        run: |
+          URL=$(gcloud run services describe ${{ env.SERVICE }} \
+            --region ${{ env.REGION }} \
+            --format "value(status.url)")
+          echo "✅ Backend desplegado en: $URL"
