@@ -290,6 +290,7 @@ async def _entrenar(job: dict, config: dict):
     _log(job, f'Clases en target: {clases_unicas} ({len(clases_unicas)} clases)')
 
     d        = Path(settings.models_dir)
+    d.mkdir(parents=True, exist_ok=True)
     ts       = datetime.now().strftime('%Y%m%d_%H%M%S')
     n_modelos = len(modelos_sel)
     resultados: list[dict] = []
