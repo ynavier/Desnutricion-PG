@@ -3,9 +3,43 @@ Generación de recomendaciones clínicas personalizadas usando Google Gemini.
 API key gratuita en: https://aistudio.google.com/apikey  (sin tarjeta)
 
 Si GOOGLE_API_KEY no está configurada, retorna recomendaciones estáticas.
+Cache en memoria con TTL de 24h para evitar llamadas repetidas por el mismo paciente.
 """
 import json
+import time
+import hashlib
 from app.config import settings
+
+# ── Cache en memoria ──────────────────────────────────────────────────────────
+_recs_cache: dict[str, tuple[dict, float]] = {}   # key → (resultado, timestamp)
+_CACHE_TTL = 86400.0  # 24 horas en segundos
+
+
+def _cache_key(datos: dict) -> str:
+    """Genera clave de caché: por paciente_id+estado si está disponible, si no por hash completo."""
+    paciente_id = datos.get('paciente_id')
+    if paciente_id is not None:
+        estado = datos.get('estado_nutricional') or datos.get('nivel_alerta') or ''
+        zscore = datos.get('zscore') or ''
+        raw = f'pac:{paciente_id}:{estado}:{zscore}'
+    else:
+        raw = json.dumps(datos, sort_keys=True, default=str)
+    return hashlib.sha256(raw.encode()).hexdigest()[:32]
+
+
+def _cache_get(key: str) -> dict | None:
+    entry = _recs_cache.get(key)
+    if entry is None:
+        return None
+    result, ts = entry
+    if time.time() - ts > _CACHE_TTL:
+        del _recs_cache[key]
+        return None
+    return result
+
+
+def _cache_set(key: str, result: dict) -> None:
+    _recs_cache[key] = (result, time.time())
 
 # ── Fallback estático por nivel ────────────────────────────────────────────────
 
@@ -60,10 +94,17 @@ def _fallback(datos: dict) -> list[str]:
 async def generar_recomendaciones(datos: dict) -> dict:
     """
     Genera recomendaciones clínicas en lenguaje natural usando Gemini 2.0 Flash.
-    Fallback automático a recomendaciones estáticas si la API falla.
+    Revisa caché antes de llamar a la API. Fallback automático si la API falla.
     """
+    key = _cache_key(datos)
+    cached = _cache_get(key)
+    if cached is not None:
+        return cached
+
     if not settings.google_api_key:
-        return {'recomendaciones': _fallback(datos), 'fuente': 'estatica'}
+        result = {'recomendaciones': _fallback(datos), 'fuente': 'estatica'}
+        _cache_set(key, result)
+        return result
 
     try:
         from google import genai
@@ -122,9 +163,13 @@ async def generar_recomendaciones(datos: dict) -> dict:
 
         recs = json.loads(texto)
         if isinstance(recs, list) and len(recs) >= 2:
-            return {'recomendaciones': [str(r) for r in recs[:4]], 'fuente': 'ia'}
+            result = {'recomendaciones': [str(r) for r in recs[:4]], 'fuente': 'ia'}
+            _cache_set(key, result)
+            return result
 
     except Exception as e:
         print(f'[AI-RECS] Error Gemini: {e}', flush=True)
 
-    return {'recomendaciones': _fallback(datos), 'fuente': 'estatica'}
+    result = {'recomendaciones': _fallback(datos), 'fuente': 'estatica'}
+    _cache_set(key, result)
+    return result

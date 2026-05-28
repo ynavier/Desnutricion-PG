@@ -5,7 +5,14 @@ import {
 } from 'lucide-react'
 import api from '../../services/api'
 
-const CARD = { background: '#fff', borderRadius: 16, border: '1px solid #E0E6ED', padding: '20px 24px' }
+const CARD = {
+  background: 'rgba(255, 255, 255, 0.72)',
+  backdropFilter: 'blur(14px)',
+  WebkitBackdropFilter: 'blur(14px)',
+  borderRadius: 20,
+  boxShadow: 'inset 0 3px 12px rgba(255,255,255,0.90), inset 0 -4px 8px rgba(0,0,0,0.07), 0 4px 18px rgba(0,0,0,0.07), 0 1px 5px rgba(0,0,0,0.04)',
+  padding: '20px 24px',
+}
 const SS_KEY = 'nutrivig_entrenamiento'
 
 const modelos = [
@@ -212,7 +219,7 @@ export default function EntrenamientoANL() {
   const canStart  = selectedCount > 0 && !sinFuente && status !== 'training'
 
   return (
-    <div className="p-6 space-y-6" style={{ background: '#FAFCFF', minHeight: '100vh' }}>
+    <div className="p-6 space-y-6 bg-neutral-bg min-h-screen">
       <div>
         <h1 className="text-xl font-bold" style={{ color: '#1A1F2B' }}>Entrenamiento de Modelos</h1>
         <p className="text-sm mt-0.5" style={{ color: '#54606E' }}>
@@ -299,8 +306,7 @@ export default function EntrenamientoANL() {
               ) : (
                 <div className="space-y-1.5">
                   {datasetsHabilitados.map(ds => (
-                    <div key={ds.id} className="flex items-center justify-between px-3 py-2 rounded-xl"
-                      style={{ background: 'rgba(111,207,151,0.08)', border: '1px solid rgba(111,207,151,0.3)' }}>
+                    <div key={ds.id} className="flex items-center justify-between px-3 py-2 rounded-xl transition-colors hover:bg-black/[0.03]">
                       <div className="flex items-center gap-2">
                         <CheckCircle className="w-3.5 h-3.5" style={{ color: '#3DAB6B' }} />
                         <span className="text-xs font-medium" style={{ color: '#1A1F2B' }}>{ds.nombre}</span>
@@ -373,8 +379,8 @@ export default function EntrenamientoANL() {
             return (
               <div key={modelo.id} style={{
                 ...CARD, padding: 0, overflow: 'hidden',
-                border: `1px solid ${isOn ? 'rgba(111,207,151,0.4)' : '#E0E6ED'}`,
-                background: isOn ? 'rgba(111,207,151,0.03)' : '#fff',
+                border: `1px solid ${isOn ? 'rgba(111,207,151,0.4)' : 'transparent'}`,
+                background: isOn ? 'rgba(111,207,151,0.04)' : 'rgba(0,0,0,0.025)',
               }}>
                 <div className="flex items-center gap-3 p-4 cursor-pointer" onClick={() => toggleModel(modelo.id)}>
                   <div className="flex-shrink-0">
@@ -390,8 +396,8 @@ export default function EntrenamientoANL() {
                   {isOn && (
                     <button
                       onClick={e => { e.stopPropagation(); toggleExpand(modelo.id) }}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs"
-                      style={{ background: 'rgba(111,207,151,0.1)', color: '#3DAB6B' }}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs transition-colors hover:bg-neutral-bg"
+                      style={{ color: '#3DAB6B' }}
                     >
                       Parámetros
                       {isExp ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
@@ -455,8 +461,8 @@ export default function EntrenamientoANL() {
                 !canStart
                   ? { background: '#F3F4F6', color: '#9CA3AF', cursor: 'not-allowed' }
                   : status === 'error'
-                    ? { background: 'linear-gradient(135deg, #FB8C00, #E53935)', color: '#fff' }
-                    : { background: 'linear-gradient(135deg, #6FCF97, #4FB4D2)', color: '#fff' }
+                    ? { background: 'linear-gradient(135deg, #FB8C00, #E53935)', color: '#fff', boxShadow: 'inset 0 3px 8px rgba(255,255,255,0.45), inset 0 -3px 6px rgba(0,0,0,0.18), 0 6px 20px rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.08)' }
+                    : { background: 'linear-gradient(135deg, #6FCF97, #4FB4D2)', color: '#fff', boxShadow: 'inset 0 3px 8px rgba(255,255,255,0.45), inset 0 -3px 6px rgba(0,0,0,0.18), 0 6px 20px rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.08)' }
               }
             >
               {status === 'training'
@@ -504,19 +510,45 @@ export default function EntrenamientoANL() {
                 }} />
               </div>
 
-              <div ref={logRef} className="rounded-xl p-3 space-y-1 overflow-y-auto"
-                style={{ background: '#1A1F2B', maxHeight: 200 }}>
-                {log.length === 0
-                  ? <p className="text-[11px] font-mono" style={{ color: '#9CA3AF' }}>Esperando...</p>
-                  : log.map((line, i) => (
-                    <p key={i} className="text-[11px] font-mono" style={{
-                      color: line.startsWith('ERROR') ? '#FF8A80'
-                        : line.startsWith('──') ? '#4FB4D2'
-                        : i === log.length - 1 ? '#6FCF97'
-                        : '#9CA3AF',
-                    }}>{'>'} {line}</p>
-                  ))
-                }
+              {/* ── Consola Hacker-Clin ── */}
+              <div className="rounded-xl overflow-hidden"
+                style={{ background: 'rgba(2,6,23,0.94)', border: '1px solid #1e293b' }}>
+                {/* Barra de título */}
+                <div className="flex items-center gap-2 px-3 py-2"
+                  style={{ borderBottom: '1px solid #1e293b', background: 'rgba(15,23,42,0.8)' }}>
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{
+                    background: status === 'error' ? '#ef4444' : status === 'done' ? '#6FCF97' : '#6FCF97',
+                    boxShadow: status === 'training' ? '0 0 7px #6FCF97' : 'none',
+                    animation: status === 'training' ? 'glow-pulse 1.5s infinite ease-in-out' : 'none',
+                  }} />
+                  <span className="text-[10px] font-mono tracking-widest" style={{ color: '#334155' }}>
+                    NUTRIVIG_ML — TRAINING LOG
+                  </span>
+                  <div className="flex-1" />
+                  <span className="text-[10px] font-mono" style={{ color: '#1e3a5f' }}>v1.0</span>
+                </div>
+                {/* Contenido del log */}
+                <div ref={logRef}
+                  className="p-3 space-y-0.5 overflow-y-auto custom-scrollbar"
+                  style={{ maxHeight: 200 }}>
+                  {log.length === 0
+                    ? <p className="text-[11px] font-mono" style={{ color: '#334155' }}>
+                        <span style={{ color: '#1d4ed8', opacity: 0.6 }}>$ </span>
+                        Esperando inicio...
+                      </p>
+                    : log.map((line, i) => (
+                      <p key={i} className="text-[11px] font-mono leading-relaxed" style={{
+                        color: line.startsWith('ERROR') ? '#fca5a5'
+                          : line.startsWith('──') ? '#38bdf8'
+                          : i === log.length - 1 ? '#6FCF97'
+                          : '#475569',
+                      }}>
+                        <span style={{ color: '#1d4ed8', opacity: 0.5 }}>$ </span>
+                        {line}
+                      </p>
+                    ))
+                  }
+                </div>
               </div>
             </div>
           )}

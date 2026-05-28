@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str
 
     google_api_key: str = ''
+    groq_api_key: str = ''
 
     models_dir:     Path = Path('../models')
     data_uploads_dir: Path = Path('../data/uploads')   # archivos subidos por usuarios

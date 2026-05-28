@@ -9,6 +9,7 @@ router = APIRouter(prefix='/recomendaciones', tags=['recomendaciones'])
 
 
 class RecomendacionesRequest(BaseModel):
+    paciente_id:        Optional[int] = None   # para clave de caché por paciente
     estado_nutricional: Optional[str] = None
     edad_meses:         Optional[int] = None
     sexo:               Optional[str] = None

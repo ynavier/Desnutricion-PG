@@ -7,6 +7,7 @@ import {
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import api from '../../services/api'
+import AnimatedCounter from '../../components/common/AnimatedCounter'
 
 const fadeUp = {
   hidden:  { opacity: 0, y: 16 },
@@ -60,8 +61,7 @@ function mesesATexto(m) { return `${Math.floor((m||0)/12)}a ${(m||0)%12}m` }
 function StatusBadge({ estado }) {
   const s = statusConfig[estado] ?? statusConfig.risk
   return (
-    <span className="text-xs font-medium px-2.5 py-1 rounded-full"
-      style={{ color: s.color, background: s.bg }}>
+    <span className="text-xs font-medium" style={{ color: s.color }}>
       {s.label}
     </span>
   )
@@ -186,13 +186,12 @@ export default function HomeCLI() {
         {kpis.map(({ label, value, icon: Icon, color, bg, delta }, i) => (
           <motion.div key={label} custom={i} initial="hidden" animate="visible" variants={fadeUp}
             className="clay-card p-5">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-4"
-              style={{ background: bg }}>
-              <Icon className="w-5 h-5" style={{ color }} />
-            </div>
+            <Icon className="w-5 h-5 mb-4" style={{ color }} />
             {loading
               ? <div className="h-7 w-16 rounded-lg animate-pulse mb-1" style={{ background: '#F1F5F9' }} />
-              : <p className="text-2xl font-bold text-neutral-text leading-none mb-1">{value}</p>
+              : <p className="text-2xl font-bold text-neutral-text leading-none mb-1">
+                  <AnimatedCounter value={value} />
+                </p>
             }
             <p className="text-xs font-semibold text-neutral-text mb-1">{label}</p>
             <p className="text-xs text-neutral-sub">{loading ? '…' : delta}</p>
@@ -225,8 +224,7 @@ export default function HomeCLI() {
                 const n = nivelConfig[nivel] ?? nivelConfig.risk
                 return (
                   <Link key={id} to={`/cli/pacientes/${paciente_id}`}
-                    className="flex items-start gap-3 p-3 rounded-xl hover:opacity-80 transition-opacity"
-                    style={{ background: n.bg }}>
+                    className="flex items-start gap-3 p-3 rounded-xl hover:bg-black/[0.03] transition-colors">
                     <TrendingDown className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: n.color }} />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-neutral-text">{paciente}</p>

@@ -1,14 +1,15 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Database, BrainCircuit, BarChart3, Users, FileText, LogOut } from 'lucide-react'
+import { LayoutDashboard, Database, BrainCircuit, BarChart3, Users, FileText, PieChart, LogOut } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 
 const navItems = [
-  { label: 'Inicio',         to: '/anl',              icon: LayoutDashboard, end: true },
-  { label: 'Datasets',       to: '/anl/datasets',     icon: Database },
-  { label: 'Entrenamiento',  to: '/anl/entrenamiento', icon: BrainCircuit },
-  { label: 'Modelos',        to: '/anl/modelos',      icon: BarChart3 },
-  { label: 'Usuarios',       to: '/anl/usuarios',     icon: Users },
-  { label: 'Reportes',       to: '/anl/reportes',     icon: FileText },
+  { label: 'Inicio',        to: '/anl',               icon: LayoutDashboard, end: true },
+  { label: 'Datasets',      to: '/anl/datasets',      icon: Database },
+  { label: 'Entrenamiento', to: '/anl/entrenamiento', icon: BrainCircuit },
+  { label: 'Modelos',       to: '/anl/modelos',       icon: BarChart3 },
+  { label: 'Dashboards',    to: '/anl/dashboards',    icon: PieChart },
+  { label: 'Usuarios',      to: '/anl/usuarios',      icon: Users },
+  { label: 'Reportes',      to: '/anl/reportes',      icon: FileText },
 ]
 
 export default function SidebarANL() {
@@ -44,7 +45,11 @@ export default function SidebarANL() {
                 isActive ? 'font-semibold' : 'text-neutral-sub hover:bg-neutral-bg hover:text-neutral-text'
               }`
             }
-            style={({ isActive }) => isActive ? { background: 'rgba(111,207,151,0.12)', color: '#3DAB6B' } : {}}
+            style={({ isActive }) => isActive ? {
+              background: 'rgba(111,207,151,0.14)',
+              color: '#3DAB6B',
+              boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.92), inset 0 -2px 4px rgba(0,0,0,0.06), 0 4px 14px rgba(0,0,0,0.09), 0 1px 4px rgba(0,0,0,0.05)',
+            } : {}}
           >
             <Icon className="w-4 h-4 flex-shrink-0" />
             {label}

@@ -74,12 +74,243 @@ const municipiosPorDepartamento = {
   'Vichada':                 ['Puerto Carreño', 'La Primavera', 'Santa Rosalía', 'Cumaribo', 'Otro'],
 }
 
-const establecimientos = [
-  'ESE Hospital Local', 'ESE Hospital Regional', 'ESE Hospital Departamental',
-  'IPS Centro de Salud', 'IPS Clínica', 'Puesto de Salud',
-  'Hospital Universitario', 'Unidad Médica ICBF', 'Centro de Atención Primaria',
-  'Otro',
-]
+const establecimientosPorUbicacion = {
+  'Amazonas': {
+    'Leticia':       ['ESE Hospital San Rafael de Leticia', 'Centro de Salud Leticia', 'Puesto de Salud San Sebastián', 'Otro'],
+    'Puerto Nariño': ['Centro de Salud Puerto Nariño', 'Otro'],
+    '_default':      ['ESE Hospital San Rafael de Leticia', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Antioquia': {
+    'Medellín':   ['Hospital General de Medellín ESE', 'Hospital Universitario San Vicente Fundación', 'Hospital Pablo Tobón Uribe', 'Hospital La María ESE', 'IPS Universitaria', 'ESE Metrosalud', 'Clínica Las Américas', 'Clínica El Rosario', 'Clínica CES', 'Clínica Medellín', 'Clínica Soma', 'Otro'],
+    'Bello':      ['ESE Hospital Marco Fidel Suárez', 'Clínica Somer', 'Otro'],
+    'Itagüí':     ['ESE Hospital del Sur Gabriel Jaramillo Ossa', 'Otro'],
+    'Envigado':   ['ESE Hospital Manuel Uribe Ángel', 'Otro'],
+    'Apartadó':   ['ESE Hospital Antonio Roldán Betancourt', 'Centro de Salud Apartadó', 'Otro'],
+    'Turbo':      ['ESE Hospital Francisco Valderrama', 'Centro de Salud Turbo', 'Otro'],
+    'Rionegro':   ['ESE Hospital San Juan de Dios de Rionegro', 'Clínica Somer Rionegro', 'Otro'],
+    'Caucasia':   ['ESE Hospital San Juan de Dios de Caucasia', 'Otro'],
+    'Sabaneta':   ['Centro de Salud Sabaneta ESE', 'Otro'],
+    'Copacabana': ['ESE Hospital San Vicente de Paul de Copacabana', 'Otro'],
+    '_default':   ['ESE Hospital Local de Antioquia', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Arauca': {
+    'Arauca':    ['ESE Hospital Sagrado Corazón de Jesús de Arauca', 'Centro de Salud Arauca', 'Otro'],
+    'Arauquita': ['ESE Hospital San Vicente de Paul de Arauquita', 'Otro'],
+    'Saravena':  ['ESE Hospital Regional Manuela Beltrán', 'Centro de Salud Saravena', 'Otro'],
+    'Tame':      ['ESE Hospital San Antonio de Tame', 'Otro'],
+    '_default':  ['ESE Hospital Sagrado Corazón de Jesús de Arauca', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Atlántico': {
+    'Barranquilla': ['Hospital Universitario CARI ESE', 'ESE Hospital Niño Jesús de Barranquilla', 'Clínica General del Norte', 'Clínica Portoazul', 'Clínica de la Costa', 'Clínica Adelitas', 'Hospital Nazareth ESE', 'Otro'],
+    'Soledad':      ['Centro de Salud Soledad ESE', 'Otro'],
+    'Sabanalarga':  ['ESE Hospital de Sabanalarga', 'Otro'],
+    'Malambo':      ['Centro de Salud Malambo', 'Otro'],
+    '_default':     ['Hospital Universitario CARI ESE', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Bogotá D.C.': {
+    'Bogotá D.C.': [
+      'Hospital de Meissen II Nivel ESE', 'Hospital de Bosa II Nivel ESE', 'Hospital de Engativá II Nivel ESE',
+      'Hospital de Fontibón II Nivel ESE', 'Hospital de Kennedy III Nivel ESE', 'Hospital de Suba II Nivel ESE',
+      'Hospital de Usaquén II Nivel ESE', 'Hospital de Usme I Nivel ESE', 'Hospital de Tunjuelito II Nivel ESE',
+      'Hospital Simón Bolívar III Nivel ESE', 'Hospital Santa Clara III Nivel ESE', 'Hospital La Victoria III Nivel ESE',
+      'Hospital El Tunal III Nivel ESE', 'Hospital Rafael Uribe Uribe II Nivel ESE', 'Hospital San Blas II Nivel ESE',
+      'Hospital Chapinero II Nivel ESE', 'Hospital Centro Oriente II Nivel ESE', 'Hospital Occidente Kennedy ESE',
+      'Fundación Hospital La Misericordia (HOMI)', 'Hospital Universitario San Ignacio',
+      'Fundación Santa Fe de Bogotá', 'Clínica del Country', 'Clínica Colombia', 'Clínica Colsubsidio', 'Otro',
+    ],
+    '_default': ['ESE Hospital de Bogotá', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Bolívar': {
+    'Cartagena':           ['ESE Clínica Maternidad Rafael Calvo', 'ESE Hospital Universitario del Caribe', 'Clínica Medihelp Services', 'Clínica Blas de Lezo', 'Hospital Bocagrande de Cartagena', 'Hospital Naval de Cartagena', 'Otro'],
+    'Magangué':            ['ESE Hospital San Juan de Dios de Magangué', 'Otro'],
+    'El Carmen de Bolívar':['ESE Hospital Regional de Carmen de Bolívar', 'Otro'],
+    'Turbaco':             ['Centro de Salud Turbaco', 'Otro'],
+    '_default':            ['ESE Hospital Local de Bolívar', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Boyacá': {
+    'Tunja':          ['ESE Hospital Regional de Boyacá', 'Hospital San Rafael de Tunja', 'Clínica Medilaser Tunja', 'Otro'],
+    'Duitama':        ['ESE Hospital Regional de Duitama', 'Otro'],
+    'Sogamoso':       ['ESE Hospital Regional de Sogamoso', 'Clínica Sogamoso', 'Otro'],
+    'Chiquinquirá':   ['ESE Hospital San Salvador de Chiquinquirá', 'Otro'],
+    'Villa de Leyva': ['Centro de Salud Villa de Leyva', 'Otro'],
+    '_default':       ['ESE Hospital Local de Boyacá', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Caldas': {
+    'Manizales': ['ESE Hospital Departamental de Caldas', 'Hospital Infantil Universitario de Manizales', 'Clínica Versalles Manizales', 'Clínica Oncólogos del Occidente', 'Otro'],
+    'La Dorada':  ['ESE Hospital La Dorada', 'Otro'],
+    'Riosucio':   ['ESE Hospital San Lorenzo de Riosucio', 'Otro'],
+    'Chinchiná':  ['Centro de Salud Chinchiná', 'Otro'],
+    '_default':   ['ESE Hospital Local de Caldas', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Caquetá': {
+    'Florencia':            ['ESE Hospital María Inmaculada de Florencia', 'Clínica Florencia', 'Otro'],
+    'San Vicente del Caguán':['ESE Hospital San Vicente del Caguán', 'Otro'],
+    '_default':             ['ESE Hospital María Inmaculada de Florencia', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Casanare': {
+    'Yopal':      ['ESE Hospital Regional de La Orinoquia', 'Clínica Casanare', 'Otro'],
+    'Aguazul':    ['Centro de Salud Aguazul', 'Otro'],
+    'Villanueva': ['Centro de Salud Villanueva', 'Otro'],
+    '_default':   ['ESE Hospital Regional de La Orinoquia', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Cauca': {
+    'Popayán':                  ['ESE Hospital Universitario San José de Popayán', 'ESE David Molina Muñoz', 'Clínica La Estancia', 'Otro'],
+    'Santander de Quilichao':   ['ESE Hospital Departamental de Quilichao', 'Otro'],
+    'Puerto Tejada':            ['ESE Hospital San José de Puerto Tejada', 'Otro'],
+    '_default':                 ['ESE Hospital Local de Cauca', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Cesar': {
+    'Valledupar': ['ESE Hospital Eduardo Arredondo Daza', 'Clínica Valledupar', 'Centro Médico Valledupar', 'Otro'],
+    'Aguachica':  ['ESE Hospital San Roque de Aguachica', 'Otro'],
+    '_default':   ['ESE Hospital Local de Cesar', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Chocó': {
+    'Quibdó':       ['ESE Hospital San Francisco de Asís de Quibdó', 'Centro de Salud Quibdó', 'Otro'],
+    'Istmina':      ['ESE Hospital San José de Istmina', 'Otro'],
+    'Bahía Solano': ['Centro de Salud Bahía Solano', 'Otro'],
+    'Nuquí':        ['Centro de Salud Nuquí', 'Otro'],
+    '_default':     ['ESE Hospital San Francisco de Asís de Quibdó', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Córdoba': {
+    'Montería':    ['ESE Hospital San Jerónimo de Montería', 'ESE Camu Santa Teresita', 'Hospital Regional del Sinú', 'Clínica IMAT Oncomédica', 'Otro'],
+    'Cereté':      ['ESE Camu Cereté', 'Otro'],
+    'Sahagún':     ['ESE Hospital San Juan de Dios de Sahagún', 'Otro'],
+    'Lorica':      ['ESE Hospital San Juan de Dios de Lorica', 'Otro'],
+    'Montelíbano': ['ESE Camu Montelíbano', 'Otro'],
+    '_default':    ['ESE Hospital San Jerónimo de Montería', 'Camu de Salud', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Cundinamarca': {
+    'Soacha':      ['ESE Hospital Mario Gaitán Yanguas de Soacha', 'Otro'],
+    'Facatativá':  ['ESE Hospital San Rafael de Facatativá', 'Otro'],
+    'Zipaquirá':   ['ESE Hospital San Juan de Dios de Zipaquirá', 'Otro'],
+    'Chía':        ['ESE Hospital San Antonio de Chía', 'Otro'],
+    'Fusagasugá':  ['ESE Hospital San Rafael de Fusagasugá', 'Otro'],
+    'Girardot':    ['ESE Hospital San Rafael de Girardot', 'Clínica Girardot', 'Otro'],
+    'Madrid':      ['Centro de Salud Madrid Cundinamarca', 'Otro'],
+    'Mosquera':    ['Centro de Salud Mosquera', 'Otro'],
+    '_default':    ['ESE Hospital Local de Cundinamarca', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Guainía': {
+    'Inírida':  ['ESE Hospital Héctor Fabio Useche Bernavides de Inírida', 'Centro de Salud Inírida', 'Otro'],
+    '_default': ['ESE Hospital Héctor Fabio Useche Bernavides', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Guaviare': {
+    'San José del Guaviare': ['ESE Hospital Departamental San José del Guaviare', 'Otro'],
+    '_default':              ['ESE Hospital San José del Guaviare', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Huila': {
+    'Neiva':    ['ESE Hospital Universitario Hernando Moncaleano Perdomo', 'Clínica Medilaser Neiva', 'Clínica La Milagrosa', 'Clínica Surcolombiana', 'Otro'],
+    'Pitalito': ['ESE Hospital Departamental San Antonio de Pitalito', 'Clínica La Presentación Pitalito', 'Otro'],
+    'Garzón':   ['ESE Hospital Departamental de Garzón', 'Otro'],
+    'La Plata': ['ESE Hospital Departamental de La Plata', 'Otro'],
+    '_default': ['ESE Hospital Local de Huila', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'La Guajira': {
+    'Riohacha': ['ESE Hospital Nuestra Señora de los Remedios de Riohacha', 'Centro de Salud Riohacha', 'Otro'],
+    'Maicao':   ['ESE Hospital San José de Maicao', 'Centro de Salud Maicao', 'Otro'],
+    'Uribia':   ['Centro de Salud Uribia', 'Puesto de Salud Uribia', 'Otro'],
+    'Manaure':  ['Centro de Salud Manaure', 'Otro'],
+    '_default': ['ESE Hospital Nuestra Señora de los Remedios', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Magdalena': {
+    'Santa Marta': ['Hospital Universitario Fernando Troconis (HUFT)', 'Clínica Murillo', 'Policlínico del Caribe', 'Clínica El Prado Santa Marta', 'Otro'],
+    'Ciénaga':     ['ESE Hospital San Cristóbal de Ciénaga', 'Otro'],
+    'Fundación':   ['ESE Hospital San Rafael de Fundación', 'Otro'],
+    'El Banco':    ['ESE Hospital San Juan de Dios de El Banco', 'Otro'],
+    '_default':    ['ESE Hospital Local de Magdalena', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Meta': {
+    'Villavicencio': ['ESE Hospital Departamental de Villavicencio', 'Clínica del Llano', 'Clínica Humanitas del Llano', 'Otro'],
+    'Acacías':       ['ESE Hospital Municipal de Acacías', 'Otro'],
+    'Granada':       ['ESE Hospital Departamental de Granada', 'Otro'],
+    '_default':      ['ESE Hospital Local del Meta', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Nariño': {
+    'Pasto':      ['ESE Hospital Universitario Departamental de Nariño', 'ESE Pasto Salud', 'Clínica Humanitas Pasto', 'Clínica Uros', 'Otro'],
+    'Tumaco':     ['ESE Hospital Divino Niño de Tumaco', 'Centro de Salud Tumaco', 'Otro'],
+    'Ipiales':    ['ESE Hospital Civil de Ipiales', 'Otro'],
+    'Túquerres':  ['ESE Hospital Susana López de Valencia de Túquerres', 'Otro'],
+    '_default':   ['ESE Hospital Local de Nariño', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Norte de Santander': {
+    'Cúcuta':          ['ESE Hospital Universitario Erasmo Meoz', 'Clínica Los Andes de Cúcuta', 'Clínica Santa Ana de Cúcuta', 'Hospital Mental Rudesindo Soto', 'Otro'],
+    'Ocaña':           ['ESE Hospital Emiro Quintero Cañizares de Ocaña', 'Otro'],
+    'Pamplona':        ['ESE Hospital Regional de Pamplona', 'Otro'],
+    'Villa del Rosario':['Centro de Salud Villa del Rosario', 'Otro'],
+    '_default':        ['ESE Hospital Local de Norte de Santander', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Putumayo': {
+    'Mocoa':       ['ESE Hospital Sagrado Corazón de Mocoa', 'Centro de Salud Mocoa', 'Otro'],
+    'Puerto Asís': ['ESE Hospital José María Hernández de Puerto Asís', 'Otro'],
+    'Orito':       ['ESE Hospital José María Hernández de Orito', 'Otro'],
+    '_default':    ['ESE Hospital Local de Putumayo', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Quindío': {
+    'Armenia':    ['ESE Hospital Departamental Universitario del Quindío San Juan de Dios', 'Clínica La Sagrada Familia Armenia', 'Clínica Versalles del Quindío', 'Otro'],
+    'Calarcá':    ['ESE Hospital La Misericordia de Calarcá', 'Otro'],
+    'Montenegro': ['Centro de Salud Montenegro', 'Otro'],
+    '_default':   ['ESE Hospital Local de Quindío', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Risaralda': {
+    'Pereira':            ['ESE Hospital Universitario San Jorge de Pereira', 'Clínica Los Rosales Pereira', 'Clínica Comfamiliar Risaralda', 'Clínica Versalles Pereira', 'Otro'],
+    'Dosquebradas':       ['ESE Hospital Santa Mónica de Dosquebradas', 'Otro'],
+    'Santa Rosa de Cabal':['ESE Hospital San Vicente de Paul de Santa Rosa de Cabal', 'Otro'],
+    '_default':           ['ESE Hospital Local de Risaralda', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'San Andrés y Providencia': {
+    'San Andrés':  ['ESE Hospital Timothy Britton de San Andrés', 'Centro Médico San Andrés', 'Otro'],
+    'Providencia': ['Centro de Salud Providencia', 'Otro'],
+    '_default':    ['ESE Hospital Timothy Britton', 'Centro de Salud', 'Otro'],
+  },
+  'Santander': {
+    'Bucaramanga':      ['ESE Hospital Universitario de Santander (HUS)', 'Hospital Psiquiátrico San Camilo', 'Clínica Foscal', 'Clínica Chicamocha', 'Clínica MedyTropic', 'Clínica Materno Infantil San Luis', 'Otro'],
+    'Floridablanca':    ['ESE Hospital San Isidro de Floridablanca', 'Clínica Cardiovascular Santa María', 'Otro'],
+    'Girón':            ['Centro de Salud Girón', 'Otro'],
+    'Barrancabermeja':  ['ESE Hospital Regional de Barrancabermeja', 'Clínica Barrancabermeja', 'Otro'],
+    'Socorro':          ['ESE Hospital Regional Manuela Beltrán del Socorro', 'Otro'],
+    'San Gil':          ['ESE Hospital Regional de San Gil', 'Otro'],
+    '_default':         ['ESE Hospital Local de Santander', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Sucre': {
+    'Sincelejo': ['ESE Hospital Universitario de Sincelejo', 'ESE Clínica Maternidad de Sincelejo', 'Clínica Regional del Caribe', 'Otro'],
+    'Corozal':   ['ESE Hospital San Francisco de Asís de Corozal', 'Otro'],
+    'San Marcos':['ESE Hospital San Marcos', 'Otro'],
+    '_default':  ['ESE Hospital Local de Sucre', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Tolima': {
+    'Ibagué':  ['ESE Hospital Federico Lleras Acosta de Ibagué', 'Hospital San Francisco de Ibagué', 'Clínica Ibagué', 'Otro'],
+    'Espinal': ['ESE Hospital San Rafael del Espinal', 'Otro'],
+    'Honda':   ['ESE Hospital San Juan de Dios de Honda', 'Otro'],
+    'Líbano':  ['ESE Hospital San Juan de Dios del Líbano', 'Otro'],
+    'Melgar':  ['Centro de Salud Melgar', 'Otro'],
+    '_default':['ESE Hospital Local de Tolima', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Valle del Cauca': {
+    'Cali':         ['Hospital Universitario del Valle Evaristo García (HUV)', 'Fundación Valle del Lili (FVL)', 'Clínica Imbanaco', 'Hospital San Juan de Dios de Cali', 'ESE Ladera', 'ESE Oriente', 'ESE Norte', 'Clínica de Occidente', 'Clínica Los Farallones', 'Clínica Colombia Cali', 'Clínica Versalles Cali', 'Otro'],
+    'Buenaventura': ['ESE Hospital Luis Ablanque de la Plata de Buenaventura', 'Centro de Salud Buenaventura', 'Otro'],
+    'Palmira':      ['ESE Hospital San Vicente de Paul de Palmira', 'Clínica Palermo Palmira', 'Otro'],
+    'Tuluá':        ['ESE Hospital Tomás Uribe Uribe de Tuluá', 'Otro'],
+    'Buga':         ['ESE Hospital Santísimo Sacramento de Buga', 'Otro'],
+    'Cartago':      ['ESE Hospital San Juan de Dios de Cartago', 'Otro'],
+    'Jamundí':      ['Centro de Salud Jamundí', 'Otro'],
+    'Yumbo':        ['Centro de Salud Yumbo', 'Otro'],
+    '_default':     ['ESE Hospital Local del Valle del Cauca', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Vaupés': {
+    'Mitú':     ['ESE Hospital San Antonio de Mitú', 'Centro de Salud Mitú', 'Otro'],
+    '_default': ['ESE Hospital San Antonio de Mitú', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+  'Vichada': {
+    'Puerto Carreño': ['ESE Hospital Nuevo Horizonte de Puerto Carreño', 'Centro de Salud Puerto Carreño', 'Otro'],
+    '_default':       ['ESE Hospital Nuevo Horizonte', 'Centro de Salud', 'Puesto de Salud', 'Otro'],
+  },
+}
+
+function getEstablecimientos(dpto, municipio) {
+  if (!dpto) return []
+  const dptoData = establecimientosPorUbicacion[dpto] || {}
+  return dptoData[municipio] || dptoData['_default'] || ['ESE Hospital Local', 'IPS Centro de Salud', 'Puesto de Salud', 'Otro']
+}
 
 const factoresSociales = [
   'Pobreza extrema',
@@ -161,8 +392,7 @@ function edadTexto(e) {
 function StatusBadge({ estado }) {
   const s = statusConfig[estado] ?? statusConfig.risk
   return (
-    <span className="text-xs font-medium px-2.5 py-1 rounded-full"
-      style={{ color: s.color, background: s.bg }}>
+    <span className="text-xs font-medium" style={{ color: s.color }}>
       {s.label}
     </span>
   )
@@ -226,15 +456,40 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
     }))
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault()
-    // Guardia: solo enviar en el paso 3
+  function validateStep(currentStep) {
+    if (currentStep === 1) {
+      if (!form.nombre.trim()) return 'El nombre es obligatorio.'
+      if (!form.apellidos.trim()) return 'Los apellidos son obligatorios.'
+      if (!form.fechaNac) return 'La fecha de nacimiento es obligatoria.'
+      if (!form.sexo) return 'El sexo es obligatorio.'
+      
+      const edadCalc = calcularEdad(form.fechaNac)
+      if (edadCalc && edadCalc.totalMeses > 60) {
+        return 'El paciente debe ser menor de 5 años (60 meses).'
+      }
+    } else if (currentStep === 2) {
+      if (!form.tipoZona) return 'Debe seleccionar el tipo de área (Urbana o Rural).'
+      if (!form.dptoResidencia) return 'El departamento de residencia es obligatorio.'
+      if (!form.municipioResidencia) return 'El municipio de residencia es obligatorio.'
+      if (!form.establecimiento) return 'El establecimiento de salud es obligatorio.'
+    }
+    return ''
+  }
+
+  async function handleNextStep() {
+    setApiError('')
+    const errorMsg = validateStep(step)
+    if (errorMsg) {
+      setApiError(errorMsg)
+      return
+    }
+
     if (step < 3) {
       setStep(s => s + 1)
       return
     }
+
     setSaving(true)
-    setApiError('')
     try {
       await api.post('/pacientes', {
         nombre:           form.nombre,
@@ -285,13 +540,13 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
     <>
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/25 z-50"
+        className="fixed inset-0 bg-slate-900/30 backdrop-blur-[2px] z-50"
         onClick={onClose}
       />
       <motion.div
         initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-        className="fixed right-0 top-0 h-screen w-full max-w-lg bg-white z-50 flex flex-col shadow-2xl"
+        className="fixed right-0 top-0 h-screen w-full max-w-lg bg-white/90 backdrop-blur-md border-l border-white/40 z-50 flex flex-col shadow-2xl"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-border flex-shrink-0">
@@ -362,7 +617,7 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
               ))}
             </div>
 
-            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
+            <form onSubmit={e => e.preventDefault()} className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
 
               {/* ── Paso 1: Datos personales ── */}
               {step === 1 && (
@@ -373,13 +628,13 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2 sm:col-span-1">
                       <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Nombre(s)</label>
-                      <input type="text" placeholder="Ej. Carlos" required
+                      <input type="text" placeholder="Ej. Carlos"
                         value={form.nombre} onChange={e => set('nombre', e.target.value)}
                         className="input-clinical" />
                     </div>
                     <div className="col-span-2 sm:col-span-1">
                       <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Apellidos</label>
-                      <input type="text" placeholder="Ej. Mendoza Ramos" required
+                      <input type="text" placeholder="Ej. Mendoza Ramos"
                         value={form.apellidos} onChange={e => set('apellidos', e.target.value)}
                         className="input-clinical" />
                     </div>
@@ -394,16 +649,16 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
 
                   <div>
                     <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Fecha de nacimiento</label>
-                    <input type="date" required
+                    <input type="date"
                       max={new Date().toISOString().split('T')[0]}
                       value={form.fechaNac} onChange={e => set('fechaNac', e.target.value)}
                       className="input-clinical" />
                     {edad && (
                       <div className="mt-2 flex items-center gap-2">
-                        <span className="text-xs px-2.5 py-1 rounded-full font-medium"
+                        <span className="text-xs font-medium"
                           style={menorDe5
-                            ? { background: 'rgba(79,180,210,0.10)', color: '#4FB4D2' }
-                            : { background: 'rgba(229,57,53,0.10)', color: '#E53935' }
+                            ? { color: '#4FB4D2' }
+                            : { color: '#E53935' }
                           }>
                           {edadTexto(edad)}
                         </span>
@@ -569,8 +824,8 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Departamento</label>
-                      <select required value={form.dptoResidencia}
-                        onChange={e => { set('dptoResidencia', e.target.value); set('municipioResidencia', '') }}
+                      <select value={form.dptoResidencia}
+                        onChange={e => { set('dptoResidencia', e.target.value); set('municipioResidencia', ''); set('establecimiento', '') }}
                         className="input-clinical">
                         <option value="">Seleccionar...</option>
                         {departamentos.map(d => <option key={d} value={d}>{d}</option>)}
@@ -578,8 +833,8 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Municipio</label>
-                      <select required value={form.municipioResidencia}
-                        onChange={e => set('municipioResidencia', e.target.value)}
+                      <select value={form.municipioResidencia}
+                        onChange={e => { set('municipioResidencia', e.target.value); set('establecimiento', '') }}
                         className="input-clinical"
                         disabled={!form.dptoResidencia}>
                         <option value="">{form.dptoResidencia ? 'Seleccionar...' : '— elige depto —'}</option>
@@ -590,10 +845,15 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
 
                   <div>
                     <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Establecimiento de salud</label>
-                    <select required value={form.establecimiento} onChange={e => set('establecimiento', e.target.value)}
-                      className="input-clinical">
-                      <option value="">Seleccionar establecimiento...</option>
-                      {establecimientos.map(e => <option key={e} value={e}>{e}</option>)}
+                    <select value={form.establecimiento} onChange={e => set('establecimiento', e.target.value)}
+                      className="input-clinical"
+                      disabled={!form.dptoResidencia}>
+                      <option value="">
+                        {!form.dptoResidencia ? '— elige departamento primero —' : 'Seleccionar establecimiento...'}
+                      </option>
+                      {getEstablecimientos(form.dptoResidencia, form.municipioResidencia).map(e => (
+                        <option key={e} value={e}>{e}</option>
+                      ))}
                     </select>
                   </div>
 
@@ -708,7 +968,8 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
                   </button>
                 )}
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={handleNextStep}
                   disabled={saving}
                   className="flex-1 clay-btn text-white font-semibold py-2.5 text-sm flex items-center justify-center gap-2 disabled:opacity-60"
                 >
@@ -787,10 +1048,10 @@ export default function PacientesCLI() {
         <div className="flex gap-2 flex-wrap">
           {Object.keys(filterLabels).map(f => (
             <button key={f} onClick={() => setFiltroEstado(f)}
-              className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${filtroEstado !== f ? 'hover:bg-neutral-bg' : ''}`}
               style={filtroEstado === f
-                ? { background: '#4FB4D2', color: '#fff' }
-                : { background: 'rgba(79,180,210,0.08)', color: '#64748B' }
+                ? { background: 'rgba(79,180,210,0.08)', color: '#1A1F2B', boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.92), inset 0 -2px 4px rgba(0,0,0,0.06), 0 4px 14px rgba(0,0,0,0.09), 0 1px 4px rgba(0,0,0,0.05)' }
+                : { color: '#54606E' }
               }>
               {filterLabels[f]}
             </button>
@@ -801,7 +1062,8 @@ export default function PacientesCLI() {
       {/* Tabla */}
       <motion.div custom={2} initial="hidden" animate="visible" variants={fadeUp}
         className="clay-card overflow-hidden">
-        <table className="w-full">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[500px] sm:min-w-full">
           <thead>
             <tr className="border-b border-neutral-border">
               <th className="text-left text-xs font-semibold text-neutral-sub px-6 py-3.5">Paciente</th>
@@ -841,6 +1103,7 @@ export default function PacientesCLI() {
             ))}
           </tbody>
         </table>
+        </div>
         {filtered.length === 0 && (
           <div className="py-16 text-center text-sm text-neutral-sub">
             No se encontraron pacientes.

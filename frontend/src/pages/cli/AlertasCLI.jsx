@@ -116,14 +116,11 @@ function DetalleAlerta({ alerta, onClose, onMarcarLeida }) {
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-border">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: n.bg }}>
-              <Icon className="w-4 h-4" style={{ color: n.color }} />
-            </div>
+            <Icon className="w-5 h-5" style={{ color: n.color }} />
             <div>
               <p className="text-sm font-bold text-neutral-text">Detalle de alerta</p>
-              <span className="text-xs font-semibold px-2 py-0.5 rounded-full"
-                style={{ color: n.color, background: n.bg }}>
+              <span className="text-xs font-semibold"
+                style={{ color: n.color }}>
                 {n.label}
               </span>
             </div>
@@ -189,15 +186,15 @@ function DetalleAlerta({ alerta, onClose, onMarcarLeida }) {
                 Acciones recomendadas
               </p>
               {loadingRecs ? (
-                <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full"
-                  style={{ background: 'rgba(79,180,210,0.08)', color: '#4FB4D2' }}>
+                <span className="flex items-center gap-1 text-[10px] font-medium"
+                  style={{ color: '#4FB4D2' }}>
                   <div className="w-2.5 h-2.5 border-2 border-t-transparent rounded-full animate-spin"
                     style={{ borderColor: '#4FB4D2', borderTopColor: 'transparent' }} />
                   Generando...
                 </span>
               ) : fuenteRecs === 'ia' ? (
-                <span className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                  style={{ background: 'rgba(111,207,151,0.12)', color: '#3DAB6B' }}>
+                <span className="flex items-center gap-1 text-[10px] font-semibold"
+                  style={{ color: '#3DAB6B' }}>
                   <Sparkles className="w-2.5 h-2.5" />
                   IA
                 </span>
@@ -304,8 +301,8 @@ export default function AlertasCLI() {
           </div>
           {sinLeer > 0 && (
             <button onClick={marcarTodas}
-              className="text-xs font-medium px-3 py-1.5 rounded-xl transition-colors"
-              style={{ background: 'rgba(79,180,210,0.08)', color: '#4FB4D2' }}>
+              className="text-xs font-medium px-3 py-1.5 rounded-xl transition-colors hover:bg-neutral-bg"
+              style={{ color: '#4FB4D2' }}>
               Marcar todas como leídas
             </button>
           )}
@@ -317,10 +314,10 @@ export default function AlertasCLI() {
       <motion.div custom={1} initial="hidden" animate="visible" variants={fadeUp} className="flex gap-2 mb-6">
         {tabs.map(t => (
           <button key={t} onClick={() => setTab(t)}
-            className="px-4 py-2 rounded-xl text-sm font-medium transition-all"
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${tab !== t ? 'hover:bg-neutral-bg' : ''}`}
             style={tab === t
-              ? { background: '#4FB4D2', color: '#fff' }
-              : { background: 'rgba(79,180,210,0.08)', color: '#64748B' }
+              ? { background: 'rgba(79,180,210,0.08)', color: '#1A1F2B', boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.92), inset 0 -2px 4px rgba(0,0,0,0.06), 0 4px 14px rgba(0,0,0,0.09), 0 1px 4px rgba(0,0,0,0.05)' }
+              : { color: '#54606E' }
             }>
             {t}
           </button>
@@ -350,7 +347,7 @@ export default function AlertasCLI() {
                   animate="visible"
                   variants={fadeUp}
                   onClick={() => setSeleccionada(alerta)}
-                  className="clay-card p-5 flex items-start gap-4 cursor-pointer hover:shadow-md transition-shadow relative overflow-visible"
+                  className="clay-card p-5 flex items-center gap-4 cursor-pointer relative overflow-visible"
                 >
                   {/* Punto rojo — centrado sobre el arco redondeado (r=20px → 6px desde cada borde) */}
                   {!leida && (
@@ -358,10 +355,7 @@ export default function AlertasCLI() {
                       style={{ background: '#E53935' }} />
                   )}
 
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: n.bg }}>
-                    <Icon className="w-4 h-4" style={{ color: n.color }} />
-                  </div>
+                  <Icon className="w-6 h-6 flex-shrink-0" style={{ color: n.color }} />
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -371,8 +365,8 @@ export default function AlertasCLI() {
                   </div>
 
                   <div className="flex flex-col items-end gap-2 flex-shrink-0">
-                    <span className="text-xs font-medium px-2.5 py-1 rounded-full"
-                      style={{ color: n.color, background: n.bg }}>
+                    <span className="text-xs font-medium"
+                      style={{ color: n.color }}>
                       {n.label}
                     </span>
                     <span className="text-[10px] text-neutral-sub">{tiempo}</span>

@@ -3,7 +3,14 @@ import { CheckCircle, Star, TrendingUp, AlertTriangle, RefreshCw, Trash2, X, Fol
 import { RadarChart, Radar, PolarGrid, PolarAngleAxis, ResponsiveContainer, Tooltip } from 'recharts'
 import api from '../../services/api'
 
-const CARD = { background: '#fff', borderRadius: 16, border: '1px solid #E0E6ED', padding: '20px 24px' }
+const CARD = {
+  background: 'rgba(255, 255, 255, 0.72)',
+  backdropFilter: 'blur(14px)',
+  WebkitBackdropFilter: 'blur(14px)',
+  borderRadius: 20,
+  boxShadow: 'inset 0 3px 12px rgba(255,255,255,0.90), inset 0 -4px 8px rgba(0,0,0,0.07), 0 4px 18px rgba(0,0,0,0.07), 0 1px 5px rgba(0,0,0,0.04)',
+  padding: '20px 24px',
+}
 
 const metricLabels = {
   accuracy:    'Accuracy',
@@ -47,7 +54,7 @@ function MetricBar({ label, value }) {
 
 function SkeletonCard() {
   return (
-    <div className="rounded-2xl p-4 animate-pulse" style={{ background: '#F7F9FC', border: '1px solid #E0E6ED' }}>
+    <div className="rounded-2xl p-4 animate-pulse" style={{ background: 'rgba(0,0,0,0.025)' }}>
       <div className="h-3 w-24 rounded mb-3" style={{ background: '#E0E6ED' }} />
       {[1, 2, 3, 4].map(n => (
         <div key={n} className="h-2.5 rounded mb-2" style={{ background: '#E0E6ED' }} />
@@ -151,7 +158,7 @@ export default function ModelosANL() {
   })
 
   return (
-    <div className="p-6 space-y-6" style={{ background: '#FAFCFF', minHeight: '100vh' }}>
+    <div className="p-6 space-y-6 bg-neutral-bg min-h-screen">
 
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -166,8 +173,8 @@ export default function ModelosANL() {
             onClick={handleLimpiarHuerfanos}
             disabled={cleaning}
             title="Eliminar archivos .joblib sin registro en la BD"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all disabled:opacity-60"
-            style={{ background: '#FFF3E0', color: '#E65100', border: '1px solid #FFE0B2' }}>
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all disabled:opacity-60 hover:bg-orange-50"
+            style={{ color: '#E65100' }}>
             {cleaning
               ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
               : <FolderX className="w-3.5 h-3.5" />
@@ -175,8 +182,7 @@ export default function ModelosANL() {
             {cleaning ? 'Limpiando...' : 'Limpiar huérfanos'}
           </button>
           <button onClick={fetchModels}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all"
-            style={{ background: '#F7F9FC', color: '#54606E', border: '1px solid #E0E6ED' }}>
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all text-neutral-sub hover:bg-neutral-bg">
             <RefreshCw className="w-3.5 h-3.5" />
             Recargar
           </button>
@@ -204,10 +210,15 @@ export default function ModelosANL() {
               return (
                 <div key={m.id}
                   onClick={() => { if (confirmDelete !== m.id) setSelectedId(m.id) }}
-                  className="cursor-pointer transition-all rounded-2xl p-4"
+                  className="cursor-pointer transition-all"
                   style={{
-                    background: selectedId === m.id ? 'rgba(79,180,210,0.06)' : '#fff',
-                    border: `1px solid ${selectedId === m.id ? 'rgba(79,180,210,0.4)' : '#E0E6ED'}`,
+                    ...CARD,
+                    padding: 16,
+                    background: selectedId === m.id ? 'rgba(79,180,210,0.08)' : 'rgba(255,255,255,0.72)',
+                    border: `1px solid ${selectedId === m.id ? 'rgba(79,180,210,0.45)' : 'rgba(255,255,255,0.68)'}`,
+                    boxShadow: selectedId === m.id
+                      ? 'inset 0 3px 12px rgba(255,255,255,0.90), inset 0 -4px 8px rgba(0,0,0,0.09), 0 6px 22px rgba(0,0,0,0.09), 0 1px 6px rgba(0,0,0,0.05)'
+                      : 'inset 0 3px 12px rgba(255,255,255,0.90), inset 0 -4px 8px rgba(0,0,0,0.07), 0 4px 18px rgba(0,0,0,0.07), 0 1px 5px rgba(0,0,0,0.04)',
                   }}>
 
                   {/* Confirmación de eliminación */}
@@ -319,7 +330,7 @@ export default function ModelosANL() {
                     onClick={() => handleActivar(selected.id)}
                     disabled={activating}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all disabled:opacity-60"
-                    style={{ background: 'linear-gradient(135deg, #6FCF97, #4FB4D2)', color: '#fff' }}>
+                    style={{ background: 'linear-gradient(135deg, #6FCF97, #4FB4D2)', color: '#fff', boxShadow: 'inset 0 3px 8px rgba(255,255,255,0.45), inset 0 -3px 6px rgba(0,0,0,0.18), 0 6px 20px rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.08)' }}>
                     {activating
                       ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" />Activando...</>
                       : <><Star className="w-3.5 h-3.5" />Activar para CLI</>
@@ -367,7 +378,7 @@ export default function ModelosANL() {
                   <div key={label} className="flex flex-col gap-0.5">
                     <span className="text-[10px] font-semibold" style={{ color: '#9CA3AF' }}>{label}</span>
                     <code className="text-[11px] px-2 py-1 rounded-lg"
-                      style={{ background: '#F7F9FC', color: '#4FB4D2', border: '1px solid #E0E6ED' }}>
+                      style={{ background: 'rgba(79,180,210,0.06)', color: '#4FB4D2' }}>
                       {file}
                     </code>
                   </div>

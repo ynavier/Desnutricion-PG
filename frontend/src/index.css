@@ -16,67 +16,93 @@
 }
 
 @layer components {
-  /* ── Claymorphism ─────────────────────────────── */
+  /* ── Claymorphism + Glassmorphism ────────────────── */
+  /*
+   * Fórmula: dual inset shadow (volumen claymorphic) +
+   * backdrop-filter (profundidad glass) + drop shadow tinted.
+   * Sin hover-lift: el efecto es estático y permanente.
+   */
   .clay-card {
-    background: linear-gradient(145deg, #ffffff, #eaf6fb);
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
     border-radius: 20px;
-    border: none;
     box-shadow:
-      6px 6px 18px rgba(79, 180, 210, 0.10),
-      -4px -4px 12px rgba(255, 255, 255, 0.95),
-      inset 0 1px 0 rgba(255, 255, 255, 1),
-      inset 0 -1px 0 rgba(79, 180, 210, 0.04);
-    transition: transform 0.25s ease, box-shadow 0.25s ease;
+      /* Highlight superior — cara iluminada */
+      inset 0  3px 12px rgba(255, 255, 255, 0.90),
+      /* Sombra inferior — profundidad suave */
+      inset 0 -4px  8px rgba(0, 0, 0, 0.07),
+      /* Drop shadow neutro — separación del fondo */
+      0  4px 18px rgba(0, 0, 0, 0.07),
+      /* Ambiente difuso */
+      0  1px  5px rgba(0, 0, 0, 0.04);
+    transition: box-shadow 0.25s ease;
   }
 
+  /* Hover: solo intensifica sombras, sin movimiento */
   .clay-card:hover {
-    transform: translateY(-4px) scale(1.01);
     box-shadow:
-      10px 14px 28px rgba(79, 180, 210, 0.18),
-      -4px -4px 12px rgba(255, 255, 255, 0.95),
-      inset 0 1px 0 rgba(255, 255, 255, 1);
+      inset 0  3px 12px rgba(255, 255, 255, 0.90),
+      inset 0 -4px  8px rgba(0, 0, 0, 0.10),
+      0  8px 26px rgba(0, 0, 0, 0.10),
+      0  2px  7px rgba(0, 0, 0, 0.05);
   }
 
+  /* ── Clay Button (filled) ─────────────────────────── */
   .clay-btn {
     border-radius: 14px;
-    background: linear-gradient(135deg, #4FB4D2, #6EC6E0);
+    background: linear-gradient(145deg, #4FB4D2, #6EC6E0);
     box-shadow:
-      0 6px 16px rgba(79, 180, 210, 0.40),
-      0 2px 4px rgba(79, 180, 210, 0.25),
-      inset 0 1px 0 rgba(255, 255, 255, 0.30);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+      /* Highlight superior */
+      inset 0  3px  8px rgba(255, 255, 255, 0.45),
+      /* Sombra inferior */
+      inset 0 -3px  6px rgba(0, 0, 0, 0.18),
+      /* Drop shadow neutro */
+      0 6px 20px rgba(0, 0, 0, 0.15),
+      0 2px  6px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.2s ease;
   }
 
+  /* Hover: sombra más intensa, sin movimiento */
   .clay-btn:hover {
-    transform: translateY(-3px);
     box-shadow:
-      0 10px 24px rgba(79, 180, 210, 0.50),
-      0 4px 8px rgba(79, 180, 210, 0.30),
-      inset 0 1px 0 rgba(255, 255, 255, 0.30);
+      inset 0  3px  8px rgba(255, 255, 255, 0.45),
+      inset 0 -3px  6px rgba(0, 0, 0, 0.22),
+      0 8px 26px rgba(0, 0, 0, 0.20),
+      0 3px  8px rgba(0, 0, 0, 0.10);
   }
 
+  /* Active: hundimiento físico sutil */
   .clay-btn:active {
     transform: translateY(1px);
     box-shadow:
-      0 3px 8px rgba(79, 180, 210, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.20);
+      inset 0  2px  5px rgba(255, 255, 255, 0.30),
+      inset 0 -2px  4px rgba(0, 0, 0, 0.12),
+      0 3px 10px rgba(0, 0, 0, 0.10),
+      0 1px  4px rgba(0, 0, 0, 0.06);
   }
 
+  /* ── Clay Button (outline / secondary) ───────────── */
   .clay-btn-outline {
     border-radius: 14px;
+    background: rgba(255, 255, 255, 0.68);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
     box-shadow:
-      4px 4px 12px rgba(79, 180, 210, 0.10),
-      -2px -2px 8px rgba(255, 255, 255, 0.9),
-      inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+      inset 0  3px  8px rgba(255, 255, 255, 0.88),
+      inset 0 -3px  5px rgba(0, 0, 0, 0.05),
+      0  4px 16px rgba(0, 0, 0, 0.09),
+      0  1px  4px rgba(0, 0, 0, 0.05);
+    transition: box-shadow 0.2s ease;
   }
 
   .clay-btn-outline:hover {
-    transform: translateY(-2px);
     box-shadow:
-      6px 6px 16px rgba(79, 180, 210, 0.15),
-      -2px -2px 8px rgba(255, 255, 255, 0.9),
-      inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      inset 0  3px  8px rgba(255, 255, 255, 0.88),
+      inset 0 -3px  5px rgba(0, 0, 0, 0.07),
+      0  6px 20px rgba(0, 0, 0, 0.13),
+      0  2px  6px rgba(0, 0, 0, 0.07);
   }
 
   .clay-btn-outline:active {
@@ -86,11 +112,13 @@
   .book-card {
     position: relative;
     border-radius: 20px;
-    background: linear-gradient(145deg, #ffffff, #eaf6fb);
+    /* Sin backdrop-filter: incompatible con preserve-3d */
+    background: rgba(255, 255, 255, 0.88);
     box-shadow:
-      8px 8px 20px rgba(79, 180, 210, 0.12),
-      -4px -4px 12px rgba(255, 255, 255, 0.95),
-      inset 0 1px 0 rgba(255, 255, 255, 1);
+      inset 0  3px 12px rgba(255, 255, 255, 0.90),
+      inset 0 -4px  8px rgba(0, 0, 0, 0.07),
+      0  4px 18px rgba(0, 0, 0, 0.07),
+      0  1px  5px rgba(0, 0, 0, 0.04);
     transform-style: preserve-3d;
     perspective: 2000px;
     display: flex;
@@ -133,5 +161,475 @@
     @apply w-full border border-neutral-border rounded-lg px-3 py-2 text-sm text-neutral-text placeholder-neutral-sub
            focus:outline-none focus:ring-2 focus:ring-clinical-blue-md focus:border-transparent
            bg-white transition-all duration-200;
+  }
+
+  /* ── Consola Analítica Scrollbar ───────────────── */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(79, 180, 210, 0.3);
+    border-radius: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(79, 180, 210, 0.5);
+  }
+
+  /* ── Alertas Pulsantes ─────────────────────────── */
+  @keyframes glow-pulse {
+    0%, 100% { box-shadow: 0 0 6px -2px rgba(229,57,53,0.3); }
+    50% { box-shadow: 0 0 14px 1px rgba(229,57,53,0.5); }
+  }
+  .animate-glow-pulse {
+    animation: glow-pulse 2s infinite ease-in-out;
+  }
+
+  /* ── Aurora Background ─────────────────────────── */
+  .bg-aurora {
+    position: relative;
+    overflow: hidden;
+  }
+  .bg-aurora::before, .bg-aurora::after {
+    content: '';
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.15;
+    z-index: 0;
+    pointer-events: none;
+    animation: rotate-aurora 25s infinite linear;
+  }
+  .bg-aurora::before {
+    background: radial-gradient(circle, #4fb4d2, transparent 70%);
+    top: -15%;
+    left: -15%;
+  }
+  .bg-aurora::after {
+    background: radial-gradient(circle, #6fcf97, transparent 70%);
+    bottom: -15%;
+    right: -15%;
+    animation-delay: -10s;
+  }
+  @keyframes rotate-aurora {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    50% { transform: translate(60px, 40px) rotate(180deg); }
+    100% { transform: translate(0, 0) rotate(360deg); }
+  }
+}
+
+/* ── Print styles (PDF via window.print) ─────────────────────────────────── */
+@media print {
+
+  /* ── Page setup: Letter (8.5" × 11"), 1" top, 0.75" sides/bottom ── */
+  @page {
+    size: letter;
+    margin: 1in 0.75in 0.75in 0.75in;
+  }
+
+  /* ── Global reset for print ── */
+  *, *::before, *::after {
+    font-family: Arial, Helvetica, sans-serif !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  html, body {
+    background: #fff !important;
+    color: #000 !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+    font-size: 12pt !important;
+    line-height: 1.5 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Reset layout shell */
+  main {
+    margin-left: 0 !important;
+    width: 100% !important;
+    min-height: auto !important;
+    padding: 0 !important;
+  }
+
+  .flex.min-h-screen,
+  .min-h-screen {
+    min-height: auto !important;
+    background: #fff !important;
+  }
+
+  /* ── Hide all web chrome ── */
+  nav,
+  aside,
+  header,
+  .print\:hidden,
+  [data-print-hide] { display: none !important; }
+
+  /* ── Full-width document ── */
+  .print\:block { display: block !important; }
+
+  /* ── Document container ── */
+  .report-print-doc {
+    background: #fff !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    width: 100% !important;
+  }
+
+  /* ── Document header — replace gradient with clean white block ── */
+  .report-print-header {
+    background: #fff !important;
+    background-image: none !important;
+    padding: 0 0 14pt 0 !important;
+    border-bottom: 2pt solid #000 !important;
+    margin-bottom: 18pt !important;
+  }
+
+  /* Institution label */
+  .report-print-institution {
+    color: #000 !important;
+    font-size: 9pt !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    margin-bottom: 6pt !important;
+  }
+
+  /* Document title */
+  .report-print-title {
+    color: #000 !important;
+    font-size: 16pt !important;
+    font-weight: 700 !important;
+    line-height: 1.25 !important;
+    margin-bottom: 10pt !important;
+  }
+
+  /* Metadata row (Período, Generado, Zona, Establecimiento) */
+  .report-print-meta {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4pt 20pt !important;
+    border-top: 1pt solid #ccc !important;
+    padding-top: 8pt !important;
+  }
+
+  .report-print-meta span {
+    color: #333 !important;
+    font-size: 10pt !important;
+  }
+
+  .report-print-meta span strong {
+    color: #000 !important;
+    font-weight: 700 !important;
+  }
+
+  /* Confidentiality/source strip */
+  .report-print-conf-strip {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    margin-top: 8pt !important;
+    padding-top: 6pt !important;
+    border-top: 1pt solid #ddd !important;
+  }
+
+  .report-print-conf-strip span {
+    background: none !important;
+    border: none !important;
+    color: #555 !important;
+    font-size: 9pt !important;
+    font-weight: 400 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+  }
+
+  /* ── Document body ── */
+  .report-print-body {
+    padding: 0 !important;
+  }
+
+  /* ── Section headers ── */
+  .report-section-header {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8pt !important;
+    padding-bottom: 6pt !important;
+    margin-bottom: 10pt !important;
+    border-bottom: 1.5pt solid #000 !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  .report-section-header span:first-child {
+    /* Number badge */
+    background: #000 !important;
+    color: #fff !important;
+    font-size: 10pt !important;
+    font-weight: 700 !important;
+    width: 18pt !important;
+    height: 18pt !important;
+    border-radius: 3pt !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+  }
+
+  .report-section-header h2 {
+    color: #000 !important;
+    font-size: 11pt !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+    margin: 0 !important;
+  }
+
+  /* ── Subsections ── */
+  .report-subsection {
+    margin-bottom: 14pt !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .report-subsection > div:first-child {
+    /* Number + title row */
+    border: none !important;
+    background: none !important;
+    padding: 0 !important;
+    margin-bottom: 6pt !important;
+    margin-top: 10pt !important;
+  }
+
+  .report-subsection > div:first-child span:first-child {
+    /* Sub-number */
+    color: #555 !important;
+    font-size: 10pt !important;
+    font-weight: 600 !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+  }
+
+  .report-subsection > div:first-child h3 {
+    color: #000 !important;
+    font-size: 10pt !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    margin: 0 !important;
+  }
+
+  /* Decorative separator line in subsection title */
+  .report-subsection > div:first-child > div:last-child {
+    display: none !important;
+  }
+
+  /* Body text inside subsections */
+  .report-subsection > div:last-child {
+    padding-left: 0 !important;
+    font-size: 11pt !important;
+    color: #000 !important;
+    line-height: 1.6 !important;
+  }
+
+  .report-subsection p {
+    color: #000 !important;
+    font-size: 11pt !important;
+    line-height: 1.6 !important;
+  }
+
+  /* ── KPI table ── */
+  .report-kpi-table {
+    border-radius: 0 !important;
+    border: 1pt solid #000 !important;
+    overflow: visible !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .report-kpi-table table {
+    font-size: 10pt !important;
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  .report-kpi-table thead tr {
+    background: #000 !important;
+  }
+
+  .report-kpi-table thead th {
+    color: #fff !important;
+    font-size: 10pt !important;
+    font-weight: 700 !important;
+    padding: 6pt 12pt !important;
+    border: 1pt solid #000 !important;
+  }
+
+  .report-kpi-table tbody td {
+    color: #000 !important;
+    padding: 5pt 12pt !important;
+    border: 1pt solid #ccc !important;
+    font-size: 10pt !important;
+  }
+
+  .report-kpi-table tbody tr:nth-child(even) {
+    background: #f5f5f5 !important;
+  }
+
+  /* ── Bullet & recommendation lists ── */
+  .report-print-body ul,
+  .report-print-body ol {
+    margin: 0 !important;
+    padding-left: 16pt !important;
+  }
+
+  .report-print-body li {
+    color: #000 !important;
+    font-size: 11pt !important;
+    line-height: 1.6 !important;
+    margin-bottom: 5pt !important;
+    display: list-item !important;
+    list-style: disc !important;
+  }
+
+  /* Numbered recs: hide custom box, show native numbers */
+  .report-print-body ol li {
+    list-style: decimal !important;
+  }
+
+  /* Bullet/rec custom inline elements */
+  .report-print-body li > span:first-child {
+    display: none !important;
+  }
+
+  .report-print-body li > span:last-child {
+    color: #000 !important;
+    font-size: 11pt !important;
+  }
+
+  /* ── Chart captions ── */
+  .report-chart-caption {
+    border-left: 2pt solid #555 !important;
+    color: #333 !important;
+    font-size: 9pt !important;
+    font-weight: 600 !important;
+    padding-left: 8pt !important;
+    margin-bottom: 8pt !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    background: none !important;
+  }
+
+  /* ── Tables inside report sections ── */
+  .report-print-body table {
+    font-size: 10pt !important;
+    border-collapse: collapse !important;
+    width: 100% !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .report-print-body table thead tr {
+    background: #333 !important;
+  }
+
+  .report-print-body table thead th {
+    color: #fff !important;
+    font-size: 9pt !important;
+    font-weight: 700 !important;
+    padding: 5pt 10pt !important;
+    border: 1pt solid #555 !important;
+  }
+
+  .report-print-body table tbody td {
+    color: #000 !important;
+    padding: 4pt 10pt !important;
+    border: 1pt solid #ccc !important;
+    font-size: 9pt !important;
+  }
+
+  .report-print-body table tbody tr:nth-child(even) {
+    background: #f5f5f5 !important;
+  }
+
+  /* ── Charts: let Recharts render, avoid cutting ── */
+  .recharts-wrapper,
+  .recharts-surface {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* ── Section spacing — sections CAN break across pages ── */
+  .report-print-body > div {
+    margin-bottom: 18pt !important;
+  }
+
+  /* ── Document footer ── */
+  .report-print-footer {
+    border-top: 1pt solid #ccc !important;
+    padding-top: 8pt !important;
+    margin-top: 24pt !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+  }
+
+  .report-print-footer p {
+    color: #666 !important;
+    font-size: 8pt !important;
+    margin: 0 !important;
+  }
+
+  /* ── Patient table — compact, wrapping, no horizontal scroll ── */
+  .report-pacientes-table {
+    overflow: visible !important;
+    border-radius: 0 !important;
+    border: 1pt solid #000 !important;
+  }
+
+  .report-pacientes-table table {
+    font-size: 8pt !important;
+    table-layout: fixed !important;
+    word-break: break-word !important;
+  }
+
+  .report-pacientes-table thead th {
+    font-size: 8pt !important;
+    padding: 4pt 6pt !important;
+    white-space: normal !important;
+    border: 1pt solid #555 !important;
+    background: #000 !important;
+    color: #fff !important;
+  }
+
+  .report-pacientes-table tbody td {
+    font-size: 8pt !important;
+    padding: 3pt 6pt !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    border: 1pt solid #ccc !important;
+    color: #000 !important;
+  }
+
+  .report-pacientes-table tbody td span {
+    font-size: 8pt !important;
+    color: #000 !important;
+    font-weight: 700 !important;
+  }
+
+  /* ── Strip web-only styling ── */
+  .clay-card,
+  [style*="backdropFilter"],
+  [style*="backdrop-filter"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: #fff !important;
+    box-shadow: none !important;
   }
 }

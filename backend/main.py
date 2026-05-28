@@ -15,6 +15,8 @@ from app.routers.modelos import router as modelos_router
 from app.routers.estadisticas import router as estadisticas_router
 from app.routers.entrenamiento import router as entrenamiento_router
 from app.routers.datasets import router as datasets_router
+from app.routers.reportes import router as reportes_router
+from app.routers.chat     import router as chat_router
 
 
 @asynccontextmanager
@@ -72,6 +74,8 @@ app.include_router(modelos_router)
 app.include_router(estadisticas_router)
 app.include_router(entrenamiento_router)
 app.include_router(datasets_router)
+app.include_router(reportes_router)
+app.include_router(chat_router)
 
 
 @app.get('/')

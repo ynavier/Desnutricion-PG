@@ -2,7 +2,14 @@ import { useState, useEffect } from 'react'
 import { UserPlus, Search, ToggleLeft, ToggleRight, X, Eye, EyeOff, ShieldCheck, CheckCircle, AlertCircle } from 'lucide-react'
 import api from '../../services/api'
 
-const CARD = { background: '#fff', borderRadius: 16, border: '1px solid #E0E6ED', padding: '20px 24px' }
+const CARD = {
+  background: 'rgba(255, 255, 255, 0.72)',
+  backdropFilter: 'blur(14px)',
+  WebkitBackdropFilter: 'blur(14px)',
+  borderRadius: 20,
+  boxShadow: 'inset 0 3px 12px rgba(255,255,255,0.90), inset 0 -4px 8px rgba(0,0,0,0.07), 0 4px 18px rgba(0,0,0,0.07), 0 1px 5px rgba(0,0,0,0.04)',
+  padding: '20px 24px',
+}
 
 const emptyForm = { nombre: '', apellidos: '', email: '', establecimiento: '', password: '', confirm: '' }
 
@@ -125,7 +132,7 @@ export default function UsuariosANL() {
   }
 
   return (
-    <div className="p-6 space-y-6" style={{ background: '#FAFCFF', minHeight: '100vh' }}>
+    <div className="p-6 space-y-6 bg-neutral-bg min-h-screen">
 
       <Toast msg={toast.msg} type={toast.type} />
 
@@ -137,7 +144,7 @@ export default function UsuariosANL() {
         <button
           onClick={() => setShowDrawer(true)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
-          style={{ background: 'linear-gradient(135deg, #6FCF97, #4FB4D2)', color: '#fff' }}
+          style={{ background: 'linear-gradient(135deg, #6FCF97, #4FB4D2)', color: '#fff', boxShadow: 'inset 0 3px 8px rgba(255,255,255,0.45), inset 0 -3px 6px rgba(0,0,0,0.18), 0 6px 20px rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.08)' }}
         >
           <UserPlus className="w-4 h-4" />
           Nuevo usuario
@@ -154,9 +161,7 @@ export default function UsuariosANL() {
           <div key={label} style={CARD}>
             <div className="flex items-center justify-between">
               <p className="text-xs" style={{ color: '#54606E' }}>{label}</p>
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: bg }}>
-                <ShieldCheck className="w-4 h-4" style={{ color }} />
-              </div>
+              <ShieldCheck className="w-4 h-4" style={{ color }} />
             </div>
             {loading
               ? <div className="h-8 w-12 rounded mt-1 animate-pulse" style={{ background: '#F0F0F0' }} />
@@ -217,10 +222,10 @@ export default function UsuariosANL() {
                     </td>
                     <td className="py-3 px-3">
                       <span
-                        className="text-[11px] font-semibold px-2.5 py-1 rounded-full"
+                        className="text-[11px] font-semibold"
                         style={u.habilitado
-                          ? { background: 'rgba(111,207,151,0.15)', color: '#3DAB6B' }
-                          : { background: '#F3F4F6', color: '#9CA3AF' }
+                          ? { color: '#3DAB6B' }
+                          : { color: '#9CA3AF' }
                         }
                       >
                         {u.habilitado ? 'Habilitado' : 'Inhabilitado'}
@@ -261,10 +266,10 @@ export default function UsuariosANL() {
       {/* Drawer */}
       {showDrawer && (
         <div className="fixed inset-0 z-50 flex">
-          <div className="flex-1 bg-black/20" onClick={closeDrawer} />
+          <div className="flex-1 bg-slate-900/30 backdrop-blur-[2px]" onClick={closeDrawer} />
           <div
             className="w-full max-w-md h-full overflow-y-auto flex flex-col"
-            style={{ background: '#fff', boxShadow: '-4px 0 24px rgba(0,0,0,0.1)' }}
+            style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', boxShadow: '-4px 0 32px rgba(0,0,0,0.12), -2px 0 12px rgba(255,255,255,0.7)' }}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: '1px solid #E0E6ED' }}>
@@ -359,8 +364,8 @@ export default function UsuariosANL() {
             <div className="px-6 py-4 flex gap-3" style={{ borderTop: '1px solid #E0E6ED' }}>
               <button
                 onClick={closeDrawer}
-                className="flex-1 py-2.5 rounded-xl text-sm font-medium"
-                style={{ border: '1px solid #E0E6ED', color: '#54606E' }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-all"
+                style={{ background: 'rgba(255,255,255,0.68)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)', border: '1px solid rgba(0,0,0,0.08)', color: '#54606E', boxShadow: 'inset 0 3px 8px rgba(255,255,255,0.88), inset 0 -3px 5px rgba(0,0,0,0.05), 0 4px 16px rgba(0,0,0,0.09), 0 1px 4px rgba(0,0,0,0.05)' }}
               >
                 Cancelar
               </button>
@@ -370,7 +375,7 @@ export default function UsuariosANL() {
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
                 style={saving
                   ? { background: '#F3F4F6', color: '#9CA3AF', cursor: 'not-allowed' }
-                  : { background: 'linear-gradient(135deg, #6FCF97, #4FB4D2)', color: '#fff' }
+                  : { background: 'linear-gradient(135deg, #6FCF97, #4FB4D2)', color: '#fff', boxShadow: 'inset 0 3px 8px rgba(255,255,255,0.45), inset 0 -3px 6px rgba(0,0,0,0.18), 0 6px 20px rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.08)' }
                 }
               >
                 {saving

@@ -5,7 +5,14 @@ import {
 } from 'lucide-react'
 import api from '../../services/api'
 
-const CARD = { background: '#fff', borderRadius: 16, border: '1px solid #E0E6ED', padding: '20px 24px' }
+const CARD = {
+  background: 'rgba(255, 255, 255, 0.72)',
+  backdropFilter: 'blur(14px)',
+  WebkitBackdropFilter: 'blur(14px)',
+  borderRadius: 20,
+  boxShadow: 'inset 0 3px 12px rgba(255,255,255,0.90), inset 0 -4px 8px rgba(0,0,0,0.07), 0 4px 18px rgba(0,0,0,0.07), 0 1px 5px rgba(0,0,0,0.04)',
+  padding: '20px 24px',
+}
 
 const ESTADO_BADGE = {
   pendiente:  { bg: '#F3F4F6',               text: '#6B7280',  label: 'Pendiente' },
@@ -231,7 +238,7 @@ export default function DatasetsANL() {
     .reduce((s, d) => s + (d.filas_proc || 0), 0)
 
   return (
-    <div className="p-6 space-y-6" style={{ background: '#FAFCFF', minHeight: '100vh' }}>
+    <div className="p-6 space-y-6 bg-neutral-bg min-h-screen">
       <Toast msg={toast.msg} type={toast.type} />
 
       {/* Barra flotante de acciones en lote */}
@@ -251,7 +258,7 @@ export default function DatasetsANL() {
           <button
             onClick={handleBatchEtl}
             className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-            style={{ background: 'linear-gradient(135deg, #6FCF97, #4FB4D2)', color: '#fff' }}
+            style={{ background: 'linear-gradient(135deg, #6FCF97, #4FB4D2)', color: '#fff', boxShadow: 'inset 0 3px 8px rgba(255,255,255,0.45), inset 0 -3px 6px rgba(0,0,0,0.18), 0 6px 20px rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.08)' }}
           >
             <Play className="w-3.5 h-3.5" />
             Ejecutar ETL
@@ -311,8 +318,7 @@ export default function DatasetsANL() {
         <div className="flex gap-3">
           <button
             onClick={load}
-            className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium"
-            style={{ border: '1px solid #E0E6ED', color: '#54606E', background: '#fff' }}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium transition-all text-neutral-sub hover:bg-neutral-bg"
           >
             <RefreshCw className="w-3.5 h-3.5" /> Actualizar
           </button>
@@ -323,7 +329,7 @@ export default function DatasetsANL() {
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all"
               style={uploadProgress
                 ? { background: '#F3F4F6', color: '#9CA3AF', cursor: 'not-allowed' }
-                : { background: 'linear-gradient(135deg, #6FCF97, #4FB4D2)', color: '#fff' }
+                : { background: 'linear-gradient(135deg, #6FCF97, #4FB4D2)', color: '#fff', boxShadow: 'inset 0 3px 8px rgba(255,255,255,0.45), inset 0 -3px 6px rgba(0,0,0,0.18), 0 6px 20px rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.08)' }
               }
             >
               {uploadProgress
@@ -410,15 +416,7 @@ export default function DatasetsANL() {
               return (
                 <div
                   key={ds.id}
-                  className="rounded-xl p-4 transition-all"
-                  style={{
-                    border: isSelected
-                      ? '1px solid rgba(79,180,210,0.5)'
-                      : ds.habilitado ? '1px solid rgba(111,207,151,0.4)' : '1px solid #F0F0F0',
-                    background: isSelected
-                      ? 'rgba(79,180,210,0.04)'
-                      : ds.habilitado ? 'rgba(111,207,151,0.03)' : '#FAFCFF',
-                  }}
+                  className="rounded-xl p-4 transition-all hover:bg-black/[0.03]"
                 >
                   <div className="flex items-center gap-3">
                     {/* Checkbox (solo para pendiente/error) */}
@@ -466,18 +464,18 @@ export default function DatasetsANL() {
                           {ds.nombre}
                         </p>
                         {ds.anio && (
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
-                            style={{ background: 'rgba(79,180,210,0.12)', color: '#1976D2' }}>
+                          <span className="text-[10px] font-semibold flex-shrink-0"
+                            style={{ color: '#1976D2' }}>
                             {ds.anio}
                           </span>
                         )}
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
-                          style={{ background: badge.bg, color: badge.text }}>
+                        <span className="text-[10px] font-semibold flex-shrink-0"
+                          style={{ color: badge.text }}>
                           {badge.label}
                         </span>
                         {ds.habilitado && (
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
-                            style={{ background: 'rgba(111,207,151,0.15)', color: '#3DAB6B' }}>
+                          <span className="text-[10px] font-semibold flex-shrink-0"
+                            style={{ color: '#3DAB6B' }}>
                             ✓ Para entrenamiento
                           </span>
                         )}
@@ -497,8 +495,8 @@ export default function DatasetsANL() {
                       {etlResultados[ds.id] && (
                         <button
                           onClick={() => setEtlExpandido(prev => ({ ...prev, [ds.id]: !prev[ds.id] }))}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
-                          style={{ background: 'rgba(111,207,151,0.1)', color: '#3DAB6B' }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-neutral-bg"
+                          style={{ color: '#3DAB6B' }}
                         >
                           {etlExpandido[ds.id] ? 'Ocultar resultado ↑' : 'Ver resultado ↓'}
                         </button>
@@ -507,10 +505,10 @@ export default function DatasetsANL() {
                         <button
                           onClick={() => handleProcesar(ds)}
                           disabled={isBusy}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${!isBusy ? 'hover:bg-neutral-bg' : ''}`}
                           style={isBusy
-                            ? { background: '#F3F4F6', color: '#9CA3AF', cursor: 'not-allowed' }
-                            : { background: 'rgba(79,180,210,0.1)', color: '#1976D2' }
+                            ? { color: '#9CA3AF', cursor: 'not-allowed' }
+                            : { color: '#1976D2' }
                           }
                         >
                           {procesando === ds.id
@@ -525,8 +523,8 @@ export default function DatasetsANL() {
                           onClick={() => handleProcesar(ds)}
                           disabled={isBusy}
                           title="Re-procesar ETL"
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
-                          style={{ background: '#F3F4F6', color: '#6B7280' }}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors hover:bg-neutral-bg"
+                          style={{ color: '#6B7280' }}
                         >
                           <RefreshCw className={`w-3.5 h-3.5 ${procesando === ds.id ? 'animate-spin' : ''}`} />
                         </button>
@@ -536,10 +534,10 @@ export default function DatasetsANL() {
                         <button
                           onClick={() => handleToggle(ds)}
                           disabled={isBusy}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:bg-neutral-bg"
                           style={ds.habilitado
-                            ? { background: 'rgba(111,207,151,0.15)', color: '#3DAB6B' }
-                            : { background: '#F3F4F6', color: '#6B7280' }
+                            ? { color: '#3DAB6B' }
+                            : { color: '#6B7280' }
                           }
                         >
                           {toggling === ds.id
@@ -555,8 +553,8 @@ export default function DatasetsANL() {
                         onClick={() => handleDelete(ds)}
                         disabled={isBusy}
                         title="Eliminar dataset"
-                        className="w-8 h-8 rounded-lg flex items-center justify-center"
-                        style={{ background: '#FFF0F0', color: '#E53935' }}
+                        className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-red-50"
+                        style={{ color: '#E53935' }}
                       >
                         {deleting === ds.id
                           ? <Loader2 className="w-3.5 h-3.5 animate-spin" />

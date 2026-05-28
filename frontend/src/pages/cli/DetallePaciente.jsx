@@ -7,8 +7,8 @@ import {
   MapPin, Calendar, X, TrendingDown, CheckCircle, Sparkles,
 } from 'lucide-react'
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, ReferenceLine,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer,
 } from 'recharts'
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -148,8 +148,10 @@ const fadeUp = {
 function StatusBadge({ estado }) {
   const s = statusConfig[estado] ?? statusConfig.risk
   return (
-    <span className="text-xs font-semibold px-3 py-1.5 rounded-full"
-      style={{ color: s.color, background: s.bg }}>
+    <span
+      className="text-xs font-semibold inline-flex items-center gap-1.5"
+      style={{ color: s.color }}
+    >
       {s.label}
     </span>
   )
@@ -248,7 +250,7 @@ function NuevoControlDrawer({ paciente, onClose, onControlAdded }) {
       {/* Overlay */}
       <motion.div
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/25 z-50"
+        className="fixed inset-0 bg-slate-900/30 backdrop-blur-[2px] z-50"
         onClick={onClose}
       />
 
@@ -256,7 +258,7 @@ function NuevoControlDrawer({ paciente, onClose, onControlAdded }) {
       <motion.div
         initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-        className="fixed right-0 top-0 h-screen w-full max-w-md bg-white z-50 flex flex-col shadow-2xl"
+        className="fixed right-0 top-0 h-screen w-full max-w-md bg-white/90 backdrop-blur-md border-l border-white/40 z-50 flex flex-col shadow-2xl"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-border">
@@ -534,6 +536,7 @@ export default function DetallePaciente() {
     const uc = rawData.controles?.[0]
     try {
       const { data } = await api.post('/recomendaciones', {
+        paciente_id:        rawData.id ?? parseInt(id),
         estado_nutricional: rawData.estado_nutricional,
         edad_meses:         rawData.edad_meses,
         sexo:               rawData.sexo,
@@ -707,16 +710,23 @@ export default function DetallePaciente() {
           className="clay-card p-6 lg:col-span-2">
           <h2 className="text-sm font-bold text-neutral-text mb-5">Evolución de peso (kg)</h2>
           <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
+            <AreaChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
+              <defs>
+                <linearGradient id="pesoGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%"  stopColor="#4FB4D2" stopOpacity={0.28} />
+                  <stop offset="95%" stopColor="#4FB4D2" stopOpacity={0}    />
+                </linearGradient>
+              </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#D9EEF5" />
               <XAxis dataKey="fecha" tick={{ fontSize: 11, fill: '#64748B' }} />
               <YAxis tick={{ fontSize: 11, fill: '#64748B' }} />
               <Tooltip content={<ChartTooltip />} />
-              <Line
+              <Area
                 type="monotone" dataKey="peso" stroke="#4FB4D2" strokeWidth={2.5}
+                fill="url(#pesoGradient)"
                 dot={<CustomDot />} activeDot={{ r: 7, stroke: '#4FB4D2', fill: 'white', strokeWidth: 2 }}
               />
-            </LineChart>
+            </AreaChart>
           </ResponsiveContainer>
           <div className="flex items-center gap-4 mt-3">
             {[
@@ -796,23 +806,20 @@ export default function DetallePaciente() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-bold text-neutral-text">Recomendaciones clínicas</h2>
             {loadingRecs ? (
-              <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-full"
-                style={{ background: 'rgba(79,180,210,0.08)', color: '#4FB4D2' }}>
+              <span className="flex items-center gap-1 text-[10px] font-medium"
+                style={{ color: '#4FB4D2' }}>
                 <div className="w-2.5 h-2.5 border-2 border-t-transparent rounded-full animate-spin"
                   style={{ borderColor: '#4FB4D2', borderTopColor: 'transparent' }} />
                 Generando...
               </span>
             ) : fuenteRecs === 'ia' ? (
-              <span className="flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-full"
-                style={{ background: 'rgba(111,207,151,0.12)', color: '#3DAB6B' }}>
+              <span className="flex items-center gap-1 text-[10px] font-semibold"
+                style={{ color: '#3DAB6B' }}>
                 <Sparkles className="w-3 h-3" />
                 IA personalizada
               </span>
             ) : (
-              <span className="text-[10px] text-neutral-sub px-2 py-1 rounded-full"
-                style={{ background: '#F8FAFC' }}>
-                Estándar
-              </span>
+              <span className="text-[10px] text-neutral-sub">Estándar</span>
             )}
           </div>
           {loadingRecs && recomendaciones.length === 0 ? (
@@ -824,10 +831,10 @@ export default function DetallePaciente() {
           ) : (
             <ul className="flex flex-col gap-3">
               {recomendaciones.map((rec, i) => (
-                <li key={i} className="flex items-start gap-3 text-xs text-neutral-sub">
-                  <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5"
-                    style={{ background: 'rgba(79,180,210,0.12)', color: '#4FB4D2' }}>
-                    {i + 1}
+                <li key={i} className="flex items-start gap-2 text-xs text-neutral-sub">
+                  <span className="text-[10px] font-bold flex-shrink-0 mt-0.5 w-4"
+                    style={{ color: '#4FB4D2' }}>
+                    {i + 1}.
                   </span>
                   {rec}
                 </li>
@@ -850,8 +857,7 @@ export default function DetallePaciente() {
               {paciente.alertas.map(({ tipo, nivel, tiempo }, i) => {
                 const n = statusConfig[nivel]
                 return (
-                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl"
-                    style={{ background: n.bg }}>
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-xl hover:bg-black/[0.03] transition-colors">
                     <TrendingDown className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: n.color }} />
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-neutral-text">{tipo}</p>
@@ -872,32 +878,34 @@ export default function DetallePaciente() {
         <div className="px-6 py-4 border-b border-neutral-border">
           <h2 className="text-sm font-bold text-neutral-text">Historial de controles</h2>
         </div>
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-neutral-border">
-              <th className="text-left text-xs font-semibold text-neutral-sub px-6 py-3">Fecha</th>
-              <th className="text-left text-xs font-semibold text-neutral-sub px-4 py-3">Peso</th>
-              <th className="text-left text-xs font-semibold text-neutral-sub px-4 py-3">Talla</th>
-              <th className="text-left text-xs font-semibold text-neutral-sub px-4 py-3">IMC</th>
-              <th className="text-left text-xs font-semibold text-neutral-sub px-4 py-3">Z-score</th>
-              <th className="text-left text-xs font-semibold text-neutral-sub px-4 py-3">Estado</th>
-              <th className="text-left text-xs font-semibold text-neutral-sub px-4 py-3 hidden lg:table-cell">Observación</th>
-            </tr>
-          </thead>
-          <tbody>
-            {paciente.historial.map(({ fecha, peso, talla, imc, zScore, estado, obs }, i) => (
-              <tr key={i} className="border-b border-neutral-border last:border-0 hover:bg-neutral-bg transition-colors">
-                <td className="px-6 py-3 text-sm font-medium text-neutral-text">{fecha}</td>
-                <td className="px-4 py-3 text-sm text-neutral-sub">{peso} kg</td>
-                <td className="px-4 py-3 text-sm text-neutral-sub">{talla} cm</td>
-                <td className="px-4 py-3 text-sm text-neutral-sub">{imc}</td>
-                <td className="px-4 py-3 text-sm font-semibold" style={{ color: zScoreColor(zScore) }}>{zScore}</td>
-                <td className="px-4 py-3"><StatusBadge estado={estado} /></td>
-                <td className="px-4 py-3 text-xs text-neutral-sub hidden lg:table-cell">{obs || '—'}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[600px] lg:min-w-full">
+            <thead>
+              <tr className="border-b border-neutral-border">
+                <th className="text-left text-xs font-semibold text-neutral-sub px-6 py-3">Fecha</th>
+                <th className="text-left text-xs font-semibold text-neutral-sub px-4 py-3">Peso</th>
+                <th className="text-left text-xs font-semibold text-neutral-sub px-4 py-3">Talla</th>
+                <th className="text-left text-xs font-semibold text-neutral-sub px-4 py-3">IMC</th>
+                <th className="text-left text-xs font-semibold text-neutral-sub px-4 py-3">Z-score</th>
+                <th className="text-left text-xs font-semibold text-neutral-sub px-4 py-3">Estado</th>
+                <th className="text-left text-xs font-semibold text-neutral-sub px-4 py-3 hidden lg:table-cell">Observación</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {paciente.historial.map(({ fecha, peso, talla, imc, zScore, estado, obs }, i) => (
+                <tr key={i} className="border-b border-neutral-border last:border-0 hover:bg-neutral-bg transition-colors">
+                  <td className="px-6 py-3 text-sm font-medium text-neutral-text">{fecha}</td>
+                  <td className="px-4 py-3 text-sm text-neutral-sub">{peso} kg</td>
+                  <td className="px-4 py-3 text-sm text-neutral-sub">{talla} cm</td>
+                  <td className="px-4 py-3 text-sm text-neutral-sub">{imc}</td>
+                  <td className="px-4 py-3 text-sm font-semibold" style={{ color: zScoreColor(zScore) }}>{zScore}</td>
+                  <td className="px-4 py-3"><StatusBadge estado={estado} /></td>
+                  <td className="px-4 py-3 text-xs text-neutral-sub hidden lg:table-cell">{obs || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </motion.div>
 
       {/* Drawer */}
