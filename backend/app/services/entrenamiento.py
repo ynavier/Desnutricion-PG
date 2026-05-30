@@ -86,7 +86,22 @@ def _make_model(tipo: str, params: dict):
 
 _jobs: dict[str, dict] = {}
 
-MAX_VERSIONS_DEFAULT = 3   # máximo de versiones por tipo de modelo que se conservan
+MAX_VERSIONS_DEFAULT = 3
+
+
+def _persistir_job(job_id: str, job: dict):
+    """Guarda/actualiza el estado del job en Supabase para sobrevivir reinicios."""
+    try:
+        from app.database import supabase
+        supabase.table('jobs_entrenamiento').upsert({
+            'job_id':   job_id,
+            'estado':   job['estado'],
+            'progreso': job['progreso'],
+            'log_msgs': job['log'][-50:],   # últimos 50 mensajes
+            'resultado': job.get('resultado'),
+        }, on_conflict='job_id').execute()
+    except Exception as e:
+        print(f'[TRAIN] No se pudo persistir job {job_id}: {e}', flush=True)
 
 
 def _limpiar_modelos_viejos(tipo: str, mantener: int, job: dict):
@@ -149,6 +164,11 @@ def _log(job: dict, msg: str):
 
 def _pct(job: dict, v: int):
     job['progreso'] = v
+    # Persistir en hitos clave (no en cada llamada para no saturar Supabase)
+    if v in (0, 25, 50, 75, 100):
+        job_id = next((k for k, j in _jobs.items() if j is job), None)
+        if job_id:
+            _persistir_job(job_id, job)
 
 
 # ── Carga de datos ─────────────────────────────────────────────────────────────
@@ -207,6 +227,7 @@ def _cargar_db(filtros: dict | None) -> pd.DataFrame:
 async def iniciar_entrenamiento(config: dict) -> str:
     job_id = str(uuid.uuid4())[:8]
     _jobs[job_id] = {'estado': 'running', 'progreso': 0, 'log': [], 'resultado': None}
+    _persistir_job(job_id, _jobs[job_id])   # guardar estado inicial en Supabase
     asyncio.create_task(_run(job_id, config))
     return job_id
 
@@ -221,6 +242,8 @@ async def _run(job_id: str, config: dict):
         _log(job, f'ERROR: {exc}')
         import traceback
         print(traceback.format_exc(), flush=True)
+    finally:
+        _persistir_job(job_id, job)   # persistir estado final
 
 
 # ── Pipeline principal ─────────────────────────────────────────────────────────
