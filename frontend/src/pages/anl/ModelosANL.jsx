@@ -275,10 +275,17 @@ export default function ModelosANL() {
   return (
     <div className="p-6 space-y-5 bg-neutral-bg min-h-screen">
 
-      {/* Toast */}
+      {/* Toast — clay */}
       {toast && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl text-sm font-medium shadow-lg"
-          style={{ background: toast.isError?'rgba(229,57,53,0.1)':'rgba(111,207,151,0.15)', color: toast.isError?'#C62828':'#2E7D4F', border:`1px solid ${toast.isError?'rgba(229,57,53,0.2)':'rgba(111,207,151,0.3)'}` }}>
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl text-sm font-semibold"
+          style={{
+            background: 'rgba(255,255,255,0.85)',
+            backdropFilter: 'blur(14px)',
+            WebkitBackdropFilter: 'blur(14px)',
+            boxShadow: 'inset 0 2px 8px rgba(255,255,255,0.92), inset 0 -2px 4px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.12)',
+            color: toast.isError ? '#C62828' : '#2E7D4F',
+            borderLeft: `3px solid ${toast.isError ? '#E53935' : '#27AE60'}`,
+          }}>
           {toast.msg}
         </div>
       )}
@@ -416,7 +423,11 @@ export default function ModelosANL() {
                 {seleccionados.size > 0 && (
                   <button onClick={handleEliminarSeleccionados} disabled={deletingBulk}
                     className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
-                    style={{ background: '#FEF2F2', color: '#B91C1C', border: '1px solid #FECACA' }}>
+                    style={{
+                      background: 'rgba(229,57,53,0.08)',
+                      color: '#B91C1C',
+                      boxShadow: 'inset 0 2px 5px rgba(255,255,255,0.85), inset 0 -2px 3px rgba(229,57,53,0.08), 0 2px 8px rgba(229,57,53,0.12)',
+                    }}>
                     {deletingBulk ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                     Eliminar {seleccionados.size}
                   </button>
@@ -427,8 +438,12 @@ export default function ModelosANL() {
               {models.filter(m => !m.activo).length > 0 && (
                 <button
                   onClick={() => seleccionados.size > 0 ? setSeleccionados(new Set()) : seleccionarTodosExceptoActivo()}
-                  className="flex items-center gap-1.5 text-xs font-medium mb-3 px-2 py-1 rounded-lg transition-all hover:bg-neutral-bg"
-                  style={{ color: '#64748B' }}>
+                  className="flex items-center gap-1.5 text-xs font-semibold mb-3 px-3 py-1.5 rounded-xl transition-all"
+                  style={{
+                    background: 'rgba(255,255,255,0.72)',
+                    color: '#64748B',
+                    boxShadow: 'inset 0 2px 5px rgba(255,255,255,0.90), inset 0 -2px 3px rgba(0,0,0,0.05), 0 2px 6px rgba(0,0,0,0.06)',
+                  }}>
                   {seleccionados.size > 0
                     ? <><Square className="w-3.5 h-3.5" />Deseleccionar todo</>
                     : <><CheckSquare className="w-3.5 h-3.5" />Seleccionar todos (excepto activo)</>
@@ -449,8 +464,16 @@ export default function ModelosANL() {
                       <div key={m.id}
                         className="flex items-center gap-2.5 px-3 py-3 rounded-xl transition-all"
                         style={{
-                          background: seleccionado ? 'rgba(229,57,53,0.04)' : m.activo ? 'rgba(39,174,96,0.06)' : selectedId === m.id ? 'rgba(79,180,210,0.06)' : 'rgba(0,0,0,0.02)',
-                          border: seleccionado ? '1px solid rgba(229,57,53,0.2)' : m.activo ? '1px solid rgba(39,174,96,0.20)' : selectedId === m.id ? '1px solid rgba(79,180,210,0.20)' : '1px solid transparent',
+                          background: seleccionado
+                            ? 'rgba(229,57,53,0.05)'
+                            : m.activo
+                            ? 'rgba(39,174,96,0.07)'
+                            : selectedId === m.id
+                            ? 'rgba(79,180,210,0.07)'
+                            : 'rgba(255,255,255,0.45)',
+                          boxShadow: (m.activo || selectedId === m.id || seleccionado)
+                            ? 'inset 0 2px 6px rgba(255,255,255,0.92), inset 0 -2px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.06)'
+                            : 'none',
                         }}>
                         {/* Checkbox (solo no-activos) */}
                         {!m.activo ? (
@@ -491,8 +514,12 @@ export default function ModelosANL() {
               {ranking.length > COLLAPSED_COUNT && (
                 <button
                   onClick={() => setExpanded(v => !v)}
-                  className="w-full mt-3 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium transition-all hover:bg-neutral-bg"
-                  style={{ color: '#4FB4D2', border: '1px dashed rgba(79,180,210,0.3)' }}>
+                  className="w-full mt-3 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all"
+                  style={{
+                    background: 'rgba(255,255,255,0.72)',
+                    color: '#4FB4D2',
+                    boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.90), inset 0 -2px 4px rgba(0,0,0,0.05), 0 2px 8px rgba(0,0,0,0.07)',
+                  }}>
                   {expanded
                     ? <><ChevronUp className="w-3.5 h-3.5" />Ver menos</>
                     : <><ChevronDown className="w-3.5 h-3.5" />Ver {ranking.length - COLLAPSED_COUNT} más</>
@@ -562,17 +589,20 @@ export default function ModelosANL() {
 
           {/* Modal confirmación eliminación individual */}
           {confirmDelete && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.3)', backdropFilter: 'blur(3px)' }}>
-              <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-                <p className="text-sm font-bold mb-2" style={{ color: '#1A1F2B' }}>¿Eliminar este modelo?</p>
-                <p className="text-xs mb-4" style={{ color: '#54606E' }}>Se borrarán los archivos. Esta acción no se puede deshacer.</p>
+            <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.25)', backdropFilter: 'blur(3px)' }}>
+              <div className="p-6 w-full max-w-sm"
+                style={{ background:'rgba(255,255,255,0.85)', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', borderRadius:24, boxShadow:'inset 0 3px 12px rgba(255,255,255,0.92), inset 0 -4px 8px rgba(0,0,0,0.06), 0 24px 60px rgba(0,0,0,0.18)' }}>
+                <p className="text-sm font-bold mb-1.5" style={{ color: '#1A1F2B' }}>¿Eliminar este modelo?</p>
+                <p className="text-xs mb-5" style={{ color: '#54606E' }}>Se borrarán los archivos del disco. Esta acción no se puede deshacer.</p>
                 <div className="flex gap-2">
                   <button onClick={() => handleEliminar(confirmDelete)} disabled={deleting}
                     className="flex-1 py-2.5 rounded-xl text-sm font-bold disabled:opacity-60"
-                    style={{ background: '#E53935', color: '#fff' }}>
+                    style={{ background:'rgba(229,57,53,0.1)', color:'#B91C1C', boxShadow:'inset 0 2px 6px rgba(255,255,255,0.85), inset 0 -2px 4px rgba(229,57,53,0.1), 0 4px 12px rgba(229,57,53,0.15)' }}>
                     {deleting ? 'Eliminando...' : 'Sí, eliminar'}
                   </button>
-                  <button onClick={() => setConfirmDelete(null)} className="px-4 py-2.5 rounded-xl text-sm font-medium border border-neutral-border">
+                  <button onClick={() => setConfirmDelete(null)}
+                    className="px-4 py-2.5 rounded-xl text-sm font-semibold"
+                    style={{ background:'rgba(255,255,255,0.72)', color:'#54606E', boxShadow:'inset 0 2px 6px rgba(255,255,255,0.90), inset 0 -2px 4px rgba(0,0,0,0.05), 0 2px 8px rgba(0,0,0,0.07)' }}>
                     Cancelar
                   </button>
                 </div>
