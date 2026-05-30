@@ -414,8 +414,86 @@ async def _entrenar(job: dict, config: dict):
         await asyncio.sleep(0.1)
 
     _log(job, f'Entrenamiento completado — {len(resultados)} modelo(s)')
+
+    # ── Auto-selección del mejor modelo ───────────────────────────────────────
+    # Criterio: F1 Weighted del Modelo A (o B si A no disponible).
+    # Si el nuevo modelo supera al activo actual, se activa automáticamente.
+    try:
+        _auto_activar_mejor(resultados, job)
+    except Exception as e:
+        _log(job, f'Advertencia en auto-selección: {e}')
+
     _pct(job, 100)
     job['resultado'] = resultados
+
+
+def _auto_activar_mejor(resultados: list[dict], job: dict):
+    """
+    Compara todos los modelos entrenados en esta sesión con el modelo activo actual.
+    Activa automáticamente el que tenga el mejor F1 Weighted.
+    """
+    if not resultados:
+        return
+
+    # F1 Weighted del mejor modelo recién entrenado
+    mejor_f1   = 0.0
+    mejor_nombre = None
+    for r in resultados:
+        met   = r.get('metricas', {})
+        met_a = met.get('modelo_A', met)
+        f1    = float(met_a.get('f1_weighted', 0))
+        if f1 > mejor_f1:
+            mejor_f1     = f1
+            mejor_nombre = r['nombre']
+
+    if not mejor_nombre:
+        return
+
+    # Comparar con el modelo activo actual
+    res_activo = (
+        supabase.table('modelos_ml')
+        .select('id, nombre, metricas')
+        .eq('activo', True)
+        .limit(1)
+        .execute()
+    )
+    activo_actual = res_activo.data[0] if res_activo.data else None
+
+    activo_f1 = 0.0
+    if activo_actual:
+        met_act  = activo_actual.get('metricas') or {}
+        met_a    = met_act.get('modelo_A', met_act)
+        activo_f1 = float(met_a.get('f1_weighted', 0))
+
+    if mejor_f1 > activo_f1:
+        # Buscar el ID del nuevo mejor modelo
+        res_nuevo = (
+            supabase.table('modelos_ml')
+            .select('id')
+            .eq('nombre', mejor_nombre)
+            .eq('activo', False)
+            .order('created_at', desc=True)
+            .limit(1)
+            .execute()
+        )
+        if not res_nuevo.data:
+            return
+
+        nuevo_id = res_nuevo.data[0]['id']
+
+        # Desactivar todos y activar el nuevo
+        supabase.table('modelos_ml').update({'activo': False}).neq('id', 0).execute()
+        supabase.table('modelos_ml').update({'activo': True}).eq('id', nuevo_id).execute()
+
+        _log(job,
+            f'✅ Auto-selección: "{mejor_nombre}" activado automáticamente '
+            f'(F1: {mejor_f1:.3f} > anterior: {activo_f1:.3f})'
+        )
+    else:
+        _log(job,
+            f'ℹ Modelo actual sigue siendo el mejor '
+            f'(F1 actual: {activo_f1:.3f} ≥ nuevo: {mejor_f1:.3f})'
+        )
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────

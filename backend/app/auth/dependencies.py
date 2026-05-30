@@ -74,19 +74,29 @@ async def get_current_user(
     return {**profile.data, 'token': token}
 
 
-async def require_anl(user: dict = Depends(get_current_user)) -> dict:
-    if user.get('rol') != 'ANL':
+async def require_adm(user: dict = Depends(get_current_user)) -> dict:
+    if user.get('rol') != 'ADM':
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail='Se requiere rol ANL',
+            detail='Se requiere rol ADM',
+        )
+    return user
+
+
+async def require_anl(user: dict = Depends(get_current_user)) -> dict:
+    """Analytics: accesible para ANL y ADM."""
+    if user.get('rol') not in ('ANL', 'ADM'):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail='Se requiere rol ANL o ADM',
         )
     return user
 
 
 async def require_cli(user: dict = Depends(get_current_user)) -> dict:
-    if user.get('rol') not in ('CLI', 'ANL'):
+    if user.get('rol') != 'CLI':
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail='Acceso no autorizado',
+            detail='Se requiere rol CLI',
         )
     return user

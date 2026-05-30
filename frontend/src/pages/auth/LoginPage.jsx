@@ -58,7 +58,8 @@ export default function LoginPage() {
       const { data } = await api.post('/auth/login', { email, password })
       const userData = { ...data.user, role: data.user.rol }
       login(userData, data.access_token)
-      navigate(userData.role === 'ANL' ? '/anl' : '/cli', { replace: true })
+      const dest = userData.role === 'ADM' ? '/adm' : userData.role === 'ANL' ? '/anl' : '/cli'
+      navigate(dest, { replace: true })
     } catch (err) {
       setError(
         err.response?.data?.detail ||

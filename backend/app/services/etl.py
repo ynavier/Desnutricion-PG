@@ -32,6 +32,11 @@ import pandas as pd
 
 warnings.filterwarnings('ignore')
 
+# ── Columnas extra para dashboard (no usadas en ML) ──────────────────────────
+# Se guardan en el CSV procesado pero NO forman parte de FEATURES_A ni TARGET.
+# Permiten filtrar y desagregar por sexo, hospitalización, fecha, geografía.
+EXTRA_DASHBOARD_COLS = ['sexo_', 'pac_hos_', 'edad_', 'ndep_resi', 'nmun_resi', 'anio_mes']
+
 # ── Columnas ML ───────────────────────────────────────────────────────────────
 
 FEATURES_A = [
@@ -230,6 +235,20 @@ def etl_sivigila(ruta: Path) -> tuple[pd.DataFrame, dict]:
                 pass
 
     filas_proc = len(df_ml)
+
+    # ── 16. Adjuntar columnas extra para el dashboard ──────────────────────────
+    # Se usan los índices de df_ml (subconjunto de df) para alinear las filas.
+    # anio_mes se calcula desde fec_not si no existe ya en el df.
+    if 'anio_mes' not in df.columns and 'fec_not' in df.columns:
+        fec = pd.to_datetime(df['fec_not'], dayfirst=True, errors='coerce')
+        df['anio_mes'] = fec.dt.strftime('%Y-%m')
+
+    for col in EXTRA_DASHBOARD_COLS:
+        if col in df.columns:
+            try:
+                df_ml[col] = df.loc[df_ml.index, col].values
+            except Exception:
+                pass  # si el índice no alinea, omitir silenciosamente
 
     stats = {
         'filas_raw':  filas_raw,

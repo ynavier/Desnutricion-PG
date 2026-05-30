@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   FileText, BarChart2, Users, Filter,
-  Printer, Sparkles, ChevronRight,
+  Download, Mail, Sparkles, Loader2, X, Send,
+  Copy, Check, Link, MessageCircle,
 } from 'lucide-react'
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
@@ -62,15 +63,6 @@ const reportTypes = [
     icon: Users,
     color: '#FB8C00',
     bg: 'rgba(251,140,0,0.1)',
-  },
-  {
-    id: 'modelo',
-    titulo: 'Informe del Modelo ML',
-    tituloCompleto: 'Informe de Desempeño del Modelo Predictivo de Machine Learning',
-    desc: 'Métricas del modelo activo, comparación histórica y evolución de predicciones.',
-    icon: BarChart2,
-    color: '#9C27B0',
-    bg: 'rgba(156,39,176,0.1)',
   },
 ]
 
@@ -761,11 +753,252 @@ function SectionsModelo({ charts }) {
 }
 
 // ── Section offsets per type ──────────────────────────────────────────────────
+// Secciones: 1=KPIs, 2-4=Gráficas, 5=Objetivo+Síntesis, 6=Análisis, 7=Conclusiones, 8=Notas
 const SO = {
-  nutricional:    { analysis: 5, conclusions: 6, notes: 7 },
-  epidemiologico: { analysis: 5, conclusions: 6, notes: 7 },
-  pacientes:      { analysis: 5, conclusions: 6, notes: 7 },
-  modelo:         { analysis: 4, conclusions: 5, notes: 6 },
+  nutricional:    { analysis: 6, conclusions: 7, notes: 8 },
+  epidemiologico: { analysis: 6, conclusions: 7, notes: 8 },
+  pacientes:      { analysis: 6, conclusions: 7, notes: 8 },
+}
+
+// ── Genera HTML del informe para subir a Supabase Storage ────────────────────
+// Captura el DOM del informe, oculta los botones, y produce un HTML
+// autocontenido que el destinatario puede abrir en el navegador e imprimir.
+function generarHtmlInforme(elementId) {
+  const el = document.getElementById(elementId)
+  if (!el) throw new Error('Elemento del informe no encontrado')
+
+  // Clonar para no modificar el DOM original
+  const clon = el.cloneNode(true)
+
+  // Quitar botones y elementos que no deben aparecer
+  clon.querySelectorAll('[class*="print:hidden"], .print\\:hidden, button, [data-no-pdf]')
+      .forEach(e => e.remove())
+
+  // Recolectar todos los estilos del documento
+  const estilos = Array.from(document.styleSheets)
+    .flatMap(ss => {
+      try { return Array.from(ss.cssRules).map(r => r.cssText) }
+      catch { return [] }
+    })
+    .join('\n')
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Informe NutriVigilancia</title>
+  <style>
+    ${estilos}
+    body { margin: 0; background: #f5f7fa; font-family: system-ui, sans-serif; }
+    .report-print-doc { max-width: 900px; margin: 0 auto; }
+    @media print {
+      body { background: white; }
+      @page { margin: 15mm; }
+    }
+  </style>
+</head>
+<body>
+  ${clon.outerHTML}
+  <div style="text-align:center;padding:24px;color:#9CA3AF;font-size:11px">
+    Para exportar como PDF: Archivo → Guardar como PDF (en el diálogo del navegador)
+  </div>
+</body>
+</html>`
+
+  // Convertir a base64 con soporte correcto para UTF-8
+  const bytes  = new TextEncoder().encode(html)
+  let binary   = ''
+  const chunk  = 8192
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + chunk))
+  }
+  return btoa(binary)
+}
+
+// ── Modal compartir ───────────────────────────────────────────────────────────
+function ModalCompartir({ reportData, onClose }) {
+  const [step,    setStep]    = useState('idle')   // idle | generando | listo | error
+  const [link,    setLink]    = useState('')
+  const [copiado, setCopiado] = useState(false)
+  const [err,     setErr]     = useState('')
+
+  const nombre = `informe_${reportData.tipo}_${new Date().toISOString().slice(0,10)}.pdf`
+  const fileRef = useRef(null)
+
+  async function subirArchivo(file) {
+    if (!file || file.type !== 'application/pdf') {
+      setErr('Selecciona un archivo PDF válido.')
+      return
+    }
+    setStep('generando'); setErr('')
+    try {
+      const reader = new FileReader()
+      const base64 = await new Promise((res, rej) => {
+        reader.onload  = e => res(e.target.result.split(',')[1])
+        reader.onerror = rej
+        reader.readAsDataURL(file)
+      })
+      const { default: api } = await import('../../services/api')
+      const { data } = await api.post('/compartir/subir-pdf', {
+        pdf_base64:     base64,
+        nombre_archivo: file.name || nombre,
+        titulo:         reportData.titulo,
+      })
+      setLink(data.url)
+      setStep('listo')
+    } catch (e) {
+      setErr(e.response?.data?.detail || 'Error al subir el PDF.')
+      setStep('error')
+    }
+  }
+
+  function copiar() {
+    navigator.clipboard.writeText(link)
+    setCopiado(true)
+    setTimeout(() => setCopiado(false), 2000)
+  }
+
+  const asunto  = encodeURIComponent(`Informe: ${reportData.titulo}`)
+  const cuerpo  = encodeURIComponent(`Accede al informe aquí:\n${link}\n\n(Válido 7 días — ábrelo en el navegador y usa Ctrl+P para guardarlo como PDF)\n\n— NutriVigilancia`)
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(3px)' }}
+      onClick={onClose}>
+      <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl"
+        style={{ boxShadow: '0 24px 60px rgba(0,0,0,0.18)' }}
+        onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-sm font-bold text-neutral-text">Compartir informe</h3>
+          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-neutral-bg">
+            <X className="w-4 h-4 text-neutral-sub" />
+          </button>
+        </div>
+
+        {/* Estado: idle — flujo 2 pasos */}
+        {step === 'idle' && (
+          <>
+            {/* Paso 1 */}
+            <div className="flex items-start gap-3 mb-4">
+              <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 text-white" style={{ background: '#0D47A1' }}>1</span>
+              <div className="flex-1">
+                <p className="text-xs font-semibold text-neutral-text mb-1">Descarga el PDF</p>
+                <p className="text-xs text-neutral-sub mb-2">Usa el botón <strong>Exportar PDF</strong> del encabezado del informe para obtener el archivo.</p>
+                <button onClick={() => { onClose(); setTimeout(() => window.print(), 100) }}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border border-neutral-border hover:bg-neutral-bg transition-all">
+                  <Download className="w-3.5 h-3.5" /> Exportar PDF ahora
+                </button>
+              </div>
+            </div>
+
+            <div className="border-t border-neutral-border my-3" />
+
+            {/* Paso 2 */}
+            <div className="flex items-start gap-3">
+              <span className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 text-white" style={{ background: '#0D47A1' }}>2</span>
+              <div className="flex-1">
+                <p className="text-xs font-semibold text-neutral-text mb-1">Sube el PDF y obtén el link</p>
+                <p className="text-xs text-neutral-sub mb-3">Selecciona el PDF que acabas de descargar para obtener un link de descarga.</p>
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="application/pdf"
+                  className="hidden"
+                  onChange={e => subirArchivo(e.target.files?.[0])}
+                />
+                <button onClick={() => fileRef.current?.click()}
+                  className="w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+                  style={{ background: 'linear-gradient(135deg,#0D47A1,#1976D2)', color: '#fff' }}>
+                  <Link className="w-4 h-4" /> Seleccionar PDF y generar link
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Estado: generando */}
+        {step === 'generando' && (
+          <div className="flex flex-col items-center py-6 gap-3 text-neutral-sub">
+            <Loader2 className="w-7 h-7 animate-spin" style={{ color: '#1565C0' }} />
+            <p className="text-sm">Generando PDF y subiendo…</p>
+          </div>
+        )}
+
+        {/* Estado: error */}
+        {step === 'error' && (
+          <>
+            <div className="px-4 py-3 rounded-xl text-xs mb-4" style={{ background: '#FEF2F2', color: '#B91C1C' }}>
+              {err}
+            </div>
+            <button onClick={() => setStep('idle')}
+              className="w-full py-2 rounded-xl text-sm font-medium text-neutral-sub border border-neutral-border hover:bg-neutral-bg">
+              Reintentar
+            </button>
+          </>
+        )}
+
+        {/* Estado: listo */}
+        {step === 'listo' && (
+          <div className="space-y-3">
+            {/* Link */}
+            <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl"
+              style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+              <Link className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#15803D' }} />
+              <p className="text-xs flex-1 truncate font-medium" style={{ color: '#15803D' }}>
+                Link generado — abre el informe en el navegador
+              </p>
+            </div>
+
+            {/* Copiar link */}
+            <button onClick={copiar}
+              className="w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
+              style={copiado
+                ? { background: '#F0FDF4', color: '#15803D', border: '1px solid #BBF7D0' }
+                : { background: '#F8FAFC', color: '#374151', border: '1px solid #E2E8F0' }}>
+              {copiado ? <><Check className="w-4 h-4" />¡Copiado!</> : <><Copy className="w-4 h-4" />Copiar link</>}
+            </button>
+
+            {/* Compartir por... */}
+            <p className="text-[10px] text-center font-semibold text-neutral-sub uppercase tracking-wide">
+              Compartir por
+            </p>
+            <div className="grid grid-cols-3 gap-2">
+              {/* Correo */}
+              <a href={`mailto:?subject=${asunto}&body=${cuerpo}`}
+                className="flex flex-col items-center gap-1.5 py-3 rounded-xl text-xs font-semibold transition-all hover:bg-neutral-bg"
+                style={{ border: '1px solid #E2E8F0', color: '#374151', textDecoration: 'none' }}>
+                <Mail className="w-5 h-5" style={{ color: '#6366F1' }} />
+                Correo
+              </a>
+              {/* Outlook */}
+              <a href={`https://outlook.live.com/mail/0/deeplink/compose?to=&subject=${asunto}&body=${cuerpo}`}
+                target="_blank" rel="noopener noreferrer"
+                className="flex flex-col items-center gap-1.5 py-3 rounded-xl text-xs font-semibold transition-all hover:bg-neutral-bg"
+                style={{ border: '1px solid #E2E8F0', color: '#374151', textDecoration: 'none' }}>
+                <img src="https://img.icons8.com/color/28/microsoft-outlook-2019.png" alt="Outlook" className="w-5 h-5" />
+                Outlook
+              </a>
+              {/* WhatsApp */}
+              <a href={`https://wa.me/?text=${encodeURIComponent(`*${reportData.titulo}*\n\nDescarga el informe aquí:\n${link}\n\n_(válido 7 días)_`)}`}
+                target="_blank" rel="noopener noreferrer"
+                className="flex flex-col items-center gap-1.5 py-3 rounded-xl text-xs font-semibold transition-all hover:bg-neutral-bg"
+                style={{ border: '1px solid #E2E8F0', color: '#374151', textDecoration: 'none' }}>
+                <MessageCircle className="w-5 h-5" style={{ color: '#25D366' }} />
+                WhatsApp
+              </a>
+            </div>
+
+            <p className="text-[10px] text-neutral-sub text-center">
+              El destinatario podrá descargar el PDF directamente desde el link.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
 }
 
 // ── Report preview — formal clinical document ─────────────────────────────────
@@ -773,10 +1006,12 @@ function ReportPreview({ reportData }) {
   const { titulo, filtros = {}, generado, kpis = {}, charts = {}, tabla = [], analisis, tipo } = reportData
   const rt = reportTypes.find(r => r.id === tipo)
   const so = SO[tipo] || SO.nutricional
+  const [modalCompartir, setModalCompartir] = useState(false)
 
   return (
     <div className="col-span-2 print:col-span-3">
-      <div className="report-print-doc" style={{
+      {modalCompartir && <ModalCompartir reportData={reportData} onClose={() => setModalCompartir(false)} />}
+      <div id="report-print-doc" className="report-print-doc" style={{
         background: '#fff',
         borderRadius: 16,
         boxShadow: '0 2px 28px rgba(0,0,0,0.09), 0 1px 6px rgba(0,0,0,0.04)',
@@ -823,10 +1058,10 @@ function ReportPreview({ reportData }) {
               </div>
             </div>
 
-            {/* Export button */}
-            <div className="print:hidden" style={{ flexShrink: 0 }}>
+            {/* Botones Compartir + Descargar */}
+            <div className="print:hidden" style={{ flexShrink: 0, display: 'flex', gap: 8 }}>
               <button
-                onClick={() => window.print()}
+                onClick={() => setModalCompartir(true)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 6,
                   padding: '8px 14px', borderRadius: 8, cursor: 'pointer',
@@ -834,7 +1069,18 @@ function ReportPreview({ reportData }) {
                   border: '1px solid rgba(255,255,255,0.25)', fontSize: 12, fontWeight: 600,
                 }}
               >
-                <Printer size={13} /> Imprimir / PDF
+                <Mail size={13} /> Compartir
+              </button>
+              <button
+                onClick={() => window.print()}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  padding: '8px 14px', borderRadius: 8, cursor: 'pointer',
+                  background: 'rgba(255,255,255,0.22)', color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.35)', fontSize: 12, fontWeight: 600,
+                }}
+              >
+                <Download size={13} /> Exportar PDF
               </button>
             </div>
           </div>
@@ -864,38 +1110,40 @@ function ReportPreview({ reportData }) {
         {/* ── Document body ─── */}
         <div className="report-print-body" style={{ padding: '40px 44px' }}>
 
-          {/* SECTION 1: Resumen Ejecutivo */}
-          <ReportSection number="1" title="Resumen Ejecutivo">
-            <ReportSubsection number="1.1" title="Objetivo del Informe">
+          {/* SECTION 1: Indicadores Clave (siempre primero, visual) */}
+          <ReportSection number="1" title="Indicadores Clave del Período">
+            <ReportSubsection number="1.1" title="Métricas principales del período evaluado">
+              <KpiTable kpis={kpis} />
+            </ReportSubsection>
+          </ReportSection>
+
+          {/* SECTIONS 2-4: Gráficas y datos por tipo (antes del texto) */}
+          {tipo === 'nutricional'    && <SectionsNutricional    charts={charts} />}
+          {tipo === 'epidemiologico' && <SectionsEpidemiologico charts={charts} />}
+          {tipo === 'pacientes'      && <SectionsPacientes      charts={charts} tabla={tabla} />}
+
+          {/* SECTION 5: Objetivo + Síntesis + Hallazgos (texto después de las gráficas) */}
+          <ReportSection number={so.analysis - 1} title="Objetivo y Síntesis del Informe">
+            <ReportSubsection number={`${so.analysis - 1}.1`} title="Objetivo del Informe">
               <p style={{ margin: 0 }}>
                 {analisis?.objetivo || OBJETIVOS[tipo] || OBJETIVOS.nutricional}
               </p>
             </ReportSubsection>
 
-            <ReportSubsection number="1.2" title="Indicadores Clave del Período Evaluado">
-              <KpiTable kpis={kpis} />
-            </ReportSubsection>
-
             {analisis?.resumen && (
-              <ReportSubsection number="1.3" title="Síntesis de Resultados">
+              <ReportSubsection number={`${so.analysis - 1}.2`} title="Síntesis de Resultados">
                 <p style={{ margin: 0 }}>{analisis.resumen}</p>
               </ReportSubsection>
             )}
 
             {analisis?.hallazgos?.length > 0 && (
-              <ReportSubsection number="1.4" title="Principales Hallazgos">
+              <ReportSubsection number={`${so.analysis - 1}.3`} title="Principales Hallazgos">
                 <BulletList items={analisis.hallazgos} color="#0D47A1" />
               </ReportSubsection>
             )}
           </ReportSection>
 
-          {/* SECTIONS 2-4 (or 2-3): Data by type */}
-          {tipo === 'nutricional'    && <SectionsNutricional    charts={charts} />}
-          {tipo === 'epidemiologico' && <SectionsEpidemiologico charts={charts} />}
-          {tipo === 'pacientes'      && <SectionsPacientes      charts={charts} tabla={tabla} />}
-          {tipo === 'modelo'         && <SectionsModelo         charts={charts} />}
-
-          {/* SECTION n: Análisis y Discusión */}
+          {/* SECTION 6: Análisis y Discusión */}
           {analisis?.discusion && (
             <ReportSection number={so.analysis} title="Análisis y Discusión Epidemiológica">
               <ReportSubsection number={`${so.analysis}.1`} title="Interpretación de los Hallazgos">
@@ -904,7 +1152,7 @@ function ReportPreview({ reportData }) {
             </ReportSection>
           )}
 
-          {/* SECTION n+1: Conclusiones y Recomendaciones */}
+          {/* SECTION 7: Conclusiones y Recomendaciones */}
           <ReportSection number={so.conclusions} title="Conclusiones Clínicas y Recomendaciones">
             {analisis?.conclusiones?.length > 0 && (
               <ReportSubsection number={`${so.conclusions}.1`} title="Conclusiones">
@@ -918,7 +1166,7 @@ function ReportPreview({ reportData }) {
             )}
           </ReportSection>
 
-          {/* SECTION n+2: Notas Técnicas y Referencias */}
+          {/* SECTION 8: Notas Técnicas y Referencias */}
           <ReportSection number={so.notes} title="Notas Técnicas y Referencias">
             <ReportSubsection number={`${so.notes}.1`} title="Fuentes de datos y consideraciones metodológicas">
               <BulletList items={NOTAS_TECNICAS[tipo] || []} color="#4FB4D2" />
@@ -991,7 +1239,7 @@ function ConfigPanel({
         >
           {generating
             ? <><div className="w-4 h-4 border-2 border-white/50 border-t-transparent rounded-full animate-spin" /> Generando...</>
-            : <><Printer className="w-4 h-4" /> Generar informe</>
+            : <><FileText className="w-4 h-4" /> Generar informe</>
           }
         </button>
       </div>

@@ -1,282 +1,1063 @@
-import { useState, useEffect } from 'react'
-import { Users, AlertTriangle, TrendingUp, MapPin, Activity, BarChart2 } from 'lucide-react'
-import AnimatedCounter from '../../components/common/AnimatedCounter'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, ComposedChart, PieChart, Pie,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend,
+  ResponsiveContainer, ReferenceLine, Cell, Area, Line,
 } from 'recharts'
-import { useAuth } from '../../contexts/AuthContext'
+import {
+  Users, AlertTriangle, Activity, Heart, TrendingUp,
+  RefreshCw, ChevronDown, X, Filter, Sparkles, Loader2,
+  ChevronLeft, ChevronRight, BarChart2,
+} from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../services/api'
+import ChatDashboard from '../../components/anl/ChatDashboard'
 
-const CARD = {
-  background: 'rgba(255, 255, 255, 0.72)',
-  backdropFilter: 'blur(14px)',
-  WebkitBackdropFilter: 'blur(14px)',
-  borderRadius: 20,
-  boxShadow: 'inset 0 3px 12px rgba(255,255,255,0.90), inset 0 -4px 8px rgba(0,0,0,0.07), 0 4px 18px rgba(0,0,0,0.07), 0 1px 5px rgba(0,0,0,0.04)',
-  padding: '20px 24px',
+const REFRESH_MS = 120_000
+
+const C = {
+  severo:   '#B71C1C',
+  moderado: '#E53935',
+  leve:     '#FB8C00',
+  riesgo:   '#FBC02D',
+  adecuado: '#6FCF97',
 }
 
-const nivelColor = {
-  crítico: { bg: '#FFEBEE', text: '#B71C1C' },
-  alto:    { bg: '#FFF3E0', text: '#E65100' },
-  medio:   { bg: '#FFF9C4', text: '#F57F17' },
+function round1(n) { return Math.round((n ?? 0) * 10) / 10 }
+
+// ── Banner de estado epidemiológico ───────────────────────────────────────────
+// Umbrales según OMS/OPS y MSPS 2016 (Protocolo Desnutrición Aguda Colombia)
+const ESTADO_CONFIG = {
+  critica: {
+    label:  'SITUACIÓN CRÍTICA',
+    bg:     '#FEF2F2',
+    border: '#FECACA',
+    dot:    '#EF4444',
+    text:   '#B91C1C',
+    sub:    '#DC2626',
+    icon:   '🔴',
+  },
+  alta: {
+    label:  'ALERTA ALTA',
+    bg:     '#FFF7ED',
+    border: '#FED7AA',
+    dot:    '#F97316',
+    text:   '#C2410C',
+    sub:    '#EA580C',
+    icon:   '🟠',
+  },
+  media: {
+    label:  'ALERTA MEDIA',
+    bg:     '#FFFBEB',
+    border: '#FDE68A',
+    dot:    '#F59E0B',
+    text:   '#B45309',
+    sub:    '#D97706',
+    icon:   '🟡',
+  },
+  favorable: {
+    label:  'SITUACIÓN FAVORABLE',
+    bg:     '#F0FDF4',
+    border: '#BBF7D0',
+    dot:    '#22C55E',
+    text:   '#15803D',
+    sub:    '#16A34A',
+    icon:   '🟢',
+  },
 }
 
-function nivelZona(casos) {
-  if (casos >= 10) return 'crítico'
-  if (casos >= 5)  return 'alto'
-  return 'medio'
+function calcularEstado(stats, detalle) {
+  if (!stats) return null
+  const gam = stats.tasa_desnutricion ?? 0   // GAM = moderada + severa
+  const severos = stats.distribucion_estado?.find(e => e.estado === 'Desnut. severa')
+  const total   = stats.total || 1
+  const sam     = severos ? round1(severos.cantidad / total * 100) : 0
+  const sinSeg  = detalle?.crec_dllo?.tasa_sin ?? 0
+  const hosp    = detalle?.tasa_hospitalizacion ?? 0
+
+  // OMS: SAM ≥ 5% → crítica | GAM ≥ 15% → crítica
+  if (sam >= 5 || gam >= 15)  return 'critica'
+  // MSPS 2016: SAM ≥ 2% → alta | GAM ≥ 10% → alta
+  if (sam >= 2 || gam >= 10)  return 'alta'
+  // OPS región Caribe (agravantes): GAM ≥ 5% → media
+  if (gam >= 5 || sinSeg >= 40 || hosp >= 10) return 'media'
+  return 'favorable'
 }
 
-function SkeletonKpi() {
+function BannerEstado({ stats, detalle, zona }) {
+  const estado = calcularEstado(stats, detalle)
+  if (!estado || !stats) return null
+  const cfg = ESTADO_CONFIG[estado]
+  const gam = stats.tasa_desnutricion ?? 0
+  const severos = stats.distribucion_estado?.find(e => e.estado === 'Desnut. severa')
+  const sam = severos ? round1((severos.cantidad / (stats.total || 1)) * 100) : 0
+  const hosp = detalle?.tasa_hospitalizacion ?? 0
+  const sinSeg = detalle?.crec_dllo?.tasa_sin ?? 0
+
+  const UMBRAL_REF = {
+    critica:   'GAM ≥ 15% o SAM ≥ 5% — Emergencia nutricional (OMS/MSPS 2016)',
+    alta:      'GAM ≥ 10% o SAM ≥ 2% — Activar respuesta urgente territorial (MSPS 2016)',
+    media:     'GAM ≥ 5% — Umbral de alerta región Caribe con agravantes (OPS)',
+    favorable: 'GAM < 5% — Dentro de parámetros aceptables (OMS/OPS)',
+  }
+
+  const ACCIONES = {
+    critica:   ['Declarar emergencia nutricional territorial', 'Activar protocolo MSPS de atención SAM', 'Notificación inmediata al nivel nacional'],
+    alta:      ['Activar respuesta urgente en municipios críticos', 'Reforzar unidades de recuperación nutricional', 'Revisar cobertura de programas ICBF/MANÍ'],
+    media:     ['Incrementar frecuencia de controles preventivos', 'Fortalecer red comunitaria de vigilancia', 'Revisar cobertura de seguimiento C&D'],
+    favorable: ['Mantener y escalar intervenciones actuales', 'Documentar buenas prácticas replicables'],
+  }
+
   return (
-    <div style={CARD}>
-      <div className="animate-pulse space-y-2">
-        <div className="h-3 w-20 rounded" style={{ background: '#F0F0F0' }} />
-        <div className="h-7 w-16 rounded" style={{ background: '#F0F0F0' }} />
-        <div className="h-2.5 w-24 rounded" style={{ background: '#F0F0F0' }} />
+    <div className="rounded-2xl p-5"
+      style={{
+        background: 'rgba(255,255,255,0.72)',
+        backdropFilter: 'blur(14px)',
+        WebkitBackdropFilter: 'blur(14px)',
+        boxShadow: 'inset 0 3px 12px rgba(255,255,255,0.90), inset 0 -4px 8px rgba(0,0,0,0.07), 0 4px 18px rgba(0,0,0,0.07), 0 1px 5px rgba(0,0,0,0.04)',
+      }}>
+
+      {/* Fila superior: badge de nivel + zona + métricas */}
+      <div className="flex items-center gap-3 flex-wrap mb-3">
+        {/* Badge nivel — estilo clay activo */}
+        <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold"
+          style={{
+            background: `${cfg.dot}18`,
+            color: cfg.dot,
+            boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.92), inset 0 -2px 4px rgba(0,0,0,0.06), 0 4px 10px rgba(0,0,0,0.07)',
+          }}>
+          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: cfg.dot }} />
+          {cfg.label}
+        </span>
+
+        <span className="text-sm font-bold text-neutral-text">{zona}</span>
+
+        <div className="flex items-center gap-3 ml-auto flex-wrap">
+          {[
+            { label: 'GAM', value: `${gam}%` },
+            { label: 'SAM', value: `${sam}%` },
+            ...(hosp > 0   ? [{ label: 'Hosp.',   value: `${hosp}%`   }] : []),
+            ...(sinSeg > 0 ? [{ label: 'Sin C&D', value: `${sinSeg}%` }] : []),
+          ].map(({ label, value }) => (
+            <div key={label} className="text-center">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-sub">{label}</p>
+              <p className="text-sm font-bold" style={{ color: cfg.text }}>{value}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Separador */}
+      <div className="border-t border-neutral-border mb-3" />
+
+      {/* Fila inferior: referencia OMS + acciones */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <p className="text-[11px] text-neutral-sub leading-relaxed">
+          <span className="font-semibold" style={{ color: cfg.text }}>Referencia: </span>
+          {UMBRAL_REF[estado]}
+        </p>
+        <div className="flex items-center gap-3 flex-wrap">
+          {ACCIONES[estado].map((a, i) => (
+            <span key={i} className="text-[11px] text-neutral-sub flex items-center gap-1">
+              <span className="w-1 h-1 rounded-full flex-shrink-0" style={{ background: cfg.dot }} />
+              {a}
+            </span>
+          ))}
+        </div>
       </div>
     </div>
   )
 }
 
+// ── Generador de alertas — umbrales según OMS/OPS, MSPS Colombia e ICBF ───────
+//
+// Fuentes:
+//   OMS/OPS: GAM ≥10% emergencia · ≥15% emergencia crítica
+//            SAM ≥2% emergencia  · ≥5% emergencia crítica
+//   MSPS 2016 (Protocolo Desnutrición Aguda):
+//            SAM ≥2% → activar respuesta urgente territorial
+//            GAM ≥10% → declarar emergencia nutricional
+//   ICBF: Z-score P/T promedio < −1.5 → intervención preventiva
+//   OPS — Región Caribe (con agravantes: desplazamiento, indígenas, acceso):
+//            umbral GAM de emergencia baja a ≥5%
+//
+function generarAlertas(datos, metrica, zonaEfectiva) {
+  if (!datos?.length) return []
+
+  const hist = datos.filter(d => d.tipo === 'historico')
+  const proy = datos.filter(d => d.tipo === 'proyeccion')
+  if (!hist.length || !proy.length) return []
+
+  const avg = arr => arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0
+  const med = arr => {
+    if (!arr.length) return 0
+    const s = [...arr].sort((a, b) => a - b)
+    const m = Math.floor(s.length / 2)
+    return s.length % 2 ? s[m] : (s[m-1] + s[m]) / 2
+  }
+
+  // Baseline: mediana de TODA la serie histórica (referencia estable)
+  const todosHist   = hist.map(d => d.valor)
+  const prom_hist   = med(todosHist)
+
+  // Proyección: mediana de todos los meses proyectados
+  const proyTodos   = proy.map(d => d.valor)
+  const prom_proy   = med(proyTodos)
+  const max_proy    = Math.max(...proyTodos)
+  const ic95_lo_fin = proy.at(-1)?.limite_inf_95 ?? prom_proy
+
+  // Incremento absoluto (casos/mes)
+  const delta_abs   = prom_proy - prom_hist
+
+  // Cambio relativo — solo si baseline ≥ 5 Y delta_abs ≥ 10
+  // Evita porcentajes engañosos cuando los valores son muy bajos
+  const cambio_pct = (prom_hist >= 5 && Math.abs(delta_abs) >= 10)
+    ? ((delta_abs / prom_hist) * 100)
+    : null
+
+  const alertas = []
+
+  // ── Tasa de desnutrición severa (SAM) ────────────────────────────────────
+  // Fuente: OMS/OPS y MSPS 2016 — Protocolo de atención desnutrición aguda
+  if (metrica === 'tasa_severa') {
+    if (max_proy >= 5) {
+      alertas.push({
+        nivel: 'critica',
+        titulo: 'Emergencia crítica — SAM ≥5%',
+        mensaje: `La tasa SAM proyectada alcanza ${round1(max_proy)}%, superando el umbral de emergencia crítica de la OMS (≥5%). Se requiere activación inmediata del protocolo MSPS de atención a la desnutrición aguda severa.`,
+        fuente: 'OMS/OPS · MSPS 2016',
+      })
+    } else if (max_proy >= 2) {
+      alertas.push({
+        nivel: 'alta',
+        titulo: 'Emergencia nutricional — SAM ≥2%',
+        mensaje: `La tasa SAM proyectada (${round1(max_proy)}%) supera el umbral de emergencia del MSPS (≥2%). Activar respuesta urgente territorial y reforzar unidades de recuperación nutricional.`,
+        fuente: 'MSPS 2016',
+      })
+    } else if (max_proy >= 1) {
+      alertas.push({
+        nivel: 'media',
+        titulo: 'Alerta SAM — zona de riesgo',
+        mensaje: `La tasa SAM proyectada (${round1(max_proy)}%) supera el 1%. Monitoreo intensivo y activación de redes comunitarias de vigilancia nutricional.`,
+        fuente: 'OMS/OPS',
+      })
+    }
+    if (cambio_pct !== null && cambio_pct > 15 && max_proy >= 1) {
+      alertas.push({
+        nivel: 'alta',
+        titulo: 'Tendencia ascendente en SAM',
+        mensaje: `La tasa SAM proyectada aumenta un ${Math.round(cambio_pct)}% respecto al período reciente. El deterioro sostenido requiere revisión del plan de intervención.`,
+        fuente: 'OMS/OPS',
+      })
+    }
+  }
+
+  // ── Tasa de desnutrición aguda global GAM (moderada + severa aprox.) ──────
+  // Fuente: OMS/OPS — con agravantes región Caribe (indígenas, desplazados)
+  if (metrica === 'tasa_moderada') {
+    // En Colombia Caribe (Cesar, Guajira) aplican agravantes → umbral baja a ≥5%
+    if (max_proy >= 15) {
+      alertas.push({
+        nivel: 'critica',
+        titulo: 'Emergencia crítica — GAM ≥15%',
+        mensaje: `La tasa de desnutrición moderada proyectada (${round1(max_proy)}%) supera el umbral crítico de la OMS (≥15%). Declarar emergencia nutricional territorial y activar respuesta humanitaria.`,
+        fuente: 'OMS/OPS — Clasificación IPC',
+      })
+    } else if (max_proy >= 10) {
+      alertas.push({
+        nivel: 'alta',
+        titulo: 'Emergencia nutricional — GAM ≥10%',
+        mensaje: `Tasa de desnutrición moderada proyectada en ${round1(max_proy)}%, superando el umbral de emergencia del MSPS (≥10%). Se recomienda notificación al nivel departamental y nacional.`,
+        fuente: 'OMS/OPS · MSPS 2016',
+      })
+    } else if (max_proy >= 5) {
+      alertas.push({
+        nivel: 'media',
+        titulo: 'Alerta GAM — umbral región Caribe',
+        mensaje: `Tasa proyectada de ${round1(max_proy)}%. En la región Caribe, con presencia de poblaciones indígenas y desplazadas, la OPS establece el umbral de alerta en ≥5%.`,
+        fuente: 'OPS — Criterios agravantes región Caribe',
+      })
+    }
+    if (cambio_pct !== null && cambio_pct > 20) {
+      alertas.push({
+        nivel: 'alta',
+        titulo: 'Incremento sostenido en desnutrición moderada',
+        mensaje: `La tasa moderada proyectada aumenta un ${Math.round(cambio_pct)}%. Una tendencia ascendente de esta magnitud requiere revisión urgente de los programas de suplementación y MANÍ.`,
+        fuente: 'OMS/OPS',
+      })
+    }
+  }
+
+  // ── Z-score promedio poblacional ──────────────────────────────────────────
+  // Fuente: OMS (referencia 2006) e ICBF — Lineamientos técnicos
+  if (metrica === 'zscore') {
+    if (prom_proy <= -3) {
+      alertas.push({
+        nivel: 'critica',
+        titulo: 'Z-score poblacional en zona de desnutrición severa',
+        mensaje: `El z-score P/T promedio proyectado (${round1(prom_proy)}) está en zona de desnutrición severa (<−3). Indica afectación nutricional aguda grave a nivel poblacional. Activar protocolo AIEPI y referir a unidades de recuperación.`,
+        fuente: 'OMS 2006 · ICBF',
+      })
+    } else if (prom_proy <= -2) {
+      alertas.push({
+        nivel: 'alta',
+        titulo: 'Z-score poblacional en desnutrición moderada',
+        mensaje: `El z-score promedio proyectado (${round1(prom_proy)}) está por debajo de −2 (desnutrición moderada). Indica deterioro nutricional colectivo. Intervención del programa de recuperación nutricional ambulatoria (PRANI/MANÍ).`,
+        fuente: 'OMS 2006 · MSPS',
+      })
+    } else if (prom_proy <= -1.5) {
+      alertas.push({
+        nivel: 'media',
+        titulo: 'Z-score en zona de alerta preventiva — ICBF',
+        mensaje: `El z-score proyectado (${round1(prom_proy)}) está por debajo de −1.5, umbral de intervención preventiva del ICBF. Fortalecer programas de vigilancia nutricional comunitaria.`,
+        fuente: 'ICBF — Lineamientos técnicos',
+      })
+    }
+    if (cambio_pct !== null && cambio_pct < -10) {
+      alertas.push({
+        nivel: 'alta',
+        titulo: 'Deterioro progresivo del estado nutricional',
+        mensaje: `El z-score poblacional muestra una tendencia descendente del ${Math.round(Math.abs(cambio_pct))}%. El empeoramiento sostenido es indicador de inseguridad alimentaria estructural.`,
+        fuente: 'OMS/OPS',
+      })
+    }
+  }
+
+  // ── Casos totales — alertas basadas en magnitud proyectada y tendencia ───
+  // Fuente: OMS/OPS Vigilancia epidemiológica nutricional
+  // Lógica: importa cuántos casos se proyectan y si la tendencia es robusta,
+  // no el porcentaje de cambio desde el baseline (que puede ser engañoso).
+  if (metrica === 'casos') {
+    const media_proy_mensual = Math.round(prom_proy)
+    // Tendencia: IC 95% inferior promedio — si sigue por encima del hist, la alza es robusta
+    const ic95_lo_avg       = avg(proy.map(d => d.limite_inf_95 ?? d.valor))
+    const tendencia_robusta  = ic95_lo_avg > prom_hist
+    const tendencia_baja     = avg(proy.map(d => d.limite_sup_95 ?? d.valor)) < prom_hist
+
+    if (media_proy_mensual >= 50 && tendencia_robusta) {
+      alertas.push({
+        nivel: 'critica',
+        titulo: 'Carga de casos crítica proyectada',
+        mensaje: `Se proyectan ~${media_proy_mensual} casos/mes en ${zonaEfectiva} hasta diciembre 2027. La tendencia es estadísticamente robusta — el escenario optimista (IC 95%) también confirma la carga elevada.`,
+        fuente: 'OMS/OPS — Vigilancia epidemiológica',
+      })
+    } else if (media_proy_mensual >= 50) {
+      alertas.push({
+        nivel: 'alta',
+        titulo: 'Alta carga de casos proyectada',
+        mensaje: `Se proyectan ~${media_proy_mensual} casos/mes en ${zonaEfectiva} hasta diciembre 2027. Reforzar la capacidad de respuesta y los programas de vigilancia nutricional.`,
+        fuente: 'OMS/OPS',
+      })
+    } else if (media_proy_mensual >= 20) {
+      alertas.push({
+        nivel: 'media',
+        titulo: 'Carga de casos moderada — monitoreo activo',
+        mensaje: `Se proyectan ~${media_proy_mensual} casos/mes en ${zonaEfectiva}. Mantener vigilancia activa y controles periódicos de crecimiento y desarrollo.`,
+        fuente: 'OMS/OPS · MSPS 2016',
+      })
+    } else if (media_proy_mensual >= 5 && tendencia_robusta && delta_abs > 0) {
+      alertas.push({
+        nivel: 'media',
+        titulo: 'Tendencia al alza estadísticamente confirmada',
+        mensaje: `La proyección en ${zonaEfectiva} muestra ~${media_proy_mensual} casos/mes con tendencia ascendente confirmada por el IC 95%. Activar vigilancia reforzada.`,
+        fuente: 'OMS/OPS',
+      })
+    }
+
+    if (tendencia_baja && media_proy_mensual < prom_hist * 0.7) {
+      alertas.push({
+        nivel: 'positiva',
+        titulo: 'Tendencia de reducción sostenida',
+        mensaje: `La proyección indica ~${media_proy_mensual} casos/mes en ${zonaEfectiva}, por debajo del promedio histórico. El escenario optimista (IC 95%) confirma la tendencia favorable. Mantener y documentar las intervenciones actuales.`,
+        fuente: 'OMS/OPS',
+      })
+    }
+  }
+
+  return alertas
+}
+
+const ALERTA_STYLE = {
+  critica:  { bg: '#FEF2F2', border: '#FECACA', text: '#B91C1C', dot: '#EF4444', label: 'CRÍTICA' },
+  alta:     { bg: '#FFF7ED', border: '#FED7AA', text: '#C2410C', dot: '#FB923C', label: 'ALTA'    },
+  media:    { bg: '#FFFBEB', border: '#FDE68A', text: '#B45309', dot: '#F59E0B', label: 'MEDIA'   },
+  positiva: { bg: '#F0FDF4', border: '#BBF7D0', text: '#15803D', dot: '#22C55E', label: 'FAVORABLE'},
+}
+
+// ── KPI Card con clay style ───────────────────────────────────────────────────
+function KpiCard({ label, value, sub, icon: Icon, color, loading }) {
+  return (
+    <div className="bg-white rounded-2xl p-5 border border-neutral-border flex flex-col gap-2"
+      style={{ boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.92), inset 0 -2px 4px rgba(0,0,0,0.04), 0 4px 14px rgba(0,0,0,0.07)' }}>
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold text-neutral-sub uppercase tracking-wide">{label}</span>
+        <Icon className="w-4 h-4" style={{ color }} />
+      </div>
+      {loading
+        ? <div className="h-7 w-24 rounded-lg animate-pulse bg-neutral-bg" />
+        : <p className="text-2xl font-bold text-neutral-text leading-none">{value ?? '—'}</p>
+      }
+      {sub && <p className="text-[11px] text-neutral-sub leading-tight">{sub}</p>}
+    </div>
+  )
+}
+
+function SectionCard({ title, sub, children }) {
+  return (
+    <div className="bg-white rounded-2xl border border-neutral-border p-6"
+      style={{ boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.92), 0 4px 14px rgba(0,0,0,0.06)' }}>
+      <div className="mb-4">
+        <h2 className="text-sm font-bold text-neutral-text">{title}</h2>
+        {sub && <p className="text-xs text-neutral-sub mt-0.5">{sub}</p>}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function CustomTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="bg-white border border-neutral-border rounded-xl shadow-lg px-4 py-3 text-xs">
+      <p className="font-semibold text-neutral-text mb-2">{label}</p>
+      {payload.map((p, i) => (
+        <div key={i} className="flex items-center gap-2 mb-1">
+          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: p.color }} />
+          <span className="text-neutral-sub capitalize">{p.name}:</span>
+          <span className="font-semibold">{typeof p.value === 'number' ? (p.value % 1 !== 0 ? p.value.toFixed(1) : p.value) : p.value}</span>
+          {p.payload?.proyeccion && (
+            <span className="text-[9px] px-1 py-0.5 rounded-full"
+              style={{ background: 'rgba(79,180,210,0.12)', color: '#2A7A9A' }}>proy.</span>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function FilterSelect({ options, value, onChange, placeholder }) {
+  return (
+    <div className="relative">
+      <select value={value} onChange={e => onChange(e.target.value)}
+        className="appearance-none pl-3 pr-7 py-2 text-xs bg-white border border-neutral-border rounded-xl text-neutral-text cursor-pointer focus:outline-none"
+        style={{ boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.06)' }}>
+        <option value="">{placeholder}</option>
+        {options.map(o => <option key={o} value={o}>{o}</option>)}
+      </select>
+      <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-neutral-sub pointer-events-none" />
+    </div>
+  )
+}
+
+// ── Avatar flotante NIVI con parpadeo ────────────────────────────────────────
+function NiviAvatarFloat({ size = 36 }) {
+  const [parpadeando, setParpadeando] = useState(false)
+  const timerRef = useRef(null)
+  useEffect(() => {
+    function tick() {
+      timerRef.current = setTimeout(() => {
+        setParpadeando(true)
+        timerRef.current = setTimeout(() => {
+          setParpadeando(false)
+          tick()
+        }, 120)
+      }, 2000 + Math.random() * 3000)
+    }
+    tick()
+    return () => clearTimeout(timerRef.current)
+  }, [])
+  return (
+    <div style={{ width: size, height: size, position: 'relative', borderRadius: '50%', overflow: 'hidden' }}>
+      <img src="/NIVI 1.png" alt="NIVI" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: parpadeando ? 0 : 1, transition: 'opacity 55ms ease' }} />
+      <img src="/NIVI 2.png" alt=""   style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: parpadeando ? 1 : 0, transition: 'opacity 55ms ease' }} />
+    </div>
+  )
+}
+
+// ── Componente principal ──────────────────────────────────────────────────────
 export default function HomeANL() {
-  const { user } = useAuth()
-  const [stats,   setStats]   = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [stats,       setStats]       = useState(null)
+  const [detalle,     setDetalle]     = useState(null)
+  const [proyecc,     setProyecc]     = useState(null)
+  const [loadingProj, setLoadingProj] = useState(false)
+  const [geoOpts,     setGeoOpts]     = useState({ departamentos: [], municipios: [] })
+  const [dpto,        setDpto]        = useState('CESAR')
+  const [municipio,   setMunicipio]   = useState('VALLEDUPAR')
+  const [metricaProj, setMetricaProj] = useState('casos')
+  const [vistaProj,   setVistaProj]   = useState('mensual')
+  const [loading,     setLoading]     = useState(true)
+  const [lastUpd,     setLastUpd]     = useState(null)
+  const [niviAbierto,  setNiviAbierto]  = useState(false)
+  const [vistaActual,  setVistaActual]  = useState(0)  // 0 = proyecciones, 1 = distribuciones
+  const [niviMensajes, setNiviMensajes] = useState([])     // persiste durante la sesión
+  const [niviAnalizado,setNiviAnalizado]= useState(false)  // evita re-analizar al reabrir
+  const timerRef = useRef(null)
+
+  const fetchProyecc = useCallback(async () => {
+    setLoadingProj(true)
+    try {
+      const params = { metrica: metricaProj }
+      if (dpto)      params.dpto      = dpto
+      if (municipio) params.municipio = municipio
+      const { data } = await api.get('/proyecciones', { params })
+      setProyecc(data)
+    } catch (e) {
+      console.error('[PROY]', e)
+      setProyecc(null)
+    } finally { setLoadingProj(false) }
+  }, [dpto, municipio, metricaProj])
+
+  const fetchAll = useCallback(async () => {
+    setLoading(true)
+    // Reset conversación de NIVI cuando cambian los filtros
+    setNiviMensajes([])
+    setNiviAnalizado(false)
+    try {
+      const params = {}
+      if (dpto)      params.dpto      = dpto
+      if (municipio) params.municipio = municipio
+      const [r1, r2] = await Promise.all([
+        api.get('/estadisticas', { params }),
+        api.get('/estadisticas/detalle', { params }),
+      ])
+      setStats(r1.data)
+      setDetalle(r2.data)
+      setLastUpd(new Date())
+    } catch (e) { console.error(e) }
+    finally { setLoading(false) }
+  }, [dpto, municipio])
 
   useEffect(() => {
-    api.get('/estadisticas')
-      .then(({ data }) => setStats(data))
-      .catch(() => {})
-      .finally(() => setLoading(false))
-  }, [])
+    fetchAll()
+    const t = setInterval(fetchAll, REFRESH_MS)
+    return () => clearInterval(t)
+  }, [fetchAll])
 
-  const kpis = stats ? [
-    {
-      label:   'Pacientes registrados',
-      value:   stats.total.toLocaleString('es-CO'),
-      raw:     stats.total,
-      sub:     `${stats.en_riesgo} en riesgo nutricional`,
-      icon:    Users,
-      color:   '#4FB4D2',
-      bg:      'rgba(79,180,210,0.1)',
-    },
-    {
-      label:   'En riesgo nutricional',
-      value:   stats.en_riesgo,
-      raw:     stats.en_riesgo,
-      sub:     `${stats.total > 0 ? Math.round(stats.en_riesgo / stats.total * 100) : 0}% del total`,
-      icon:    AlertTriangle,
-      color:   '#E53935',
-      bg:      'rgba(229,57,53,0.08)',
-    },
-    {
-      label:   'Tasa de desnutrición',
-      value:   `${stats.tasa_desnutricion}%`,
-      raw:     null,
-      sub:     'Moderada + severa',
-      icon:    TrendingUp,
-      color:   '#6FCF97',
-      bg:      'rgba(111,207,151,0.1)',
-    },
-    {
-      label:   'Municipios monitoreados',
-      value:   stats.zonas_monitoreadas,
-      raw:     stats.zonas_monitoreadas,
-      sub:     `${stats.zonas_riesgo.length} zonas con mayor carga`,
-      icon:    MapPin,
-      color:   '#FB8C00',
-      bg:      'rgba(251,140,0,0.1)',
-    },
-  ] : []
+  useEffect(() => {
+    fetchProyecc()
+    const t = setInterval(fetchProyecc, REFRESH_MS)
+    return () => clearInterval(t)
+  }, [fetchProyecc])
+
+  useEffect(() => {
+    const params = dpto ? { dpto } : {}
+    api.get('/estadisticas/geo', { params })
+      .then(r => setGeoOpts(r.data))
+      .catch(() => {})
+  }, [dpto])
+
+  const hayFiltros = dpto || municipio
+  const zona = [dpto, municipio].filter(Boolean).join(' › ') || 'Colombia'
+
+  // ── Agregación anual ────────────────────────────────────────────────────────
+  function agregarAnual(datos) {
+    const porAnio = {}
+    for (const d of datos) {
+      const anio = d.anio_mes?.slice(0, 4)
+      if (!anio) continue
+      if (!porAnio[anio]) porAnio[anio] = { items: [], tipo: d.tipo }
+      porAnio[anio].items.push(d)
+      if (d.tipo === 'proyeccion') porAnio[anio].tipo = 'proyeccion'
+    }
+    const esPromedio = metricaProj !== 'casos'
+    function avg(items, campo) {
+      const v = items.filter(i => i[campo] != null)
+      return v.length ? round1(v.reduce((a, i) => a + i[campo], 0) / v.length) : null
+    }
+    return Object.entries(porAnio).sort().map(([anio, { items, tipo }]) => {
+      const vals  = items.map(i => i.valor)
+      const valor = esPromedio
+        ? round1(vals.reduce((a, b) => a + b, 0) / vals.length)
+        : Math.round(vals.reduce((a, b) => a + b, 0))
+      return {
+        label: anio, anio_mes: anio, valor, tipo,
+        limite_inf_80: avg(items, 'limite_inf_80'),
+        limite_sup_80: avg(items, 'limite_sup_80'),
+        limite_inf_95: avg(items, 'limite_inf_95'),
+        limite_sup_95: avg(items, 'limite_sup_95'),
+      }
+    })
+  }
 
   return (
-    <div className="p-6 space-y-6 bg-neutral-bg min-h-screen">
+    <div className="p-6 max-w-7xl mx-auto space-y-5">
 
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold" style={{ color: '#1A1F2B' }}>
-          Bienvenido, {user?.nombre ?? 'Analítico'}
-        </h1>
-        <p className="text-sm mt-0.5" style={{ color: '#54606E' }}>
-          Panel epidemiológico · Vigilancia nutricional infantil
-        </p>
+      {/* ── Header ─────────────────────────────────────────────── */}
+      <div className="flex items-start justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-neutral-text">Dashboard Epidemiológico</h1>
+          <p className="text-xs text-neutral-sub mt-0.5">
+            Vigilancia nutricional infantil · {zona}
+            {lastUpd && ` · ${lastUpd.toLocaleTimeString()}`}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Filter className="w-3.5 h-3.5 text-neutral-sub" />
+          <FilterSelect options={geoOpts.departamentos} value={dpto}
+            onChange={v => { setDpto(v); setMunicipio('') }} placeholder="Departamento" />
+          {dpto && (
+            <FilterSelect options={geoOpts.municipios} value={municipio}
+              onChange={setMunicipio} placeholder="Municipio" />
+          )}
+          {hayFiltros && (
+            <button onClick={() => { setDpto(''); setMunicipio('') }}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs text-neutral-sub hover:bg-neutral-bg">
+              <X className="w-3 h-3" /> Limpiar
+            </button>
+          )}
+          <button onClick={fetchAll} disabled={loading}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs rounded-xl border border-neutral-border bg-white hover:bg-neutral-bg disabled:opacity-50"
+            style={{ boxShadow: 'inset 0 1px 3px rgba(255,255,255,0.9), 0 2px 6px rgba(0,0,0,0.07)' }}>
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            Actualizar
+          </button>
+          {/* Botón NIVI */}
+          <button
+            onClick={() => setNiviAbierto(true)}
+            disabled={!stats}
+            className="clay-btn flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
+          >
+            <Sparkles className="w-4 h-4" />
+            Analizar con NIVI
+          </button>
+        </div>
       </div>
 
-      {/* KPIs */}
+      {/* Chip filtro */}
+      {hayFiltros && (
+        <p className="text-xs text-neutral-sub">Zona: <strong className="text-neutral-text">{zona}</strong></p>
+      )}
+
+      {/* ── Banner de estado — se actualiza con los filtros ─────── */}
+      <BannerEstado stats={stats} detalle={detalle} zona={zona} />
+
+      {/* ── KPIs ───────────────────────────────────────────────── */}
       <div className="grid grid-cols-4 gap-4">
-        {loading
-          ? [1, 2, 3, 4].map(n => <SkeletonKpi key={n} />)
-          : kpis.map(({ label, value, raw, sub, icon: Icon, color, bg }) => (
-              <div key={label} style={CARD}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-medium mb-1" style={{ color: '#54606E' }}>{label}</p>
-                    <p className="text-2xl font-bold" style={{ color: '#1A1F2B' }}>
-                      {raw != null ? <AnimatedCounter value={raw} /> : value}
-                    </p>
-                    <p className="text-xs mt-1" style={{ color }}>{sub}</p>
-                  </div>
-                  <Icon className="w-8 h-8 flex-shrink-0 opacity-80" style={{ color }} />
-                </div>
-              </div>
-            ))
-        }
+        <KpiCard label="Total casos" icon={Users} color="#4FB4D2" loading={loading}
+          value={stats?.total?.toLocaleString()}
+          sub={stats ? `BD: ${stats.total_bd?.toLocaleString()} · Hist: ${stats.total_historico?.toLocaleString()}` : undefined} />
+        <KpiCard label="Desnutrición severa" icon={AlertTriangle} color="#B71C1C" loading={loading}
+          value={stats?.distribucion_estado?.find(e => e.estado === 'Desnut. severa')?.cantidad?.toLocaleString()}
+          sub={stats?.total ? `${((stats.distribucion_estado?.find(e => e.estado === 'Desnut. severa')?.cantidad ?? 0) / stats.total * 100).toFixed(1)}% del total` : undefined} />
+        <KpiCard label="Desnutrición moderada" icon={Activity} color="#E53935" loading={loading}
+          value={stats?.distribucion_estado?.find(e => e.estado === 'Desnut. moderada')?.cantidad?.toLocaleString()}
+          sub={stats?.total ? `${((stats.distribucion_estado?.find(e => e.estado === 'Desnut. moderada')?.cantidad ?? 0) / stats.total * 100).toFixed(1)}% del total` : undefined} />
+        <KpiCard label="Tasa hospitalización" icon={Heart} color="#9B59B6" loading={loading}
+          value={detalle ? `${detalle.tasa_hospitalizacion}%` : undefined}
+          sub={detalle?.total ? `De ${detalle.total?.toLocaleString()} pacientes` : undefined} />
       </div>
 
-      {/* Charts row */}
-      <div className="grid grid-cols-3 gap-4">
-
-        {/* Tendencia mensual */}
-        <div style={{ ...CARD, gridColumn: 'span 2' }}>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-sm font-semibold" style={{ color: '#1A1F2B' }}>
-                Tendencia Mensual por Estado Nutricional
-              </p>
-              <p className="text-xs" style={{ color: '#54606E' }}>Últimos 6 meses · controles registrados</p>
-            </div>
-            <Activity className="w-4 h-4" style={{ color: '#6FCF97' }} />
+      {/* ── Navegación de vistas ───────────────────────────────── */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          {[
+            { i: 0, label: 'Proyecciones', icon: TrendingUp },
+            { i: 1, label: 'Distribuciones', icon: BarChart2 },
+          ].map(({ i, label, icon: Icon }) => (
+            <button key={i} onClick={() => setVistaActual(i)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+              style={vistaActual === i
+                ? { background: 'white', color: '#2A7A9A', boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.92), 0 4px 14px rgba(0,0,0,0.08)', border: '1px solid rgba(79,180,210,0.2)' }
+                : { color: '#94A3B8', background: 'transparent' }
+              }>
+              <Icon className="w-4 h-4" />
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1.5">
+          <button onClick={() => setVistaActual(v => Math.max(0, v - 1))} disabled={vistaActual === 0}
+            className="w-8 h-8 rounded-xl flex items-center justify-center border border-neutral-border bg-white disabled:opacity-30 hover:bg-neutral-bg transition-all"
+            style={{ boxShadow: 'inset 0 1px 3px rgba(255,255,255,0.9), 0 2px 6px rgba(0,0,0,0.06)' }}>
+            <ChevronLeft className="w-4 h-4 text-neutral-sub" />
+          </button>
+          <div className="flex gap-1.5">
+            {[0, 1].map(i => (
+              <button key={i} onClick={() => setVistaActual(i)}
+                className="rounded-full transition-all"
+                style={{ width: vistaActual === i ? 20 : 8, height: 8, background: vistaActual === i ? '#4FB4D2' : '#CBD5E1' }} />
+            ))}
           </div>
-          {loading ? (
-            <div className="h-52 rounded-xl animate-pulse" style={{ background: '#F7F9FC' }} />
-          ) : (
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={stats?.tendencia_mensual ?? []}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F0" />
-                <XAxis dataKey="mes" tick={{ fontSize: 11, fill: '#54606E' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#54606E' }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #E0E6ED', fontSize: 12 }} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Line type="monotone" dataKey="adecuado" stroke="#6FCF97" strokeWidth={2} dot={false} name="Adecuado" />
-                <Line type="monotone" dataKey="riesgo"   stroke="#FBC02D" strokeWidth={2} dot={false} name="Riesgo" />
-                <Line type="monotone" dataKey="leve"     stroke="#FB8C00" strokeWidth={2} dot={false} name="D. Leve" />
-                <Line type="monotone" dataKey="moderado" stroke="#E53935" strokeWidth={2} dot={false} name="D. Moderada" />
-                <Line type="monotone" dataKey="severo"   stroke="#B71C1C" strokeWidth={2} dot={false} name="D. Severa" />
-              </LineChart>
-            </ResponsiveContainer>
-          )}
+          <button onClick={() => setVistaActual(v => Math.min(1, v + 1))} disabled={vistaActual === 1}
+            className="w-8 h-8 rounded-xl flex items-center justify-center border border-neutral-border bg-white disabled:opacity-30 hover:bg-neutral-bg transition-all"
+            style={{ boxShadow: 'inset 0 1px 3px rgba(255,255,255,0.9), 0 2px 6px rgba(0,0,0,0.06)' }}>
+            <ChevronRight className="w-4 h-4 text-neutral-sub" />
+          </button>
+        </div>
+      </div>
+
+      {/* ── Contenido animado entre vistas ─────────────────────── */}
+      <AnimatePresence mode="wait">
+        <motion.div key={vistaActual}
+          initial={{ opacity: 0, x: vistaActual === 0 ? -24 : 24 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: vistaActual === 0 ? 24 : -24 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className="space-y-5">
+
+      {vistaActual === 0 && <>
+      {/* ── Proyecciones SARIMA ─────────────────────────────────── */}
+      <SectionCard
+        title="Proyecciones hasta diciembre 2027"
+        sub="SARIMA(1,1,1)(1,1,0,12) · Intervalos de confianza IC 80% y IC 95% · Hasta diciembre 2027"
+      >
+        {/* Controles */}
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
+          <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: 'rgba(0,0,0,0.04)' }}>
+            {[{v:'casos',l:'Casos'},{v:'tasa_severa',l:'Tasa severa'},{v:'tasa_moderada',l:'Tasa moderada'},{v:'zscore',l:'Z-score'}].map(({v,l}) => (
+              <button key={v} onClick={() => setMetricaProj(v)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                style={metricaProj === v
+                  ? { background: 'white', color: '#2A7A9A', boxShadow: 'inset 0 1px 3px rgba(255,255,255,0.9), 0 2px 8px rgba(0,0,0,0.08)' }
+                  : { color: '#94A3B8' }}>
+                {l}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-1 rounded-xl p-1" style={{ background: 'rgba(0,0,0,0.04)' }}>
+            {[{v:'mensual',l:'Mensual'},{v:'anual',l:'Anual'}].map(({v,l}) => (
+              <button key={v} onClick={() => setVistaProj(v)}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                style={vistaProj === v
+                  ? { background: 'white', color: '#2A7A9A', boxShadow: 'inset 0 1px 3px rgba(255,255,255,0.9), 0 2px 8px rgba(0,0,0,0.08)' }
+                  : { color: '#94A3B8' }}>
+                {l}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Distribución Urbana/Rural */}
-        <div style={CARD}>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-sm font-semibold" style={{ color: '#1A1F2B' }}>Distribución por Zona</p>
-              <p className="text-xs" style={{ color: '#54606E' }}>Urbana vs Rural</p>
-            </div>
-            <MapPin className="w-4 h-4" style={{ color: '#4FB4D2' }} />
+        {loadingProj ? (
+          <div className="h-64 flex flex-col items-center justify-center gap-3 text-neutral-sub">
+            <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#4FB4D2' }} />
+            <p className="text-xs">Ajustando modelo SARIMA…</p>
           </div>
-          {loading ? (
-            <div className="h-44 rounded-xl animate-pulse" style={{ background: '#F7F9FC' }} />
-          ) : (
-            <>
-              <ResponsiveContainer width="100%" height={180}>
-                <PieChart>
-                  <Pie
-                    data={stats?.distribucion_area ?? []}
-                    cx="50%" cy="50%"
-                    innerRadius={50} outerRadius={75}
-                    dataKey="value"
-                  >
-                    {(stats?.distribucion_area ?? []).map((entry, i) => (
-                      <Cell key={i} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    formatter={(v) => `${v}%`}
-                    contentStyle={{ borderRadius: 10, border: '1px solid #E0E6ED', fontSize: 12 }}
-                  />
-                </PieChart>
+        ) : proyecc?.fuente === 'nacional_fallback' || (proyecc?.fuente === 'nacional' && (dpto || municipio)) ? (
+          <div className="h-64 flex flex-col items-center justify-center gap-3 text-center px-8">
+            <TrendingUp className="w-8 h-8" style={{ color: '#CBD5E1' }} />
+            <p className="text-sm font-semibold text-neutral-text">
+              Datos insuficientes para {dpto || 'este filtro'}
+            </p>
+            <p className="text-xs text-neutral-sub leading-relaxed">
+              Se necesitan al menos <strong>12 meses</strong> de registros para generar una proyección confiable.
+              Este departamento tiene muy pocos casos en los datasets históricos.
+            </p>
+            <p className="text-xs" style={{ color: '#4FB4D2' }}>
+              Selecciona <strong>CESAR</strong>, <strong>GUAJIRA</strong> o <strong>MAGDALENA</strong> para ver proyecciones con datos suficientes.
+            </p>
+          </div>
+        ) : proyecc?.datos?.length > 0 ? (() => {
+          // Banner de nivel efectivo
+          const nivelConfig = {
+            municipio:            { label: `Datos de ${proyecc.zona_efectiva}`,                         color: '#15803D', bg: '#F0FDF4', border: '#BBF7D0' },
+            departamento:         { label: `Datos de ${proyecc.zona_efectiva}`,                         color: '#2A7A9A', bg: 'rgba(79,180,210,0.08)', border: 'rgba(79,180,210,0.25)' },
+            departamento_fallback:{ label: `Sin datos suficientes para ${municipio} — usando ${proyecc.zona_efectiva}`, color: '#B45309', bg: '#FFFBEB', border: '#FDE68A' },
+            nacional:             { label: 'Datos nacionales',                                          color: '#64748B', bg: '#F8FAFC', border: '#E2E8F0' },
+          }
+          const nivel = nivelConfig[proyecc.fuente] ?? nivelConfig.nacional
+          const datosBase  = vistaProj === 'anual' ? agregarAnual(proyecc.datos) : proyecc.datos
+          const hist       = datosBase.filter(d => d.tipo === 'historico')
+          const divisor    = hist.at(-1)?.label
+          const unidad     = metricaProj === 'casos' ? 'Casos' : metricaProj === 'zscore' ? 'Z-score' : '%'
+          const chartData  = datosBase.map(d => ({
+            label: d.label,
+            valor: metricaProj === 'casos' ? Math.round(d.valor ?? 0) : +round1(d.valor ?? 0),
+            tipo: d.tipo,
+            ic80_lo: d.limite_inf_80 != null ? +round1(d.limite_inf_80) : null,
+            ic80_hi: d.limite_sup_80 != null ? +round1(d.limite_sup_80) : null,
+            ic95_lo: d.limite_inf_95 != null ? +round1(d.limite_inf_95) : null,
+            ic95_hi: d.limite_sup_95 != null ? +round1(d.limite_sup_95) : null,
+          }))
+          return (
+            <div>
+              {/* Banner de nivel — siempre visible */}
+              <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-xl text-xs font-semibold"
+                style={{ background: nivel.bg, border: `1px solid ${nivel.border}`, color: nivel.color }}>
+                <span>📍</span>
+                <span>{nivel.label}</span>
+                {proyecc.n_train && <span className="font-normal opacity-70">· {proyecc.n_train} meses de entrenamiento</span>}
+              </div>
+
+              {/* Alertas de proyección */}
+              {(() => {
+                const alertas = generarAlertas(proyecc.datos, metricaProj, proyecc.zona_efectiva || zona)
+                if (!alertas.length) return null
+                return (
+                  <div className="flex flex-col gap-2 mb-4">
+                    {alertas.map((a, i) => {
+                      const s = ALERTA_STYLE[a.nivel] ?? ALERTA_STYLE.media
+                      return (
+                        <div key={i} className="flex items-start gap-3 px-4 py-3 rounded-xl"
+                          style={{ background: s.bg, border: `1px solid ${s.border}` }}>
+                          <div className="flex items-center gap-1.5 flex-shrink-0 mt-0.5">
+                            <span className="w-2 h-2 rounded-full flex-shrink-0"
+                              style={{ background: s.dot }} />
+                            <span className="text-[10px] font-bold tracking-wide"
+                              style={{ color: s.text }}>{s.label}</span>
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold" style={{ color: s.text }}>{a.titulo}</p>
+                            <p className="text-xs mt-0.5 leading-relaxed" style={{ color: s.text, opacity: 0.85 }}>
+                              {a.mensaje}
+                            </p>
+                            {a.fuente && (
+                              <p className="text-[10px] mt-1 font-semibold opacity-60" style={{ color: s.text }}>
+                                Fuente: {a.fuente}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )
+              })()}
+              <ResponsiveContainer width="100%" height={280}>
+                <ComposedChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                  <XAxis dataKey="label" tick={{ fontSize: 9 }} interval="preserveStartEnd" />
+                  <YAxis tick={{ fontSize: 10 }}
+                    label={{ value: unidad, angle: -90, position: 'insideLeft', fontSize: 10, fill: '#94A3B8' }} />
+                  <Tooltip content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null
+                    const d = payload[0]?.payload
+                    if (!d) return null
+                    const val = metricaProj === 'casos'
+                      ? Math.round(d.valor ?? 0)
+                      : round1(d.valor ?? 0)
+                    return (
+                      <div className="bg-white border border-neutral-border rounded-xl shadow px-4 py-3 text-xs">
+                        <p className="font-semibold text-neutral-text mb-2">{label}</p>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="w-2 h-2 rounded-full" style={{ background: '#185fa5' }} />
+                          <span className="text-neutral-sub">{unidad}:</span>
+                          <span className="font-semibold">{val}</span>
+                        </div>
+                        {d.ic80_lo != null && (
+                          <>
+                            <p className="text-neutral-sub mt-1">IC 80%: [{round1(d.ic80_lo)} — {round1(d.ic80_hi)}]</p>
+                            <p className="text-neutral-sub">IC 95%: [{round1(d.ic95_lo)} — {round1(d.ic95_hi)}]</p>
+                          </>
+                        )}
+                        {d.tipo === 'proyeccion' && (
+                          <span className="inline-block mt-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold"
+                            style={{ background: 'rgba(79,180,210,0.12)', color: '#2A7A9A' }}>
+                            proyección
+                          </span>
+                        )}
+                      </div>
+                    )
+                  }} />
+                  {divisor && (
+                    <ReferenceLine x={divisor} stroke="#CBD5E1" strokeDasharray="4 4"
+                      label={{ value: 'Hoy', fontSize: 9, fill: '#94A3B8', position: 'insideTopRight' }} />
+                  )}
+                  <Area type="monotone" dataKey="ic95_hi" stroke="none" fill="rgba(79,180,210,0.10)" legendType="none" name="" />
+                  <Area type="monotone" dataKey="ic95_lo" stroke="none" fill="white" legendType="none" name="" />
+                  <Area type="monotone" dataKey="ic80_hi" stroke="none" fill="rgba(79,180,210,0.22)" name="IC 80%" />
+                  <Area type="monotone" dataKey="ic80_lo" stroke="none" fill="white" legendType="none" name="" />
+                  <Line type="monotone" dataKey="valor" name={unidad}
+                    stroke="#185fa5" strokeWidth={2.5} dot={false} />
+                </ComposedChart>
               </ResponsiveContainer>
-              <div className="flex justify-center gap-4 mt-2">
-                {(stats?.distribucion_area ?? []).map(d => (
-                  <div key={d.name} className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ background: d.fill }} />
-                    <span className="text-xs" style={{ color: '#54606E' }}>{d.name} {d.value}%</span>
-                  </div>
-                ))}
+              {proyecc?.baja_densidad && (
+                <p className="text-xs text-center mt-3" style={{ color: '#B45309' }}>
+                  ⚠ Pocos casos históricos ({proyecc.total_casos}) — los intervalos de confianza son amplios. Interpreta con cautela.
+                </p>
+              )}
+              <div className="flex items-center gap-5 mt-3 justify-center text-[10px] text-neutral-sub">
+                <div className="flex items-center gap-1.5"><div className="w-6 h-0.5 rounded" style={{ background: '#185fa5' }} /><span>Histórico / Proyección</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-4 h-3 rounded" style={{ background: 'rgba(79,180,210,0.22)' }} /><span>IC 80%</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-4 h-3 rounded" style={{ background: 'rgba(79,180,210,0.10)' }} /><span>IC 95%</span></div>
               </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Bottom row */}
-      <div className="grid grid-cols-3 gap-4">
-
-        {/* Distribución por estado nutricional */}
-        <div style={{ ...CARD, gridColumn: 'span 2' }}>
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <p className="text-sm font-semibold" style={{ color: '#1A1F2B' }}>
-                Distribución por Estado Nutricional
-              </p>
-              <p className="text-xs" style={{ color: '#54606E' }}>Total de pacientes registrados</p>
             </div>
-            <BarChart2 className="w-4 h-4" style={{ color: '#4FB4D2' }} />
+          )
+        })() : (
+          <div className="h-64 flex flex-col items-center justify-center gap-2 text-neutral-sub">
+            <TrendingUp className="w-8 h-8" style={{ color: '#CBD5E1' }} />
+            <p className="text-sm">Sin datos suficientes para proyectar.</p>
+            <p className="text-xs">Re-procesa los datasets desde el panel ADM.</p>
           </div>
-          {loading ? (
-            <div className="h-44 rounded-xl animate-pulse" style={{ background: '#F7F9FC' }} />
-          ) : (
-            <ResponsiveContainer width="100%" height={180}>
-              <BarChart data={stats?.distribucion_estado ?? []} barSize={32}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#F0F0F0" vertical={false} />
-                <XAxis dataKey="estado" tick={{ fontSize: 11, fill: '#54606E' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#54606E' }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ borderRadius: 10, border: '1px solid #E0E6ED', fontSize: 12 }} />
-                <Bar dataKey="cantidad" radius={[6, 6, 0, 0]} name="Pacientes">
-                  {(stats?.distribucion_estado ?? []).map((entry, i) => (
-                    <Cell key={i} fill={entry.fill} />
-                  ))}
-                </Bar>
+        )}
+      </SectionCard>
+
+      </>}
+
+      {vistaActual === 1 && <>
+      {/* ── Estrato + Sexo ──────────────────────────────────────── */}
+      <div className="grid grid-cols-2 gap-4">
+        <SectionCard title="Por estrato socioeconómico" sub="Distribución de casos por estrato">
+          {detalle?.por_estrato?.length > 0 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={detalle.por_estrato} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#F1F5F9" />
+                <XAxis type="number" tick={{ fontSize: 10 }} />
+                <YAxis dataKey="label" type="category" width={70} tick={{ fontSize: 10 }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend wrapperStyle={{ fontSize: 10 }} />
+                <Bar dataKey="severo"   name="Severo"   stackId="a" fill={C.severo} />
+                <Bar dataKey="moderado" name="Moderado" stackId="a" fill={C.moderado} />
+                <Bar dataKey="adecuado" name="Adecuado" stackId="a" fill={C.adecuado} radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
-          )}
-        </div>
-
-        {/* Zonas críticas */}
-        <div style={CARD}>
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm font-semibold" style={{ color: '#1A1F2B' }}>Municipios con más casos</p>
-            <AlertTriangle className="w-4 h-4" style={{ color: '#E53935' }} />
-          </div>
-          {loading ? (
-            <div className="space-y-3">
-              {[1,2,3,4,5].map(n => (
-                <div key={n} className="h-8 rounded-lg animate-pulse" style={{ background: '#F7F9FC' }} />
-              ))}
-            </div>
-          ) : (stats?.zonas_riesgo ?? []).length === 0 ? (
-            <p className="text-xs text-center py-8" style={{ color: '#9CA3AF' }}>
-              Sin datos de municipio registrados
-            </p>
           ) : (
-            <div className="space-y-2.5">
-              {(stats?.zonas_riesgo ?? []).map(({ zona, casos }) => {
-                const nivel = nivelZona(casos)
+            <div className="h-48 flex items-center justify-center text-sm text-neutral-sub">
+              {loading ? 'Cargando…' : 'Sin datos'}
+            </div>
+          )}
+        </SectionCard>
+
+        <SectionCard title="Por sexo" sub="Distribución M vs F">
+          {detalle?.por_sexo?.length > 0 ? (
+            <div className="space-y-5 pt-2">
+              {detalle.por_sexo.map(s => {
+                const total  = s.total || 1
+                const pctSev = round1(s.severo  / total * 100)
+                const pctMod = round1(s.moderado / total * 100)
+                const pctAde = round1(s.adecuado / total * 100)
                 return (
-                  <div key={zona} className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium truncate" style={{ color: '#1A1F2B' }}>{zona}</p>
-                      <p className="text-[11px]" style={{ color: '#54606E' }}>{casos} pacientes</p>
+                  <div key={s.sexo}>
+                    <div className="flex justify-between mb-1.5">
+                      <span className="text-sm font-semibold text-neutral-text">{s.label}</span>
+                      <span className="text-xs text-neutral-sub">{s.total?.toLocaleString()} casos</span>
                     </div>
-                    <span
-                      className="text-[10px] font-semibold flex-shrink-0 ml-2"
-                      style={{ color: nivelColor[nivel].text }}
-                    >
-                      {nivel}
-                    </span>
+                    <div className="h-4 rounded-full overflow-hidden flex"
+                      style={{ boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.08)' }}>
+                      <div style={{ width: `${pctSev}%`, background: C.severo }} title={`Severo ${pctSev}%`} />
+                      <div style={{ width: `${pctMod}%`, background: C.moderado }} title={`Moderado ${pctMod}%`} />
+                      <div style={{ width: `${pctAde}%`, background: C.adecuado }} title={`Adecuado ${pctAde}%`} />
+                      <div style={{ flex: 1, background: '#F1F5F9' }} />
+                    </div>
+                    <div className="flex gap-3 mt-1.5 text-[10px] text-neutral-sub">
+                      <span style={{ color: C.severo }}>■ Severo {pctSev}%</span>
+                      <span style={{ color: C.moderado }}>■ Moderado {pctMod}%</span>
+                      <span style={{ color: C.adecuado }}>■ Adecuado {pctAde}%</span>
+                    </div>
                   </div>
                 )
               })}
             </div>
+          ) : (
+            <div className="h-48 flex items-center justify-center text-sm text-neutral-sub">
+              {loading ? 'Cargando…' : 'Sin datos'}
+            </div>
           )}
-        </div>
-
+        </SectionCard>
       </div>
+
+      {/* ── Grupo etario + Crec y desarrollo ───────────────────── */}
+      <div className="grid grid-cols-2 gap-4">
+        <SectionCard title="Por grupo etario" sub="Casos severos y moderados por edad">
+          {detalle?.por_grupo_etario?.length > 0 ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={detalle.por_grupo_etario}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                <XAxis dataKey="grupo" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 10 }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend wrapperStyle={{ fontSize: 10 }} />
+                <Bar dataKey="severo"   name="Severo"   stackId="a" fill={C.severo} />
+                <Bar dataKey="moderado" name="Moderado" stackId="a" fill={C.moderado} radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-48 flex items-center justify-center text-sm text-neutral-sub">
+              {loading ? 'Cargando…' : 'Sin datos'}
+            </div>
+          )}
+        </SectionCard>
+
+        <SectionCard title="Crecimiento y desarrollo" sub="Seguimiento por parte del sistema de salud">
+          {detalle?.crec_dllo ? (() => {
+            const { con, sin, tasa_sin } = detalle.crec_dllo
+            const total = con + sin || 1
+            return (
+              <div className="flex flex-col gap-4 pt-1">
+                <div className="flex items-center gap-6">
+                  <ResponsiveContainer width="45%" height={130}>
+                    <PieChart>
+                      <Pie data={[{ value: con, fill: '#6FCF97' }, { value: sin, fill: '#E53935' }]}
+                        cx="50%" cy="50%" innerRadius={38} outerRadius={58} dataKey="value">
+                        <Cell fill="#6FCF97" />
+                        <Cell fill="#E53935" />
+                      </Pie>
+                      <Tooltip formatter={v => [v, 'Casos']} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="flex flex-col gap-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="w-3 h-3 rounded-full" style={{ background: '#6FCF97' }} />
+                        <span className="text-xs text-neutral-sub">Con seguimiento</span>
+                      </div>
+                      <p className="text-xl font-bold" style={{ color: '#6FCF97' }}>{con?.toLocaleString()}</p>
+                      <p className="text-xs text-neutral-sub">{round1(con / total * 100)}%</p>
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="w-3 h-3 rounded-full" style={{ background: '#E53935' }} />
+                        <span className="text-xs text-neutral-sub">Sin seguimiento</span>
+                      </div>
+                      <p className="text-xl font-bold" style={{ color: '#E53935' }}>{sin?.toLocaleString()}</p>
+                      <p className="text-xs text-neutral-sub">{tasa_sin}%</p>
+                    </div>
+                  </div>
+                </div>
+                {tasa_sin > 30 && (
+                  <p className="text-xs font-semibold" style={{ color: '#B91C1C' }}>
+                    ⚠ {tasa_sin}% sin seguimiento — intervención prioritaria requerida.
+                  </p>
+                )}
+              </div>
+            )
+          })() : (
+            <div className="h-48 flex items-center justify-center text-sm text-neutral-sub">
+              {loading ? 'Cargando…' : 'Sin datos'}
+            </div>
+          )}
+        </SectionCard>
+      </div>
+
+      </>}
+
+        </motion.div>
+      </AnimatePresence>
+
+      <p className="text-center text-[10px] text-neutral-sub pb-2">
+        Actualización automática cada 2 min · BD + Datasets SIVIGILA · NutriVigilancia
+      </p>
+
+      {/* ── Botón flotante NIVI ────────────────────────────────── */}
+      <motion.button
+        onClick={() => setNiviAbierto(v => !v)}
+        animate={niviAbierto ? { scale: 0, opacity: 0 } : { scale: 1, opacity: 1 }}
+        whileHover={!niviAbierto ? { scale: 1.08 } : {}}
+        whileTap={!niviAbierto  ? { scale: 0.92 } : {}}
+        transition={{ type: 'spring', damping: 24, stiffness: 260 }}
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center shadow-xl"
+        style={{ background: 'white', border: '2px solid rgba(79,180,210,0.25)' }}
+        title="Analizar con NIVI"
+        disabled={!stats}
+      >
+        <NiviAvatarFloat size={48} />
+      </motion.button>
+
+      {/* ── Panel NIVI ─────────────────────────────────────────── */}
+      <AnimatePresence>
+        {niviAbierto && stats && (
+          <ChatDashboard
+            stats={stats}
+            detalle={detalle}
+            dpto={dpto}
+            municipio={municipio}
+            mensajes={niviMensajes}
+            setMensajes={setNiviMensajes}
+            analizado={niviAnalizado}
+            setAnalizado={setNiviAnalizado}
+            onClose={() => setNiviAbierto(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }

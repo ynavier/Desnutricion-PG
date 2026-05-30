@@ -1,12 +1,12 @@
-"""
-Gestión de datasets SIVIGILA para entrenamiento de modelos ML.
+﻿"""
+GestiÃ³n de datasets SIVIGILA para entrenamiento de modelos ML.
 
 Endpoints:
-  GET    /datasets                 — lista todos
-  POST   /datasets/upload          — sube un Excel SIVIGILA
-  POST   /datasets/{id}/procesar   — ejecuta ETL y genera CSV procesado
-  PATCH  /datasets/{id}/habilitar  — habilita / deshabilita para entrenamiento
-  DELETE /datasets/{id}            — elimina registro + archivos
+  GET    /datasets                 â€” lista todos
+  POST   /datasets/upload          â€” sube un Excel SIVIGILA
+  POST   /datasets/{id}/procesar   â€” ejecuta ETL y genera CSV procesado
+  PATCH  /datasets/{id}/habilitar  â€” habilita / deshabilita para entrenamiento
+  DELETE /datasets/{id}            â€” elimina registro + archivos
 """
 
 import shutil
@@ -15,7 +15,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 
-from app.auth.dependencies import require_anl
+from app.auth.dependencies import require_adm
 from app.config import settings
 from app.database import supabase
 from app.services.etl import etl_sivigila
@@ -34,10 +34,10 @@ def _proc_dir() -> Path:
     return p
 
 
-# ── Listar ─────────────────────────────────────────────────────────────────────
+# â”€â”€ Listar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @router.get('')
-async def listar_datasets(user: dict = Depends(require_anl)):
+async def listar_datasets(user: dict = Depends(require_adm)):
     res = (
         supabase.table('datasets_ml')
         .select('*')
@@ -47,12 +47,12 @@ async def listar_datasets(user: dict = Depends(require_anl)):
     return res.data or []
 
 
-# ── Subir Excel ────────────────────────────────────────────────────────────────
+# â”€â”€ Subir Excel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @router.post('/upload', status_code=201)
 async def subir_dataset(
     file: UploadFile = File(...),
-    user: dict = Depends(require_anl),
+    user: dict = Depends(require_adm),
 ):
     if not file.filename.endswith(('.xlsx', '.xls')):
         raise HTTPException(status_code=400, detail='Solo se aceptan archivos Excel (.xlsx / .xls)')
@@ -64,14 +64,14 @@ async def subir_dataset(
     with dest.open('wb') as f:
         shutil.copyfileobj(file.file, f)
 
-    # Contar filas rápido
+    # Contar filas rÃ¡pido
     try:
         import pandas as pd
         filas_raw = len(pd.read_excel(dest))
     except Exception:
         filas_raw = 0
 
-    # Intentar extraer año del nombre original (ej. "2024_113_Reporte.xlsx")
+    # Intentar extraer aÃ±o del nombre original (ej. "2024_113_Reporte.xlsx")
     anio = None
     try:
         anio = int(file.filename.split('_')[0])
@@ -91,10 +91,10 @@ async def subir_dataset(
     return res.data[0] if res.data else rec
 
 
-# ── Procesar ETL ───────────────────────────────────────────────────────────────
+# â”€â”€ Procesar ETL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @router.post('/{dataset_id}/procesar')
-async def procesar_dataset(dataset_id: int, user: dict = Depends(require_anl)):
+async def procesar_dataset(dataset_id: int, user: dict = Depends(require_adm)):
     res = supabase.table('datasets_ml').select('*').eq('id', dataset_id).single().execute()
     if not res.data:
         raise HTTPException(status_code=404, detail='Dataset no encontrado')
@@ -121,7 +121,7 @@ async def procesar_dataset(dataset_id: int, user: dict = Depends(require_anl)):
             'archivo_proc': nombre_csv,
             'filas_raw':    stats['filas_raw'],
             'filas_proc':   stats['filas_proc'],
-            'mensaje_etl':  f'OK — {stats["filas_proc"]:,} registros válidos de {stats["filas_raw"]:,}',
+            'mensaje_etl':  f'OK â€” {stats["filas_proc"]:,} registros vÃ¡lidos de {stats["filas_raw"]:,}',
         }).eq('id', dataset_id).execute()
 
         return {
@@ -139,13 +139,13 @@ async def procesar_dataset(dataset_id: int, user: dict = Depends(require_anl)):
         raise HTTPException(status_code=500, detail=f'Error en ETL: {str(e)}')
 
 
-# ── Habilitar / deshabilitar ───────────────────────────────────────────────────
+# â”€â”€ Habilitar / deshabilitar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @router.patch('/{dataset_id}/habilitar')
 async def toggle_habilitado(
     dataset_id: int,
     habilitado: bool,
-    user: dict = Depends(require_anl),
+    user: dict = Depends(require_adm),
 ):
     res = supabase.table('datasets_ml').select('estado').eq('id', dataset_id).single().execute()
     if not res.data:
@@ -160,10 +160,10 @@ async def toggle_habilitado(
     return {'ok': True, 'habilitado': habilitado}
 
 
-# ── Eliminar ───────────────────────────────────────────────────────────────────
+# â”€â”€ Eliminar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @router.delete('/{dataset_id}', status_code=204)
-async def eliminar_dataset(dataset_id: int, user: dict = Depends(require_anl)):
+async def eliminar_dataset(dataset_id: int, user: dict = Depends(require_adm)):
     res = supabase.table('datasets_ml').select('archivo_raw, archivo_proc').eq('id', dataset_id).single().execute()
     if not res.data:
         raise HTTPException(status_code=404, detail='Dataset no encontrado')
@@ -181,3 +181,4 @@ async def eliminar_dataset(dataset_id: int, user: dict = Depends(require_anl)):
             proc.unlink(missing_ok=True)
 
     supabase.table('datasets_ml').delete().eq('id', dataset_id).execute()
+

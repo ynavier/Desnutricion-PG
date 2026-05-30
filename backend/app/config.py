@@ -19,6 +19,13 @@ class Settings(BaseSettings):
     app_env: str = 'development'
     cors_origins: str = 'http://localhost:5173'
 
+    # SMTP para envío de informes por correo
+    smtp_host: str = ''
+    smtp_port: int = 587
+    smtp_user: str = ''
+    smtp_pass: str = ''
+    smtp_from: str = ''
+
     @property
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(',')]
