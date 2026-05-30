@@ -235,15 +235,28 @@ async def iniciar_entrenamiento(config: dict) -> str:
 async def _run(job_id: str, config: dict):
     job = _jobs[job_id]
     try:
-        await _entrenar(job, config)
-        job['estado'] = 'done'
+        # Ejecutar en thread pool para no bloquear el event loop de asyncio.
+        # model.fit() es CPU-intensivo y bloquearía todas las peticiones al servidor.
+        await asyncio.get_event_loop().run_in_executor(None, lambda: _run_sync(job, config))
+        if job['estado'] != 'error':
+            job['estado'] = 'done'
     except Exception as exc:
         job['estado'] = 'error'
         _log(job, f'ERROR: {exc}')
         import traceback
         print(traceback.format_exc(), flush=True)
     finally:
-        _persistir_job(job_id, job)   # persistir estado final
+        _persistir_job(job_id, job)
+
+
+def _run_sync(job: dict, config: dict):
+    """Versión síncrona del pipeline de entrenamiento para ejecutar en thread pool."""
+    import asyncio as _asyncio
+    loop = _asyncio.new_event_loop()
+    try:
+        loop.run_until_complete(_entrenar(job, config))
+    finally:
+        loop.close()
 
 
 # ── Pipeline principal ─────────────────────────────────────────────────────────
