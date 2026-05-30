@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   CheckCircle, TrendingUp, RefreshCw, Trash2, FolderX,
-  Award, Zap, Info,
+  Award, Zap, Info, Sparkles, X, Send, Loader2,
 } from 'lucide-react'
 import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis,
@@ -64,6 +64,194 @@ function CustomTooltip({ active, payload, label }) {
   )
 }
 
+// ── Avatar NIVI ───────────────────────────────────────────────────────────────
+function NiviAvatar({ size = 36 }) {
+  const [p, setP] = useState(false)
+  const t = useRef(null)
+  useEffect(() => {
+    function tick() { t.current = setTimeout(() => { setP(true); t.current = setTimeout(() => { setP(false); tick() }, 120) }, 2000 + Math.random() * 3000) }
+    tick(); return () => clearTimeout(t.current)
+  }, [])
+  return (
+    <div style={{ width: size, height: size, position: 'relative', borderRadius: '50%', overflow: 'hidden', flexShrink: 0 }}>
+      <img src="/NIVI 1.png" alt="NIVI" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: p ? 0 : 1, transition: 'opacity 55ms ease' }} />
+      <img src="/NIVI 2.png" alt=""   style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: p ? 1 : 0, transition: 'opacity 55ms ease' }} />
+    </div>
+  )
+}
+
+function MensajeMarkdown({ texto }) {
+  const partes = texto.split('\n').map((linea, i) => {
+    const bold = linea.split(/\*\*(.*?)\*\*/g).map((s, j) => j % 2 === 1 ? <strong key={j}>{s}</strong> : s)
+    const esBullet = linea.trimStart().startsWith('- ') || linea.trimStart().startsWith('• ')
+    if (esBullet) return <li key={i} className="ml-4 list-disc leading-relaxed">{bold}</li>
+    if (linea.trim() === '') return <br key={i} />
+    return <p key={i} className="leading-relaxed">{bold}</p>
+  })
+  return <div className="flex flex-col gap-0.5 text-base">{partes}</div>
+}
+
+function formatearContextoModelo(models) {
+  const activo = models.find(m => m.activo)
+  if (!activo) return 'No hay modelo activo en el sistema.'
+  const met   = activo.metricas || {}
+  const ma    = met.modelo_A || met
+  const mb    = met.modelo_B || {}
+  const tipo  = { rf: 'Random Forest', xgb: 'XGBoost (HistGB)', gb: 'Gradient Boosting', lr: 'Regresión Logística' }
+
+  const pct = (v) => v != null ? `${(parseFloat(v) * 100).toFixed(1)}%` : 'N/D'
+
+  return [
+    `Explícame las métricas del modelo ML activo del Sistema de Vigilancia Nutricional Infantil:`,
+    ``,
+    `MODELO ACTIVO: ${activo.nombre}`,
+    `Tipo de algoritmo: ${tipo[activo.tipo] || activo.tipo?.toUpperCase() || 'N/D'}`,
+    ``,
+    `MÉTRICAS — MODELO A (con IMC):`,
+    `- Accuracy:    ${pct(ma.accuracy)}`,
+    `- F1 Weighted: ${pct(ma.f1_weighted)}`,
+    `- F1 Macro:    ${pct(ma.f1_macro)}`,
+    `- CV Accuracy: ${pct(ma.cv_accuracy)}`,
+    ``,
+    `MÉTRICAS — MODELO B (sin IMC, fallback rural):`,
+    `- Accuracy:    ${pct(mb.accuracy)}`,
+    `- F1 Weighted: ${pct(mb.f1_weighted)}`,
+    `- F1 Macro:    ${pct(mb.f1_macro)}`,
+    ``,
+    `DATOS DE ENTRENAMIENTO:`,
+    `- Muestras totales: ${met.n_muestras?.toLocaleString() || 'N/D'}`,
+    `- SMOTE aplicado: ${met.smote ? 'Sí' : 'No'}`,
+    `- Fuentes: ${(met.fuentes || []).join(', ') || 'N/D'}`,
+    ``,
+    `Por favor explícame en lenguaje sencillo qué significa cada métrica y qué nos dice sobre el rendimiento del modelo. No des recomendaciones ni aspectos a mejorar, solo explica lo que indican los números y qué diferencia hay entre el Modelo A y el Modelo B.`,
+  ].join('\n')
+}
+
+// ── Panel NIVI para métricas de modelos ───────────────────────────────────────
+function NiviMetricas({ models, onClose }) {
+  const [mensajes,  setMensajes]  = useState([])
+  const [input,     setInput]     = useState('')
+  const [cargando,  setCargando]  = useState(true)
+  const [analizado, setAnalizado] = useState(false)
+  const endRef  = useRef(null)
+  const inputRef = useRef(null)
+
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [mensajes, cargando])
+
+  useEffect(() => {
+    async function analizar() {
+      setCargando(true)
+      try {
+        const { default: api } = await import('../../services/api')
+        const { data } = await api.post('/chat', {
+          mensaje: formatearContextoModelo(models),
+          historial: [],
+        })
+        setMensajes([{ role: 'assistant', content: data.respuesta }])
+        setAnalizado(true)
+      } catch {
+        setMensajes([{ role: 'assistant', content: 'No pude cargar el análisis. Puedes preguntarme directamente sobre las métricas del modelo.' }])
+        setAnalizado(true)
+      } finally { setCargando(false); setTimeout(() => inputRef.current?.focus(), 100) }
+    }
+    analizar()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function enviar() {
+    const msg = input.trim()
+    if (!msg || cargando) return
+    setInput('')
+    const hist = mensajes.filter(m => m.role === 'user' || m.role === 'assistant').map(m => ({ role: m.role, content: m.content }))
+    setMensajes(prev => [...prev, { role: 'user', content: msg }])
+    setCargando(true)
+    try {
+      const { default: api } = await import('../../services/api')
+      const { data } = await api.post('/chat', { mensaje: msg, historial: hist.slice(-16) })
+      setMensajes(prev => [...prev, { role: 'assistant', content: data.respuesta }])
+    } catch {
+      setMensajes(prev => [...prev, { role: 'assistant', content: 'Error al conectar. Intenta de nuevo.' }])
+    } finally { setCargando(false) }
+  }
+
+  return (
+    <>
+      <div className="fixed inset-0 z-40" style={{ background: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(2px)' }} onClick={onClose} />
+      <div className="fixed right-0 top-0 h-screen z-50 flex flex-col"
+        style={{ width: 'min(540px, 96vw)', background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(20px)', border: '1px solid rgba(79,180,210,0.14)', boxShadow: '-8px 0 40px rgba(0,0,0,0.12)' }}
+        onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div className="px-6 py-4 border-b border-neutral-border flex items-center gap-3 flex-shrink-0" style={{ background: 'rgba(255,255,255,0.9)' }}>
+          <NiviAvatar size={46} />
+          <div className="flex-1 min-w-0">
+            <p className="text-base font-bold text-neutral-text leading-none">NIVI</p>
+            <p className="text-xs mt-1 font-medium" style={{ color: '#52C41A' }}>● Explicación de métricas ML</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-neutral-bg transition-colors text-neutral-sub">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Mensajes */}
+        <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-3" style={{ minHeight: 0 }}>
+          {cargando && mensajes.length === 0 && (
+            <div className="flex gap-3 items-end">
+              <NiviAvatar size={42} />
+              <div className="px-5 py-4 rounded-2xl flex items-center gap-2" style={{ background: '#F1F8FB', borderRadius: '4px 18px 18px 18px' }}>
+                <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#4FB4D2' }} />
+                <span className="text-sm text-neutral-sub">Analizando las métricas del modelo…</span>
+              </div>
+            </div>
+          )}
+          {mensajes.map((m, i) => (
+            <div key={i} className={`flex gap-3 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              {m.role === 'assistant' && <div className="mt-0.5 flex-shrink-0"><NiviAvatar size={42} /></div>}
+              <div className="px-5 py-4 rounded-2xl text-base"
+                style={m.role === 'user'
+                  ? { background: 'linear-gradient(135deg,#4FB4D2,#3DA0BC)', color: '#fff', borderRadius: '18px 18px 4px 18px', maxWidth: '65%' }
+                  : { background: '#F1F8FB', color: '#374151', borderRadius: '4px 18px 18px 18px', maxWidth: '80%' }}>
+                {m.role === 'assistant' ? <MensajeMarkdown texto={m.content} /> : <p className="leading-relaxed">{m.content}</p>}
+              </div>
+            </div>
+          ))}
+          {cargando && mensajes.length > 0 && (
+            <div className="flex gap-3 items-end">
+              <NiviAvatar size={42} />
+              <div className="px-5 py-4 rounded-2xl flex items-center gap-2" style={{ background: '#F1F8FB', borderRadius: '4px 18px 18px 18px' }}>
+                <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#4FB4D2' }} />
+                <span className="text-sm text-neutral-sub">NIVI está pensando…</span>
+              </div>
+            </div>
+          )}
+          <div ref={endRef} />
+        </div>
+
+        {/* Input */}
+        <div className="px-6 py-4 border-t border-neutral-border flex-shrink-0" style={{ background: 'rgba(255,255,255,0.92)' }}>
+          <div className="flex gap-2 items-end">
+            <textarea ref={inputRef} rows={1} value={input}
+              onChange={e => { setInput(e.target.value); e.target.style.height = 'auto'; e.target.style.height = Math.min(e.target.scrollHeight, 96) + 'px' }}
+              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar() } }}
+              placeholder="Pregunta sobre las métricas… (Enter para enviar)"
+              disabled={cargando}
+              className="flex-1 input-clinical text-base resize-none overflow-hidden"
+              style={{ minHeight: 40, maxHeight: 96, lineHeight: '1.5' }} />
+            <button onClick={enviar} disabled={!input.trim() || cargando}
+              className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all disabled:opacity-40"
+              style={{ background: 'linear-gradient(135deg,#4FB4D2,#3DA0BC)' }}>
+              <Send className="w-4 h-4 text-white" />
+            </button>
+          </div>
+          <p className="text-[10px] text-neutral-sub mt-2 text-center">
+            NIVI explica las métricas en lenguaje comprensible · Puedes hacer preguntas de seguimiento
+          </p>
+        </div>
+      </div>
+    </>
+  )
+}
+
 export default function ModelosANL() {
   const [models,        setModels]        = useState([])
   const [selectedId,    setSelectedId]    = useState(null)
@@ -72,6 +260,7 @@ export default function ModelosANL() {
   const [confirmDelete, setConfirmDelete] = useState(null)
   const [deleting,      setDeleting]      = useState(false)
   const [cleaning,      setCleaning]      = useState(false)
+  const [niviAbierto,   setNiviAbierto]   = useState(false)
 
   function fetchModels() {
     setLoading(true)
@@ -173,8 +362,17 @@ export default function ModelosANL() {
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all text-neutral-sub hover:bg-neutral-bg">
             <RefreshCw className="w-3.5 h-3.5" /> Recargar
           </button>
+          <button
+            onClick={() => setNiviAbierto(true)}
+            disabled={loading || models.length === 0}
+            className="clay-btn flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">
+            <Sparkles className="w-4 h-4" /> Explicar con NIVI
+          </button>
         </div>
       </div>
+
+      {/* Panel NIVI */}
+      {niviAbierto && <NiviMetricas models={models} onClose={() => setNiviAbierto(false)} />}
 
       {/* Toast */}
       {toast && (
@@ -191,27 +389,38 @@ export default function ModelosANL() {
       {/* Banner modelo activo auto-seleccionado */}
       {modeloActivo && !loading && (
         <div className="flex items-center gap-4 px-5 py-4 rounded-2xl"
-          style={{ background: 'rgba(39,174,96,0.06)', border: '1px solid rgba(39,174,96,0.20)' }}>
+          style={{
+            background: 'rgba(255,255,255,0.72)',
+            backdropFilter: 'blur(14px)',
+            WebkitBackdropFilter: 'blur(14px)',
+            boxShadow: 'inset 0 3px 12px rgba(255,255,255,0.90), inset 0 -4px 8px rgba(0,0,0,0.07), 0 4px 18px rgba(0,0,0,0.07), 0 1px 5px rgba(0,0,0,0.04)',
+            borderRadius: 20,
+          }}>
+          {/* Icono clay */}
           <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: 'rgba(39,174,96,0.12)' }}>
+            style={{ boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.92), inset 0 -2px 4px rgba(0,0,0,0.06), 0 4px 10px rgba(0,0,0,0.07)' }}>
             <Zap className="w-5 h-5" style={{ color: '#27AE60' }} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="text-sm font-bold" style={{ color: '#27AE60' }}>
-                Modelo activo — seleccionado automáticamente
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm font-bold text-neutral-text">
+                {modeloActivo.nombre}
               </p>
-              <Badge color="#27AE60" bg="rgba(39,174,96,0.10)">EN USO EN CLI</Badge>
+              {/* Badge estilo sidebar activo */}
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[10px] font-bold"
+                style={{ background: 'rgba(39,174,96,0.1)', color: '#27AE60', boxShadow: 'inset 0 2px 6px rgba(255,255,255,0.92), inset 0 -2px 4px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.06)' }}>
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background: '#27AE60' }} />
+                ACTIVO EN CLI
+              </span>
             </div>
-            <p className="text-xs mt-0.5" style={{ color: '#54606E' }}>
-              <strong style={{ color: '#1A1F2B' }}>{modeloActivo.nombre}</strong>
-              {' · '}F1 Weighted: <strong>{((flatMetrics(modeloActivo.metricas).f1_weighted ?? 0) * 100).toFixed(1)}%</strong>
+            <p className="text-xs mt-1 text-neutral-sub">
+              Seleccionado automáticamente · F1 Weighted: <strong className="text-neutral-text">{((flatMetrics(modeloActivo.metricas).f1_weighted ?? 0) * 100).toFixed(1)}%</strong>
               {' · '}Criterio: mejor F1 Weighted entre todos los modelos entrenados
             </p>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
             <Info className="w-3.5 h-3.5" style={{ color: '#9CA3AF' }} />
-            <span className="text-xs" style={{ color: '#9CA3AF' }}>
+            <span className="text-xs text-neutral-sub">
               Se actualiza automáticamente al entrenar
             </span>
           </div>
