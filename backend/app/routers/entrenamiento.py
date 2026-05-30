@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+﻿from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from app.auth.dependencies import require_anl
+from app.auth.dependencies import require_adm
 from app.services.entrenamiento import iniciar_entrenamiento, get_job
 
 router = APIRouter(prefix='/entrenamiento', tags=['entrenamiento'])
@@ -14,7 +14,7 @@ class EntrenamientoConfig(BaseModel):
 
 
 @router.post('/iniciar')
-async def iniciar(body: EntrenamientoConfig, user: dict = Depends(require_anl)):
+async def iniciar(body: EntrenamientoConfig, user: dict = Depends(require_adm)):
     if not body.modelos:
         raise HTTPException(status_code=400, detail='Selecciona al menos un modelo')
     job_id = await iniciar_entrenamiento({
@@ -25,7 +25,7 @@ async def iniciar(body: EntrenamientoConfig, user: dict = Depends(require_anl)):
 
 
 @router.get('/{job_id}')
-async def estado_job(job_id: str, user: dict = Depends(require_anl)):
+async def estado_job(job_id: str, user: dict = Depends(require_adm)):
     job = get_job(job_id)
     if not job:
         raise HTTPException(status_code=404, detail='Job no encontrado')
@@ -35,3 +35,4 @@ async def estado_job(job_id: str, user: dict = Depends(require_anl)):
         'log':       job['log'],
         'resultado': job['resultado'],
     }
+

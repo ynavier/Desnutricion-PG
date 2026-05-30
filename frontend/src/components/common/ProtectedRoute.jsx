@@ -1,6 +1,12 @@
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 
+function redirectFor(role) {
+  if (role === 'ADM') return '/adm'
+  if (role === 'ANL') return '/anl'
+  return '/cli'
+}
+
 export default function ProtectedRoute({ children, role }) {
   const { user, loading, isAuthenticated } = useAuth()
 
@@ -17,8 +23,7 @@ export default function ProtectedRoute({ children, role }) {
   }
 
   if (role && user?.role !== role) {
-    const redirect = user?.role === 'ANL' ? '/anl' : '/cli'
-    return <Navigate to={redirect} replace />
+    return <Navigate to={redirectFor(user?.role)} replace />
   }
 
   return children

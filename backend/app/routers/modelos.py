@@ -1,8 +1,8 @@
-import traceback
+﻿import traceback
 from pathlib import Path
 from fastapi import APIRouter, HTTPException, Depends
 
-from app.auth.dependencies import get_current_user, require_anl
+from app.auth.dependencies import get_current_user, require_adm
 from app.config import settings
 from app.database import supabase
 from app.ml.loader import load_models
@@ -33,7 +33,7 @@ async def modelo_activo(user: dict = Depends(get_current_user)):
 @router.put('/{modelo_id}/activar')
 async def activar_modelo(
     modelo_id: int,
-    user: dict = Depends(require_anl),
+    user: dict = Depends(require_adm),
 ):
     """
     Activa el modelo indicado para el panel CLI.
@@ -57,7 +57,7 @@ async def activar_modelo(
         raise HTTPException(
             status_code=500,
             detail=(
-                f'Modelo activado en BD pero falló la carga: '
+                f'Modelo activado en BD pero fallÃ³ la carga: '
                 f'archivo "{modelo.get("archivo_a")}" no encontrado en /models'
             ),
         )
@@ -70,7 +70,7 @@ async def activar_modelo(
 
 
 @router.delete('/{modelo_id}', status_code=204)
-async def eliminar_modelo(modelo_id: int, user: dict = Depends(require_anl)):
+async def eliminar_modelo(modelo_id: int, user: dict = Depends(require_adm)):
     """Elimina un modelo de la BD y borra sus archivos .joblib del disco."""
     res = supabase.table('modelos_ml').select('*').eq('id', modelo_id).single().execute()
     if not res.data:
@@ -92,7 +92,7 @@ async def eliminar_modelo(modelo_id: int, user: dict = Depends(require_anl)):
             if f.exists():
                 f.unlink(missing_ok=True)
 
-    # Borrar le_dpto si está registrado en metricas
+    # Borrar le_dpto si estÃ¡ registrado en metricas
     metricas = modelo.get('metricas') or {}
     le_f = metricas.get('le_dpto')
     if le_f:
@@ -104,9 +104,9 @@ async def eliminar_modelo(modelo_id: int, user: dict = Depends(require_anl)):
     print(f'[MODELOS] Modelo #{modelo_id} "{modelo["nombre"]}" eliminado por {user["email"]}', flush=True)
 
 
-# ── Archivos huérfanos ─────────────────────────────────────────────────────────
+# â”€â”€ Archivos huÃ©rfanos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-# Archivos base que NUNCA se borran aunque no estén en la BD
+# Archivos base que NUNCA se borran aunque no estÃ©n en la BD
 _ARCHIVOS_PROTEGIDOS = {
     'modelo_A_rf.joblib', 'modelo_B_rf.joblib',
     'scaler_A.joblib', 'scaler_B.joblib',
@@ -114,10 +114,10 @@ _ARCHIVOS_PROTEGIDOS = {
 }
 
 @router.post('/limpiar-huerfanos')
-async def limpiar_huerfanos(user: dict = Depends(require_anl)):
+async def limpiar_huerfanos(user: dict = Depends(require_adm)):
     """
-    Detecta y elimina archivos .joblib en /models que no están referenciados
-    por ningún registro activo en la BD (huérfanos de entrenamientos fallidos).
+    Detecta y elimina archivos .joblib en /models que no estÃ¡n referenciados
+    por ningÃºn registro activo en la BD (huÃ©rfanos de entrenamientos fallidos).
     Nunca borra los archivos base protegidos.
     """
     d = Path(settings.models_dir)
@@ -146,7 +146,8 @@ async def limpiar_huerfanos(user: dict = Depends(require_anl)):
         if f.name not in archivos_en_bd:
             f.unlink(missing_ok=True)
             borrados.append(f.name)
-            print(f'[MODELOS] Huérfano eliminado: {f.name}', flush=True)
+            print(f'[MODELOS] HuÃ©rfano eliminado: {f.name}', flush=True)
 
-    print(f'[MODELOS] Limpieza: {len(borrados)} archivo(s) huérfano(s) eliminados por {user["email"]}', flush=True)
+    print(f'[MODELOS] Limpieza: {len(borrados)} archivo(s) huÃ©rfano(s) eliminados por {user["email"]}', flush=True)
     return {'borrados': borrados, 'total': len(borrados)}
+

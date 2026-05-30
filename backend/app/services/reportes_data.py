@@ -516,87 +516,153 @@ async def reporte_pacientes(filtros: dict) -> dict:
 # ── 4. Reporte Modelo ML ──────────────────────────────────────────────────────
 
 async def reporte_modelo(_filtros: dict) -> dict:
-    # Modelo activo
+    """
+    Genera el reporte del modelo ML activo con métricas reales.
+    Estructura de metricas en BD:
+      { modelo_A: {accuracy, f1_weighted, f1_macro, cv_accuracy},
+        modelo_B: {accuracy, f1_weighted, f1_macro, cv_accuracy},
+        n_muestras, test_size, cv_folds, fuentes, smote, le_dpto }
+    """
+    # ── Datos de Supabase ─────────────────────────────────────────────────────
     activo_res = supabase.table('modelos_ml').select('*').eq('activo', True).limit(1).execute()
-    activo = (activo_res.data or [{}])[0]
+    activo     = (activo_res.data or [{}])[0]
 
-    # Historial de modelos (últimos 10)
-    hist_res = supabase.table('modelos_ml').select(
-        'id, nombre, created_at, version, metricas, activo'
-    ).order('created_at', desc=True).limit(10).execute()
+    hist_res  = supabase.table('modelos_ml').select(
+        'id, nombre, tipo, created_at, version, metricas, activo'
+    ).order('created_at', desc=True).limit(15).execute()
     historial = hist_res.data or []
 
-    # Total predicciones
-    pred_res = supabase.table('controles').select('id', count='exact').execute()
+    pred_res           = supabase.table('controles').select('id', count='exact').execute()
     total_predicciones = pred_res.count or 0
 
-    def _get_metric(metricas: dict | None, key: str) -> float | None:
-        if not metricas:
-            return None
-        v = metricas.get(f'a_{key}') or metricas.get(key)
-        if v is None:
-            return None
+    # ── Extracción de métricas (soporta formato plano y anidado) ─────────────
+    def _extraer(met: dict | None, sub: str = 'modelo_A') -> dict:
+        """Extrae métricas del submodelo o del nivel raíz."""
+        if not met:
+            return {}
+        if sub in met and isinstance(met[sub], dict):
+            return met[sub]
+        return met   # formato plano (versiones antiguas)
+
+    def _pct(v) -> float:
+        if v is None: return 0.0
         try:
-            return round(float(v), 4)
-        except Exception:
-            return None
+            f = float(v)
+            return round(f * 100, 1) if f <= 1.0 else round(f, 1)
+        except Exception: return 0.0
 
-    metricas_activo = activo.get('metricas') or {}
+    met_activo = activo.get('metricas') or {}
+    ma  = _extraer(met_activo, 'modelo_A')   # con IMC
+    mb  = _extraer(met_activo, 'modelo_B')   # sin IMC
 
-    accuracy  = _get_metric(metricas_activo, 'accuracy')
-    f1        = _get_metric(metricas_activo, 'f1') or _get_metric(metricas_activo, 'f1_score')
-    precision = _get_metric(metricas_activo, 'precision')
-    recall    = _get_metric(metricas_activo, 'recall')
-    roc_auc   = _get_metric(metricas_activo, 'roc_auc')
+    acc_a  = _pct(ma.get('accuracy'))
+    f1w_a  = _pct(ma.get('f1_weighted'))
+    f1m_a  = _pct(ma.get('f1_macro'))
+    cv_a   = _pct(ma.get('cv_accuracy'))
 
-    def _to_pct(v: float | None) -> float:
-        if v is None:
-            return 0.0
-        return round(v * 100, 1) if v <= 1.0 else round(v, 1)
+    acc_b  = _pct(mb.get('accuracy'))
+    f1w_b  = _pct(mb.get('f1_weighted'))
+    f1m_b  = _pct(mb.get('f1_macro'))
+    cv_b   = _pct(mb.get('cv_accuracy'))
 
+    n_muestras  = met_activo.get('n_muestras', 0)
+    test_size   = met_activo.get('test_size', 0.2)
+    fuentes     = met_activo.get('fuentes', [])
+    smote_usado = met_activo.get('smote', False)
+
+    # ── Gráfica 1: Radar — Modelo A (métricas del activo) ────────────────────
     radar_metricas = [
-        {'metric': 'Accuracy',  'value': _to_pct(accuracy)},
-        {'metric': 'F1-Score',  'value': _to_pct(f1)},
-        {'metric': 'Precision', 'value': _to_pct(precision)},
-        {'metric': 'Recall',    'value': _to_pct(recall)},
-        {'metric': 'ROC-AUC',   'value': _to_pct(roc_auc)},
+        {'metric': 'Accuracy',    'value': acc_a},
+        {'metric': 'F1 Weighted', 'value': f1w_a},
+        {'metric': 'F1 Macro',    'value': f1m_a},
+        {'metric': 'CV Accuracy', 'value': cv_a},
     ]
 
-    evolucion_accuracy = []
+    # ── Gráfica 2: Modelo A vs Modelo B (barras comparativas) ────────────────
+    modelo_ab = [
+        {'metrica': 'Accuracy',    'Modelo A (con IMC)': acc_a, 'Modelo B (sin IMC)': acc_b},
+        {'metrica': 'F1 Weighted', 'Modelo A (con IMC)': f1w_a, 'Modelo B (sin IMC)': f1w_b},
+        {'metrica': 'F1 Macro',    'Modelo A (con IMC)': f1m_a, 'Modelo B (sin IMC)': f1m_b},
+        {'metrica': 'CV Accuracy', 'Modelo A (con IMC)': cv_a,  'Modelo B (sin IMC)': cv_b},
+    ]
+
+    # ── Gráfica 3: Evolución histórica (líneas accuracy + F1W por versión) ───
+    evolucion = []
     for m in reversed(historial):
-        met = m.get('metricas') or {}
-        acc = _get_metric(met, 'accuracy')
-        # fecha: prefer version (ts string) else created_at
-        fecha_raw = m.get('version') or m.get('created_at') or ''
-        fecha_str = fecha_raw[:10]
-        evolucion_accuracy.append({
-            'nombre':   m.get('nombre') or 'sin nombre',
-            'fecha':    fecha_str,
-            'accuracy': _to_pct(acc),
+        met  = m.get('metricas') or {}
+        sub  = _extraer(met, 'modelo_A')
+        fecha_raw = (m.get('version') or m.get('created_at') or '')[:16]
+        evolucion.append({
+            'nombre':       m.get('nombre', '—'),
+            'fecha':        fecha_raw,
+            'accuracy':     _pct(sub.get('accuracy')),
+            'f1_weighted':  _pct(sub.get('f1_weighted')),
+            'cv_accuracy':  _pct(sub.get('cv_accuracy')),
+            'activo':       m.get('activo', False),
+            'n_muestras':   (met.get('n_muestras') or 0),
         })
+
+    # ── Gráfica 4: Scatter — tamaño dataset vs accuracy (todos los modelos) ──
+    scatter_datos = [
+        {
+            'nombre':    m.get('nombre', '—'),
+            'n_muestras': (m.get('metricas') or {}).get('n_muestras', 0),
+            'accuracy':   _pct(_extraer(m.get('metricas') or {}, 'modelo_A').get('accuracy')),
+            'f1_weighted':_pct(_extraer(m.get('metricas') or {}, 'modelo_A').get('f1_weighted')),
+            'activo':     m.get('activo', False),
+        }
+        for m in historial
+        if (m.get('metricas') or {}).get('n_muestras', 0) > 0
+    ]
+
+    # ── Gráfica 5: Comparativa por tipo de modelo (RF, XGB, GB, LR) ──────────
+    tipos_perf: dict[str, list] = {}
+    for m in historial:
+        tipo = m.get('tipo', 'rf')
+        met  = m.get('metricas') or {}
+        sub  = _extraer(met, 'modelo_A')
+        f1   = sub.get('f1_weighted', 0)
+        if tipo not in tipos_perf:
+            tipos_perf[tipo] = []
+        tipos_perf[tipo].append(_pct(f1))
+
+    tipo_labels = {'rf': 'Random Forest', 'xgb': 'XGBoost (HistGB)', 'gb': 'Gradient Boosting', 'lr': 'Regr. Logística'}
+    comparativa_tipos = [
+        {
+            'tipo':         tipo_labels.get(t, t.upper()),
+            'f1_promedio':  round(sum(vals) / len(vals), 1),
+            'f1_max':       max(vals),
+            'n_versiones':  len(vals),
+        }
+        for t, vals in tipos_perf.items()
+    ]
 
     return {
         'kpis': {
-            'nombre_modelo':      activo.get('nombre') or 'N/A',
-            'accuracy':           _to_pct(accuracy),
-            'f1_score':           _to_pct(f1),
-            'precision':          _to_pct(precision),
-            'recall':             _to_pct(recall),
-            'total_predicciones': total_predicciones,
-            'modelos_entrenados': len(historial),
+            'Nombre del modelo':        activo.get('nombre') or 'N/A',
+            'Tipo de algoritmo':        tipo_labels.get(activo.get('tipo', ''), activo.get('tipo', 'N/A')),
+            'Accuracy (Modelo A)':      f'{acc_a}%',
+            'F1 Weighted (Modelo A)':   f'{f1w_a}%',
+            'F1 Macro (Modelo A)':      f'{f1m_a}%',
+            'CV Accuracy':              f'{cv_a}%',
+            'Accuracy (Modelo B)':      f'{acc_b}%',
+            'F1 Weighted (Modelo B)':   f'{f1w_b}%',
+            'Total muestras entrenamiento': f'{n_muestras:,}',
+            'Tamaño conjunto prueba':   f'{int(test_size * 100)}%',
+            'SMOTE aplicado':           'Sí' if smote_usado else 'No',
+            'Fuentes de datos':         ', '.join(fuentes) if fuentes else 'N/A',
+            'Total predicciones en BD': f'{total_predicciones:,}',
+            'Versiones entrenadas':     len(historial),
         },
         'charts': {
             'radar_metricas':     radar_metricas,
-            'evolucion_accuracy': evolucion_accuracy,
+            'modelo_ab':          modelo_ab,
+            'evolucion_accuracy': evolucion,
+            'scatter_datos':      scatter_datos,
+            'comparativa_tipos':  comparativa_tipos,
         },
         'distribucion': {
-            'metricas_activo': {
-                'accuracy':  _to_pct(accuracy),
-                'f1':        _to_pct(f1),
-                'precision': _to_pct(precision),
-                'recall':    _to_pct(recall),
-                'roc_auc':   _to_pct(roc_auc),
-            },
-            'total_modelos': len(historial),
+            'modelo_A': {'accuracy': acc_a, 'f1_weighted': f1w_a, 'f1_macro': f1m_a, 'cv': cv_a},
+            'modelo_B': {'accuracy': acc_b, 'f1_weighted': f1w_b, 'f1_macro': f1m_b, 'cv': cv_b},
         },
     }
