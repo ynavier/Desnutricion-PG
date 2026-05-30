@@ -12,7 +12,6 @@ Pipeline:
 from __future__ import annotations
 
 import asyncio
-import json
 import uuid
 import joblib
 import numpy as np
@@ -86,7 +85,7 @@ def _make_model(tipo: str, params: dict):
 
 _jobs: dict[str, dict] = {}
 
-MAX_VERSIONS_DEFAULT = 3
+MAX_VERSIONS_DEFAULT = 1  # Un solo modelo por tipo — siempre el mejor
 
 
 def _persistir_job(job_id: str, job: dict):
@@ -118,7 +117,6 @@ def _limpiar_modelos_viejos(tipo: str, mantener: int, job: dict):
             .execute()
         )
         todos   = res.data or []
-        activos = [m for m in todos if m.get('activo')]
         resto   = [m for m in todos if not m.get('activo')]
 
         # Cuántos sobran (el modelo recién insertado ya está en `todos`)
