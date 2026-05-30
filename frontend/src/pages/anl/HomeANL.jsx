@@ -242,14 +242,8 @@ function generarAlertas(datos, metrica, zonaEfectiva) {
         fuente: 'OMS/OPS',
       })
     }
-    if (cambio_pct !== null && cambio_pct > 15 && max_proy >= 1) {
-      alertas.push({
-        nivel: 'alta',
-        titulo: 'Tendencia ascendente en SAM',
-        mensaje: `La tasa SAM proyectada aumenta un ${Math.round(cambio_pct)}% respecto al período reciente. El deterioro sostenido requiere revisión del plan de intervención.`,
-        fuente: 'OMS/OPS',
-      })
-    }
+    // Para SAM tampoco se usa cambio_pct relativo.
+    // Los umbrales OMS absolutos (≥1%, ≥2%, ≥5%) ya son suficientes.
   }
 
   // ── Tasa de desnutrición aguda global GAM (moderada + severa aprox.) ──────
@@ -278,14 +272,8 @@ function generarAlertas(datos, metrica, zonaEfectiva) {
         fuente: 'OPS — Criterios agravantes región Caribe',
       })
     }
-    if (cambio_pct !== null && cambio_pct > 20) {
-      alertas.push({
-        nivel: 'alta',
-        titulo: 'Incremento sostenido en desnutrición moderada',
-        mensaje: `La tasa moderada proyectada aumenta un ${Math.round(cambio_pct)}%. Una tendencia ascendente de esta magnitud requiere revisión urgente de los programas de suplementación y MANÍ.`,
-        fuente: 'OMS/OPS',
-      })
-    }
+    // Para tasas no se usa cambio_pct relativo (engañoso).
+    // Los umbrales absolutos OMS (≥5%, ≥10%, ≥15%) ya cubren la severidad.
   }
 
   // ── Z-score promedio poblacional ──────────────────────────────────────────
@@ -759,14 +747,20 @@ export default function HomeANL() {
           const hist       = datosBase.filter(d => d.tipo === 'historico')
           const divisor    = hist.at(-1)?.label
           const unidad     = metricaProj === 'casos' ? 'Casos' : metricaProj === 'zscore' ? 'Z-score' : '%'
-          const chartData  = datosBase.map(d => ({
-            label: d.label,
-            valor: metricaProj === 'casos' ? Math.round(d.valor ?? 0) : +round1(d.valor ?? 0),
-            tipo: d.tipo,
-            ic80_lo: d.limite_inf_80 != null ? +round1(d.limite_inf_80) : null,
-            ic80_hi: d.limite_sup_80 != null ? +round1(d.limite_sup_80) : null,
-            ic95_lo: d.limite_inf_95 != null ? +round1(d.limite_inf_95) : null,
-            ic95_hi: d.limite_sup_95 != null ? +round1(d.limite_sup_95) : null,
+          // Separar histórico y pronóstico en datakeys distintos.
+          // El último punto histórico aparece en AMBAS series para que las líneas conecten sin salto.
+          const lastHistIdx = datosBase.reduce((li, d, i) => d.tipo === 'historico' ? i : li, -1)
+          const valFn = (v) => metricaProj === 'casos' ? Math.round(v ?? 0) : +round1(v ?? 0)
+          const chartData = datosBase.map((d, i) => ({
+            label:      d.label,
+            tipo:       d.tipo,
+            // historico: valores históricos + el último punto también en pronóstico = conexión limpia
+            historico:  d.tipo === 'historico' ? valFn(d.valor) : null,
+            pronostico: (d.tipo === 'proyeccion' || i === lastHistIdx) ? valFn(d.valor) : null,
+            ic80_lo:    d.limite_inf_80 != null ? +round1(d.limite_inf_80) : null,
+            ic80_hi:    d.limite_sup_80 != null ? +round1(d.limite_sup_80) : null,
+            ic95_lo:    d.limite_inf_95 != null ? +round1(d.limite_inf_95) : null,
+            ic95_hi:    d.limite_sup_95 != null ? +round1(d.limite_sup_95) : null,
           }))
           return (
             <div>
@@ -822,28 +816,27 @@ export default function HomeANL() {
                     if (!active || !payload?.length) return null
                     const d = payload[0]?.payload
                     if (!d) return null
+                    const rawVal = d.historico ?? d.pronostico ?? 0
                     const val = metricaProj === 'casos'
-                      ? Math.round(d.valor ?? 0)
-                      : round1(d.valor ?? 0)
+                      ? Math.round(rawVal)
+                      : round1(rawVal)
                     return (
                       <div className="bg-white border border-neutral-border rounded-xl shadow px-4 py-3 text-xs">
                         <p className="font-semibold text-neutral-text mb-2">{label}</p>
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="w-2 h-2 rounded-full" style={{ background: '#185fa5' }} />
+                          <span className="w-2 h-2 rounded-full" style={{ background: d?.tipo === 'proyeccion' ? '#7E57C2' : '#2563EB' }} />
                           <span className="text-neutral-sub">{unidad}:</span>
                           <span className="font-semibold">{val}</span>
+                          {d?.tipo === 'proyeccion' && (
+                            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold"
+                              style={{ background: '#EDE7F6', color: '#7E57C2' }}>pronóstico</span>
+                          )}
                         </div>
-                        {d.ic80_lo != null && (
+                        {d?.ic80_lo != null && (
                           <>
                             <p className="text-neutral-sub mt-1">IC 80%: [{round1(d.ic80_lo)} — {round1(d.ic80_hi)}]</p>
                             <p className="text-neutral-sub">IC 95%: [{round1(d.ic95_lo)} — {round1(d.ic95_hi)}]</p>
                           </>
-                        )}
-                        {d.tipo === 'proyeccion' && (
-                          <span className="inline-block mt-1.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold"
-                            style={{ background: 'rgba(79,180,210,0.12)', color: '#2A7A9A' }}>
-                            proyección
-                          </span>
                         )}
                       </div>
                     )
@@ -852,12 +845,20 @@ export default function HomeANL() {
                     <ReferenceLine x={divisor} stroke="#CBD5E1" strokeDasharray="4 4"
                       label={{ value: 'Hoy', fontSize: 9, fill: '#94A3B8', position: 'insideTopRight' }} />
                   )}
-                  <Area type="monotone" dataKey="ic95_hi" stroke="none" fill="rgba(79,180,210,0.10)" legendType="none" name="" />
-                  <Area type="monotone" dataKey="ic95_lo" stroke="none" fill="white" legendType="none" name="" />
-                  <Area type="monotone" dataKey="ic80_hi" stroke="none" fill="rgba(79,180,210,0.22)" name="IC 80%" />
-                  <Area type="monotone" dataKey="ic80_lo" stroke="none" fill="white" legendType="none" name="" />
-                  <Line type="monotone" dataKey="valor" name={unidad}
-                    stroke="#185fa5" strokeWidth={2.5} dot={false} />
+                  <Area type="monotone" dataKey="ic95_hi" stroke="none" fill="#EDE7F6" legendType="none" name="" />
+                  <Area type="monotone" dataKey="ic95_lo" stroke="none" fill="white"   legendType="none" name="" />
+                  <Area type="monotone" dataKey="ic80_hi" stroke="none" fill="#B39DDB" legendType="none" name="" />
+                  <Area type="monotone" dataKey="ic80_lo" stroke="none" fill="white"   legendType="none" name="" />
+                  <Line type="monotone" dataKey="historico"  name="Histórico"  stroke="#2563EB" strokeWidth={2.5} dot={false} connectNulls={false} />
+                  <Line type="monotone" dataKey="pronostico" name="Pronóstico" stroke="#7E57C2" strokeWidth={2.5} strokeDasharray="6 3" connectNulls={false}
+                    dot={(props) => {
+                      const { cx, cy, payload } = props
+                      // Solo el punto exacto de unión: tiene ambos valores y cy es válido
+                      if (payload.historico == null || payload.pronostico == null) return null
+                      if (!isFinite(cy)) return null
+                      return <circle key={`dot-union-${cx}`} cx={cx} cy={cy} r={4} fill="#7E57C2" stroke="white" strokeWidth={2} />
+                    }}
+                  />
                 </ComposedChart>
               </ResponsiveContainer>
               {proyecc?.baja_densidad && (
@@ -865,10 +866,11 @@ export default function HomeANL() {
                   ⚠ Pocos casos históricos ({proyecc.total_casos}) — los intervalos de confianza son amplios. Interpreta con cautela.
                 </p>
               )}
-              <div className="flex items-center gap-5 mt-3 justify-center text-[10px] text-neutral-sub">
-                <div className="flex items-center gap-1.5"><div className="w-6 h-0.5 rounded" style={{ background: '#185fa5' }} /><span>Histórico / Proyección</span></div>
-                <div className="flex items-center gap-1.5"><div className="w-4 h-3 rounded" style={{ background: 'rgba(79,180,210,0.22)' }} /><span>IC 80%</span></div>
-                <div className="flex items-center gap-1.5"><div className="w-4 h-3 rounded" style={{ background: 'rgba(79,180,210,0.10)' }} /><span>IC 95%</span></div>
+              <div className="flex items-center gap-5 mt-3 justify-center text-[10px] text-neutral-sub flex-wrap">
+                <div className="flex items-center gap-1.5"><div className="w-6 h-0.5 rounded" style={{ background: '#2563EB' }} /><span>Histórico</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-6 h-0" style={{ borderTop: '2px dashed #7E57C2', width: 24 }} /><span>Pronóstico</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-4 h-3 rounded" style={{ background: '#B39DDB' }} /><span>IC 80%</span></div>
+                <div className="flex items-center gap-1.5"><div className="w-4 h-3 rounded" style={{ background: '#EDE7F6' }} /><span>IC 95%</span></div>
               </div>
             </div>
           )
