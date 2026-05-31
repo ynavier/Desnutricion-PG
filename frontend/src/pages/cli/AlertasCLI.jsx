@@ -114,7 +114,7 @@ function DetalleAlerta({ alerta, onClose, onMarcarLeida }) {
         className="fixed right-0 top-0 h-screen w-full max-w-md bg-white z-50 flex flex-col shadow-2xl"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-border">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-neutral-border">
           <div className="flex items-center gap-3">
             <Icon className="w-5 h-5" style={{ color: n.color }} />
             <div>
@@ -132,7 +132,7 @@ function DetalleAlerta({ alerta, onClose, onMarcarLeida }) {
         </div>
 
         {/* Contenido */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 flex flex-col gap-5">
 
           {/* Paciente */}
           <div className="rounded-2xl p-4 flex items-center gap-3"

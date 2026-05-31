@@ -546,10 +546,10 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
       <motion.div
         initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-        className="fixed right-0 top-0 h-screen w-full max-w-lg bg-white/90 backdrop-blur-md border-l border-white/40 z-50 flex flex-col shadow-2xl"
+        className="fixed right-0 top-0 h-screen w-full max-w-lg bg-white/90 backdrop-blur-md border-l border-white/40 z-50 flex flex-col shadow-2xl overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-border flex-shrink-0">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-neutral-border flex-shrink-0">
           <div>
             <h2 className="text-sm font-bold text-neutral-text">Nuevo paciente</h2>
             <p className="text-xs text-neutral-sub mt-0.5">Registro de paciente menor de 5 años</p>
@@ -617,7 +617,7 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
               ))}
             </div>
 
-            <form onSubmit={e => e.preventDefault()} className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
+            <form onSubmit={e => e.preventDefault()} className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 flex flex-col gap-5">
 
               {/* ── Paso 1: Datos personales ── */}
               {step === 1 && (
@@ -625,7 +625,7 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
                   className="flex flex-col gap-4">
                   <SeccionTitle icon={User} label="Datos personales" />
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="col-span-2 sm:col-span-1">
                       <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Nombre(s)</label>
                       <input type="text" placeholder="Ej. Carlos"
@@ -698,7 +698,7 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
 
                   <p className="text-xs font-bold text-neutral-text uppercase tracking-wide pt-1">Antecedentes neonatales</p>
 
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Peso al nacer (kg)</label>
                       <input type="number" step="0.01" min="0.5" max="6" placeholder="3.2"
@@ -719,7 +719,7 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Duración lactancia (meses)</label>
                       <input type="number" min="0" max="24" placeholder="6"
@@ -778,7 +778,7 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
                   {/* — Procedencia — */}
                   <SeccionTitle icon={MapPin} label="Lugar de procedencia" />
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Departamento</label>
                       <select value={form.dptoProcedencia}
@@ -821,7 +821,7 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Departamento</label>
                       <select value={form.dptoResidencia}
@@ -857,7 +857,7 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
                     </select>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Estrato socioeconómico</label>
                       <select value={form.estrato} onChange={e => set('estrato', e.target.value)} className="input-clinical">
@@ -921,7 +921,7 @@ function NuevoPacienteDrawer({ onClose, onCreated }) {
                     Opcional. Puedes registrarlo ahora o desde el detalle del paciente.
                   </p>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-neutral-sub mb-1.5">Peso (kg)</label>
                       <input type="number" step="0.1" min="0" placeholder="10.2"
@@ -1019,7 +1019,7 @@ export default function PacientesCLI() {
   })
 
   return (
-    <div className="px-8 py-8 max-w-6xl mx-auto">
+    <div className="px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8 max-w-6xl mx-auto">
 
       {/* Header */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp}

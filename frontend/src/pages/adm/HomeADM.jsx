@@ -60,7 +60,7 @@ export default function HomeADM() {
   }, [])
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
+    <div className="p-4 sm:p-6 md:p-8 max-w-5xl mx-auto">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-neutral-text">Panel Administrativo</h1>
@@ -71,7 +71,7 @@ export default function HomeADM() {
 
       {/* KPIs rápidos */}
       {stats && (
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           {[
             { label: 'Pacientes registrados',   value: stats.total },
             { label: 'Municipios monitoreados', value: stats.zonas_monitoreadas },
@@ -89,7 +89,7 @@ export default function HomeADM() {
       <h2 className="text-xs font-semibold text-neutral-sub uppercase tracking-wide mb-4">
         Módulos de administración
       </h2>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {accesos.map(({ title, desc, icon: Icon, to, color }) => (
           <button
             key={to}

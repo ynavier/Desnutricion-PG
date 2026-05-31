@@ -99,7 +99,7 @@ export default function LoginPage() {
         initial={{ opacity: 0, y: 28, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="relative z-10 w-full max-w-sm mx-4 px-8 py-10"
+        className="relative z-10 w-full max-w-sm mx-4 px-5 sm:px-8 py-10"
         style={glassCard}
       >
         {/* Logo */}

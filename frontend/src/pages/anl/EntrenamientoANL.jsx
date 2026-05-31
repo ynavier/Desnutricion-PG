@@ -219,7 +219,7 @@ export default function EntrenamientoANL() {
   const canStart  = selectedCount > 0 && !sinFuente && status !== 'training'
 
   return (
-    <div className="p-6 space-y-6 bg-neutral-bg min-h-screen">
+    <div className="p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6 bg-neutral-bg min-h-screen">
       <div>
         <h1 className="text-xl font-bold" style={{ color: '#1A1F2B' }}>Entrenamiento de Modelos</h1>
         <p className="text-sm mt-0.5" style={{ color: '#54606E' }}>
@@ -227,14 +227,14 @@ export default function EntrenamientoANL() {
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* ── Columna izquierda ── */}
-        <div className="col-span-2 space-y-3">
+        <div className="lg:col-span-2 space-y-3">
 
           {/* Config global */}
           <div style={CARD}>
             <p className="text-sm font-semibold mb-3" style={{ color: '#1A1F2B' }}>Configuración del Pipeline</p>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-medium block mb-1" style={{ color: '#54606E' }}>División train/test</label>
                 <select value={testSize} onChange={e => setTestSize(parseFloat(e.target.value))}
@@ -341,7 +341,7 @@ export default function EntrenamientoANL() {
                   <p className="text-[11px]" style={{ color: '#54606E' }}>
                     Se aplicará ETL a los controles registrados en la plataforma y se combinarán con los datasets SIVIGILA.
                   </p>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <label className="text-[11px] font-medium block mb-1" style={{ color: '#54606E' }}>Fecha desde</label>
                       <input type="date" value={filtroFechaDesde}
@@ -406,7 +406,7 @@ export default function EntrenamientoANL() {
                 </div>
 
                 {isOn && isExp && (
-                  <div className="px-4 pb-4 grid grid-cols-2 gap-3" style={{ borderTop: '1px solid #F0F0F0' }}>
+                  <div className="px-4 pb-4 grid grid-cols-1 md:grid-cols-2 gap-3" style={{ borderTop: '1px solid #F0F0F0' }}>
                     <p className="col-span-2 text-xs font-medium pt-3" style={{ color: '#54606E' }}>Hiperparámetros</p>
                     {modelo.params.map(param => (
                       <div key={param.key}>

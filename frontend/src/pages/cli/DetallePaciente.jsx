@@ -261,7 +261,7 @@ function NuevoControlDrawer({ paciente, onClose, onControlAdded }) {
         className="fixed right-0 top-0 h-screen w-full max-w-md bg-white/90 backdrop-blur-md border-l border-white/40 z-50 flex flex-col shadow-2xl"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-border">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-neutral-border">
           <div>
             <h2 className="text-sm font-bold text-neutral-text">Registrar control</h2>
             <p className="text-xs text-neutral-sub mt-0.5">{paciente.nombre}</p>
@@ -299,7 +299,7 @@ function NuevoControlDrawer({ paciente, onClose, onControlAdded }) {
             </button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
+          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 flex flex-col gap-5">
 
             {/* Datos antropométricos */}
             <div>
@@ -600,7 +600,7 @@ export default function DetallePaciente() {
   const s = statusConfig[paciente.estado] ?? statusConfig.risk
 
   return (
-    <div className="px-8 py-8 max-w-6xl mx-auto">
+    <div className="px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8 max-w-6xl mx-auto">
 
       {/* Header */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp}

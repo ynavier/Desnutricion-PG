@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, FileText, LogOut, TrendingUp } from 'lucide-react'
+import { LayoutDashboard, FileText, LogOut, TrendingUp, Menu, X } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 
 const navItems = [
@@ -10,6 +11,7 @@ const navItems = [
 export default function SidebarANL() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [open, setOpen] = useState(false)
 
   function handleLogout() {
     logout()
@@ -17,15 +19,40 @@ export default function SidebarANL() {
   }
 
   return (
-    <aside className="fixed top-0 left-0 h-screen w-60 bg-white border-r border-neutral-border flex flex-col z-40">
+    <>
+      {/* Hamburger – mobile only */}
+      <button
+        className="md:hidden fixed top-3 left-3 z-50 p-2 rounded-xl bg-white border border-neutral-border shadow-sm"
+        onClick={() => setOpen(true)}
+        aria-label="Abrir menú"
+      >
+        <Menu className="w-5 h-5 text-neutral-text" />
+      </button>
+
+      {/* Backdrop – mobile only */}
+      {open && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/30 z-40"
+          onClick={() => setOpen(false)}
+        />
+      )}
+
+    <aside className={`fixed top-0 left-0 h-screen w-60 bg-white border-r border-neutral-border flex flex-col z-40 transition-transform duration-300 ${open ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
 
       {/* Logo */}
       <div className="px-5 py-4 flex items-center gap-3 border-b border-neutral-border">
         <img src="/Logo.png" alt="Logo" className="w-8 h-8 object-contain" />
-        <div>
+        <div className="flex-1 min-w-0">
           <p className="text-xs font-bold text-neutral-text leading-none">NutriVigilancia</p>
           <p className="text-[10px] mt-0.5 font-medium" style={{ color: '#4FB4D2' }}>Panel Analítico</p>
         </div>
+        <button
+          className="md:hidden p-1.5 rounded-lg hover:bg-neutral-bg text-neutral-sub"
+          onClick={() => setOpen(false)}
+          aria-label="Cerrar menú"
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Nav */}
@@ -84,5 +111,6 @@ export default function SidebarANL() {
         </button>
       </div>
     </aside>
+    </>
   )
 }

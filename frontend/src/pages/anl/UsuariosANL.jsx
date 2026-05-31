@@ -211,7 +211,7 @@ export default function UsuariosANL() {
       {/* Tabla */}
       <div style={CARD}>
         <div className="flex items-center gap-3 mb-4 flex-wrap">
-          <div className="flex-1 relative min-w-48">
+          <div className="flex-1 relative min-w-0 sm:min-w-48">
             <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: '#9CA3AF' }} />
             <input type="text" placeholder="Buscar por nombre, email o establecimiento..."
               value={query} onChange={e => setQuery(e.target.value)}
@@ -244,12 +244,17 @@ export default function UsuariosANL() {
           </div>
         ) : (
           <>
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[500px]">
               <thead>
                 <tr style={{ borderBottom: '1px solid #F0F0F0' }}>
-                  {['Usuario', 'Email', 'Rol', 'Establecimiento', 'Registrado', 'Estado', 'Acciones'].map(h => (
-                    <th key={h} className="text-left py-2.5 px-3 text-xs font-semibold" style={{ color: '#54606E' }}>{h}</th>
-                  ))}
+                  <th className="text-left py-2.5 px-3 text-xs font-semibold" style={{ color: '#54606E' }}>Usuario</th>
+                  <th className="text-left py-2.5 px-3 text-xs font-semibold hidden sm:table-cell" style={{ color: '#54606E' }}>Email</th>
+                  <th className="text-left py-2.5 px-3 text-xs font-semibold" style={{ color: '#54606E' }}>Rol</th>
+                  <th className="text-left py-2.5 px-3 text-xs font-semibold hidden md:table-cell" style={{ color: '#54606E' }}>Establecimiento</th>
+                  <th className="text-left py-2.5 px-3 text-xs font-semibold hidden lg:table-cell" style={{ color: '#54606E' }}>Registrado</th>
+                  <th className="text-left py-2.5 px-3 text-xs font-semibold" style={{ color: '#54606E' }}>Estado</th>
+                  <th className="text-left py-2.5 px-3 text-xs font-semibold" style={{ color: '#54606E' }}>Acciones</th>
                 </tr>
               </thead>
               <tbody>
@@ -266,7 +271,7 @@ export default function UsuariosANL() {
                       </div>
                     </td>
                     {/* Email */}
-                    <td className="py-3 px-3 text-xs" style={{ color: '#54606E' }}>{u.email}</td>
+                    <td className="py-3 px-3 text-xs hidden sm:table-cell" style={{ color: '#54606E' }}>{u.email}</td>
                     {/* Rol — editable */}
                     <td className="py-3 px-3">
                       {editingRol === u.id ? (
@@ -285,9 +290,9 @@ export default function UsuariosANL() {
                       )}
                     </td>
                     {/* Establecimiento */}
-                    <td className="py-3 px-3 text-xs" style={{ color: '#54606E' }}>{u.establecimiento || '—'}</td>
+                    <td className="py-3 px-3 text-xs hidden md:table-cell" style={{ color: '#54606E' }}>{u.establecimiento || '—'}</td>
                     {/* Fecha */}
-                    <td className="py-3 px-3 text-xs" style={{ color: '#54606E' }}>
+                    <td className="py-3 px-3 text-xs hidden lg:table-cell" style={{ color: '#54606E' }}>
                       {u.created_at ? new Date(u.created_at).toLocaleDateString('es-CO') : '—'}
                     </td>
                     {/* Estado */}
@@ -315,6 +320,7 @@ export default function UsuariosANL() {
                 ))}
               </tbody>
             </table>
+            </div>
             {filtered.length === 0 && (
               <div className="text-center py-10">
                 <p className="text-sm" style={{ color: '#9CA3AF' }}>
@@ -333,7 +339,7 @@ export default function UsuariosANL() {
           <div className="w-full max-w-md h-full overflow-y-auto flex flex-col"
             style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)', boxShadow: '-4px 0 32px rgba(0,0,0,0.12)' }}>
             {/* Header drawer */}
-            <div className="flex items-center justify-between px-6 py-5" style={{ borderBottom: '1px solid #E0E6ED' }}>
+            <div className="flex items-center justify-between px-4 sm:px-6 py-5" style={{ borderBottom: '1px solid #E0E6ED' }}>
               <div>
                 <p className="text-base font-bold" style={{ color: '#1A1F2B' }}>Nuevo usuario</p>
                 <p className="text-xs mt-0.5" style={{ color: '#54606E' }}>Registra acceso con el rol adecuado</p>
@@ -344,8 +350,8 @@ export default function UsuariosANL() {
             </div>
 
             {/* Formulario */}
-            <div className="flex-1 px-6 py-5 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+            <div className="flex-1 px-4 sm:px-6 py-5 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[{ key:'nombre', label:'Nombre(s)' }, { key:'apellidos', label:'Apellidos' }].map(({ key, label }) => (
                   <div key={key}>
                     <label className="text-xs font-medium block mb-1" style={{ color: '#54606E' }}>{label}</label>
