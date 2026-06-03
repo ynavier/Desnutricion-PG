@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, FileText, LogOut, TrendingUp, Menu, X } from 'lucide-react'
+import { LayoutDashboard, FileText, LogOut, TrendingUp, Menu, X, BarChart2, ExternalLink } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 
 const navItems = [
@@ -77,6 +77,19 @@ export default function SidebarANL() {
             {label}
           </NavLink>
         ))}
+
+        {/* Power BI — enlace externo */}
+        <a
+          href="https://app.powerbi.com/reportEmbed?reportId=79f0993e-ad9d-45c2-850e-ecdf40731485&autoAuth=true&ctid=e2bf1c48-1dae-47ba-9808-67da61e2588d"
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => setOpen(false)}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all text-neutral-sub hover:bg-neutral-bg hover:text-neutral-text"
+        >
+          <BarChart2 className="w-4 h-4 flex-shrink-0" />
+          <span className="flex-1">Power BI</span>
+          <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-50" />
+        </a>
       </nav>
 
       {/* Badge analítico */}
