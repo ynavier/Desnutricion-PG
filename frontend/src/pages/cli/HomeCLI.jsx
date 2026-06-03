@@ -171,7 +171,7 @@ export default function HomeCLI() {
     }))
 
   return (
-    <div className="px-8 py-8 max-w-6xl mx-auto">
+    <div className="px-4 py-4 sm:px-6 sm:py-6 md:px-8 md:py-8 max-w-6xl mx-auto">
 
       {/* Header */}
       <motion.div initial="hidden" animate="visible" variants={fadeUp} className="mb-8">
@@ -182,7 +182,7 @@ export default function HomeCLI() {
       </motion.div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {kpis.map(({ label, value, icon: Icon, color, bg, delta }, i) => (
           <motion.div key={label} custom={i} initial="hidden" animate="visible" variants={fadeUp}
             className="clay-card p-5">

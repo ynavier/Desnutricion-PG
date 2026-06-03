@@ -568,7 +568,7 @@ export default function HomeANL() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-5">
+    <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto space-y-5">
 
       {/* ── Header ─────────────────────────────────────────────── */}
       <div className="flex items-start justify-between flex-wrap gap-3">
@@ -620,7 +620,7 @@ export default function HomeANL() {
       <BannerEstado stats={stats} detalle={detalle} zona={zona} />
 
       {/* ── KPIs ───────────────────────────────────────────────── */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard label="Total casos" icon={Users} color="#4FB4D2" loading={loading}
           value={stats?.total?.toLocaleString()}
           sub={stats ? `BD: ${stats.total_bd?.toLocaleString()} · Hist: ${stats.total_historico?.toLocaleString()}` : undefined} />
@@ -887,7 +887,7 @@ export default function HomeANL() {
 
       {vistaActual === 1 && <>
       {/* ── Estrato + Sexo ──────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <SectionCard title="Por estrato socioeconómico" sub="Distribución de casos por estrato">
           {detalle?.por_estrato?.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>
@@ -948,7 +948,7 @@ export default function HomeANL() {
       </div>
 
       {/* ── Grupo etario + Crec y desarrollo ───────────────────── */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <SectionCard title="Por grupo etario" sub="Casos severos y moderados por edad">
           {detalle?.por_grupo_etario?.length > 0 ? (
             <ResponsiveContainer width="100%" height={200}>

@@ -965,7 +965,7 @@ function ModalCompartir({ reportData, onClose }) {
             <p className="text-[10px] text-center font-semibold text-neutral-sub uppercase tracking-wide">
               Compartir por
             </p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2 sm:grid-cols-3">
               {/* Correo */}
               <a href={`mailto:?subject=${asunto}&body=${cuerpo}`}
                 className="flex flex-col items-center gap-1.5 py-3 rounded-xl text-xs font-semibold transition-all hover:bg-neutral-bg"
@@ -1009,7 +1009,7 @@ function ReportPreview({ reportData }) {
   const [modalCompartir, setModalCompartir] = useState(false)
 
   return (
-    <div className="col-span-2 print:col-span-3">
+    <div className="lg:col-span-2 print:col-span-3">
       {modalCompartir && <ModalCompartir reportData={reportData} onClose={() => setModalCompartir(false)} />}
       <div id="report-print-doc" className="report-print-doc" style={{
         background: '#fff',
@@ -1345,7 +1345,7 @@ export default function ReportesANL() {
   }, [])
 
   return (
-    <div className="p-6 space-y-6 bg-neutral-bg min-h-screen print:p-0 print:bg-white print:space-y-0">
+    <div className="p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6 bg-neutral-bg min-h-screen print:p-0 print:bg-white print:space-y-0">
 
       {/* Page header */}
       <div className="print:hidden">
@@ -1355,18 +1355,18 @@ export default function ReportesANL() {
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-6 items-start print:block">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start print:block">
 
         {/* Left area: type selector + filters OR report preview */}
         {reportData ? (
           <ReportPreview reportData={reportData} />
         ) : (
-          <div className="col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-4">
 
             {/* Report type selector */}
             <div style={CARD}>
               <p className="text-sm font-semibold mb-4" style={{ color: '#1A1F2B' }}>Tipo de informe</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {reportTypes.map(rt => {
                   const Icon = rt.icon
                   const isOn = selectedType === rt.id
@@ -1402,7 +1402,7 @@ export default function ReportesANL() {
                 <Filter className="w-4 h-4" style={{ color: '#1565C0' }} />
                 <p className="text-sm font-semibold" style={{ color: '#1A1F2B' }}>Filtros del informe</p>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
                   ['Fecha desde', 'date', dateFrom, setDateFrom],
                   ['Fecha hasta', 'date', dateTo,   setDateTo],

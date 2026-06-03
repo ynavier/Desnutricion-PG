@@ -378,7 +378,7 @@ export default function ReportesADM() {
   const { titulo, filtros={}, generado, kpis={}, charts={}, analisis } = reportData || {}
 
   return (
-    <div className="p-6 space-y-6 bg-neutral-bg min-h-screen print:p-0 print:bg-white">
+    <div className="p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6 bg-neutral-bg min-h-screen print:p-0 print:bg-white">
       {modalComp && <ModalCompartir reportData={reportData} onClose={()=>setModalComp(false)}/>}
 
       <div className="print:hidden">
@@ -386,11 +386,11 @@ export default function ReportesADM() {
         <p className="text-sm mt-0.5" style={{color:'#54606E'}}>Desempeño del modelo predictivo activo — exportación PDF</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-6 items-start print:block">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start print:block">
 
         {/* Vista previa o configuración */}
         {reportData ? (
-          <div className="col-span-2 print:col-span-3">
+          <div className="lg:col-span-2 print:col-span-3">
             <div id="report-print-doc" className="report-print-doc" style={{background:'#fff',borderRadius:16,boxShadow:'0 2px 28px rgba(0,0,0,0.09)',overflow:'hidden'}}>
 
               {/* Header */}
@@ -476,10 +476,10 @@ export default function ReportesADM() {
             </div>
           </div>
         ) : (
-          <div className="col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-4">
             <div style={CARD}>
               <p className="text-sm font-semibold mb-4" style={{color:'#1A1F2B'}}>Período de evaluación</p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[['Fecha desde','date',dateFrom,setDateFrom],['Fecha hasta','date',dateTo,setDateTo]].map(([label,type,val,setter])=>(
                   <div key={label}>
                     <label className="text-xs font-medium block mb-1" style={{color:'#54606E'}}>{label}</label>

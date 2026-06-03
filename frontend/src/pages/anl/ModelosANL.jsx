@@ -273,7 +273,7 @@ export default function ModelosANL() {
   })
 
   return (
-    <div className="p-6 space-y-5 bg-neutral-bg min-h-screen">
+    <div className="p-3 sm:p-4 md:p-6 space-y-4 md:space-y-5 bg-neutral-bg min-h-screen">
 
       {/* Toast — clay */}
       {toast && (
@@ -291,12 +291,12 @@ export default function ModelosANL() {
       )}
 
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold" style={{ color: '#1A1F2B' }}>Comparativa de Modelos ML</h1>
           <p className="text-sm mt-0.5" style={{ color: '#54606E' }}>El mejor modelo se activa automáticamente · 1 versión por tipo</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button onClick={handleLimpiarHuerfanos} disabled={cleaning}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all disabled:opacity-60 hover:bg-orange-50"
             style={{ color: '#E65100' }}>
@@ -383,7 +383,7 @@ export default function ModelosANL() {
             </ResponsiveContainer>
           </div>
 
-          <div className="grid grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             {/* Radar */}
             <div style={CARD}>
               <p className="text-sm font-bold mb-1" style={{ color: '#1A1F2B' }}>Radar comparativo</p>

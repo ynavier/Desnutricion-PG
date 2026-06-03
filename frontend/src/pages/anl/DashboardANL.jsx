@@ -7,7 +7,7 @@ export default function DashboardANL() {
   return (
     <div className="flex min-h-screen bg-neutral-bg">
       <SidebarANL />
-      <main className="flex-1 ml-60 min-h-screen">
+      <main className="flex-1 md:ml-60 min-h-screen pt-14 md:pt-0">
         <Routes>
           <Route index          element={<HomeANL />} />
           <Route path="reportes" element={<ReportesANL />} />

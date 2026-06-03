@@ -1,709 +1,989 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" />
-  <img src="https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white" />
-  <img src="https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react&logoColor=black" />
-  <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" />
-  <img src="https://img.shields.io/badge/scikit--learn-ML-F7931E?style=for-the-badge&logo=scikitlearn&logoColor=white" />
-  <img src="https://img.shields.io/badge/Vite-5.x-646CFF?style=for-the-badge&logo=vite&logoColor=white" />
-  <img src="https://img.shields.io/badge/License-Academic-blue?style=for-the-badge" />
+  <img src="frontend/public/Logo.png" alt="NutriVigilancia Logo" width="80"/>
 </p>
 
-# 🏥 NutriVigilancia — Sistema de Predicción y Clasificación de la Desnutrición Infantil
+<h1 align="center">NutriVigilancia</h1>
+<p align="center"><b>Sistema de Predicción y Vigilancia de Desnutrición Infantil</b></p>
+<p align="center">Universidad Popular del Cesar · Proyecto de Grado · Ingeniería de Sistemas · 2026</p>
 
-> **Plataforma clínica inteligente** para la predicción, clasificación y vigilancia de la desnutrición en niños menores de 5 años en Valledupar, Colombia, basada en datos del SIVIGILA (Evento 113, período 2020–2025).
-
----
-
-## 📋 Tabla de Contenido
-
-- [Descripción General](#-descripción-general)
-- [Características Principales](#-características-principales)
-- [Arquitectura del Sistema](#-arquitectura-del-sistema)
-- [Estructura del Proyecto](#-estructura-del-proyecto)
-- [Requisitos Previos](#-requisitos-previos)
-- [Instalación y Configuración](#-instalación-y-configuración)
-  - [1. Clonar el repositorio](#1-clonar-el-repositorio)
-  - [2. Configurar Supabase](#2-configurar-supabase)
-  - [3. Configurar el Backend](#3-configurar-el-backend)
-  - [4. Configurar el Frontend](#4-configurar-el-frontend)
-  - [5. Configurar la IA (Opcional)](#5-configurar-la-ia-opcional)
-- [Ejecución](#-ejecución)
-- [Roles del Sistema](#-roles-del-sistema)
-- [Módulos Funcionales](#-módulos-funcionales)
-- [Modelos de Machine Learning](#-modelos-de-machine-learning)
-- [API REST — Endpoints](#-api-rest--endpoints)
-- [Base de Datos](#-base-de-datos)
-- [Reportes Clínicos](#-reportes-clínicos)
-- [Dashboards Power BI](#-dashboards-power-bi)
-- [Datos y Fuentes](#-datos-y-fuentes)
-- [Metodología](#-metodología)
-- [Stack Tecnológico](#-stack-tecnológico)
-- [Variables de Entorno](#-variables-de-entorno)
-- [Contribución](#-contribución)
-- [Autores](#-autores)
-- [Licencia](#-licencia)
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white"/>
+  <img src="https://img.shields.io/badge/FastAPI-0.115-009688?style=flat-square&logo=fastapi&logoColor=white"/>
+  <img src="https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black"/>
+  <img src="https://img.shields.io/badge/Vite-5-646CFF?style=flat-square&logo=vite&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=flat-square&logo=supabase&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Cloud%20Run-Google-4285F4?style=flat-square&logo=googlecloud&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Vercel-Frontend-000000?style=flat-square&logo=vercel&logoColor=white"/>
+  <img src="https://img.shields.io/badge/scikit--learn-ML-F7931E?style=flat-square&logo=scikitlearn&logoColor=white"/>
+</p>
 
 ---
 
-## 🎯 Descripción General
+## Descripción
 
-**NutriVigilancia** es una plataforma web clínica de apoyo a la decisión que integra Machine Learning con vigilancia epidemiológica para:
-
-- **Clasificar** el estado nutricional de niños menores de 5 años en 6 categorías: Desnutrición severa, Desnutrición moderada, Normal bajo, Normal, Sobrepeso y Obesidad.
-- **Predecir** el riesgo individual de desnutrición con probabilidades calibradas.
-- **Alertar** de forma temprana sobre pacientes en riesgo mediante un sistema inteligente de alertas.
-- **Recomendar** intervenciones clínicas personalizadas potenciadas por IA (Google Gemini).
-- **Monitorear** tendencias epidemiológicas a nivel territorial con proyecciones SARIMA hasta diciembre de 2027.
-- **Generar reportes** clínicamente útiles en formatos PDF y Excel.
-
-> ⚠️ **Importante:** El sistema NO diagnostica enfermedades. Es una herramienta de apoyo a la toma de decisiones preventivas mediante análisis predictivo.
+NutriVigilancia es una plataforma web de vigilancia epidemiológica nutricional para menores de 5 años en Colombia. Integra Machine Learning supervisado para predicción de estados nutricionales, proyecciones temporales con modelos SARIMA, análisis IA con grandes modelos de lenguaje y un asistente clínico de voz (NIVI) basado en Llama 3.3. Los datos históricos provienen del sistema SIVIGILA (Evento 113 — Desnutrición Aguda) y los datos clínicos actuales del registro directo por personal de salud.
 
 ---
 
-## ✨ Características Principales
+## Índice
 
-| Área | Funcionalidades |
-|------|----------------|
-| 🧒 **Gestión de Pacientes** | Registro, búsqueda, historial clínico completo, datos antropométricos y socioeconómicos |
-| 📏 **Controles Antropométricos** | Peso, talla, IMC, perímetro braquial, Z-scores WHO, signos clínicos (edema, delgadez, palidez, etc.) |
-| 🤖 **Machine Learning** | Clasificación nutricional con 4 algoritmos (RF, GB, LR, XGBoost), modos Clínica y Campo |
-| ⚠️ **Alertas Inteligentes** | Detección temprana de riesgo (severo, moderado, leve), tendencias negativas, pacientes sin seguimiento |
-| 💡 **Recomendaciones IA** | Recomendaciones clínicas personalizadas generadas por Google Gemini con caché de 24h |
-| 📊 **Dashboards** | Indicadores epidemiológicos, factores de riesgo, proyecciones temporales y cuadro de mando estratégico |
-| 📄 **Reportes** | 4 tipos de reportes clínicos (Individual, Poblacional, Epidemiológico, Intervención) en PDF/Excel |
-| 🗃️ **Gestión de Datasets** | Carga de CSV/Excel, ETL automático (limpieza, normalización, validación) |
-| 🔧 **Entrenamiento de Modelos** | Selección de algoritmo, ajuste de hiperparámetros, evaluación de métricas, comparación de modelos |
-| 👥 **Gestión de Usuarios** | RBAC con roles ANL y CLI, habilitación/inhabilitación de cuentas |
-| 🔐 **Seguridad** | Autenticación JWT vía Supabase Auth, Row Level Security, service key para backend |
+1. [Arquitectura del sistema](#arquitectura-del-sistema)
+2. [Stack tecnológico](#stack-tecnológico)
+3. [Roles y paneles](#roles-y-paneles)
+4. [Funcionalidades por panel](#funcionalidades-por-panel)
+5. [Machine Learning](#machine-learning)
+6. [Proyecciones epidemiológicas](#proyecciones-epidemiológicas)
+7. [Asistente NIVI](#asistente-nivi)
+8. [API REST](#api-rest)
+9. [Estructura del proyecto](#estructura-del-proyecto)
+10. [Base de datos](#base-de-datos)
+11. [Despliegue en producción](#despliegue-en-producción)
+12. [Instalación local](#instalación-local)
+13. [Variables de entorno](#variables-de-entorno)
+14. [Estándares normativos](#estándares-normativos)
 
 ---
 
-## 🏗 Arquitectura del Sistema
+## Arquitectura del sistema
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                          CLIENTE (Browser)                          │
-│   React 18 + Vite + TailwindCSS + Recharts + Framer Motion         │
-│                                                                     │
-│   ┌──────────┐  ┌──────────┐  ┌───────────┐  ┌──────────────────┐  │
-│   │ Landing  │  │  Login   │  │  Panel    │  │  Panel           │  │
-│   │  Page    │  │  Page    │  │  ANL      │  │  CLI             │  │
-│   └──────────┘  └──────────┘  └───────────┘  └──────────────────┘  │
-└─────────────────────────┬───────────────────────────────────────────┘
-                          │ HTTP / REST (axios)
-                          ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                       BACKEND (FastAPI + Uvicorn)                    │
-│                                                                     │
-│   ┌───────────┐  ┌────────────┐  ┌────────────┐  ┌──────────────┐  │
-│   │  Auth     │  │  Routers   │  │  Services  │  │  ML Engine   │  │
-│   │  (JWT)    │  │  (REST)    │  │  (ETL, IA) │  │  (sklearn)   │  │
-│   └───────────┘  └────────────┘  └────────────┘  └──────────────┘  │
-└─────────────────────────┬──────────────────────┬────────────────────┘
-                          │                      │
-                          ▼                      ▼
-               ┌──────────────────┐    ┌──────────────────┐
-               │    Supabase      │    │  Google Gemini   │
-               │  (PostgreSQL +   │    │  (Recomendaciones│
-               │   Auth + RLS)    │    │   clínicas IA)   │
-               └──────────────────┘    └──────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                        CLIENTE (Browser)                        │
+│                                                                 │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐                      │
+│  │ Panel CLI │  │ Panel ANL │  │ Panel ADM │   React + Vite     │
+│  │ /cli/*   │  │ /anl/*   │  │ /adm/*   │   Tailwind + Framer  │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘                      │
+└───────┼──────────────┼──────────────┼───────────────────────────┘
+        │              │              │  HTTPS / REST API
+        ▼              ▼              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   BACKEND — Google Cloud Run                    │
+│                                                                 │
+│  ┌─────────────────────────────────────────────────────────┐   │
+│  │                    FastAPI + Uvicorn                    │   │
+│  │                                                         │   │
+│  │  /auth          /pacientes    /controles   /alertas     │   │
+│  │  /estadisticas  /proyecciones /modelos     /modelos_ml  │   │
+│  │  /entrenamiento /datasets     /reportes    /chat        │   │
+│  │  /analisis-ia   /compartir    /usuarios    /proyecciones │   │
+│  └──────────┬──────────────────────────────────────────────┘   │
+│             │                                                   │
+│  ┌──────────▼──────────┐  ┌───────────────────────────────┐   │
+│  │   Capa de servicios  │  │        Capa de ML             │   │
+│  │                      │  │                               │   │
+│  │  • ETL SIVIGILA      │  │  • scikit-learn (RF/XGB/GB/LR)│   │
+│  │  • Entrenamiento ML  │  │  • statsmodels (SARIMA)       │   │
+│  │  • Chat IA (Groq)    │  │  • imbalanced-learn (SMOTE)   │   │
+│  │  • Análisis IA       │  │  • joblib (persistencia)      │   │
+│  │  • Reportes (Gemini) │  │                               │   │
+│  └──────────────────────┘  └───────────────────────────────┘   │
+└─────────────────┬───────────────────────────────────────────────┘
+                  │
+     ┌────────────┼────────────┐
+     ▼            ▼            ▼
+┌─────────┐  ┌─────────┐  ┌────────────────┐
+│Supabase │  │  GCS    │  │   APIs externas │
+│(PostgreSQL│  │(Storage)│  │                │
+│  + Auth)│  │modelos/ │  │ Groq: LLM+STT  │
+│         │  │uploads/ │  │ Google: Gemini  │
+│         │  │processed│  │                │
+└─────────┘  └─────────┘  └────────────────┘
+```
+
+### Flujo de autenticación
+
+```
+Usuario → Login → Supabase Auth → JWT Token → FastAPI (Bearer)
+                                            → Perfil en BD (rol: CLI|ANL|ADM)
+                                            → Redirección según rol
+```
+
+### Flujo de predicción ML
+
+```
+Control clínico → ETL en memoria → Modelo A (con IMC) o B (sin IMC)
+               → Z-score OMS → Clasificación (6 clases)
+               → Alerta automática si severo/moderado
+               → Guardado en BD + notificación en panel
 ```
 
 ---
 
-## 📁 Estructura del Proyecto
+## Stack tecnológico
 
-```text
+### Frontend
+| Librería | Versión | Uso |
+|---|---|---|
+| React | 18 | Framework UI |
+| Vite | 5 | Bundler + dev server |
+| Tailwind CSS | 3 | Estilos utilitarios |
+| Framer Motion | 11 | Animaciones y transiciones |
+| Recharts | 2 | Gráficas (barras, líneas, radar, scatter) |
+| React Router | 6 | Navegación SPA |
+| Axios | 1 | Cliente HTTP |
+| @splinetool/react-spline | — | Animación 3D NIVI |
+| jsPDF + html2canvas | — | Generación PDF cliente |
+
+### Backend
+| Librería | Versión | Uso |
+|---|---|---|
+| FastAPI | 0.115 | Framework API REST |
+| Uvicorn | 0.30 | Servidor ASGI |
+| Pydantic | 2.8 | Validación de datos |
+| pydantic-settings | 2.4 | Config desde .env |
+| supabase | ≥2.10 | Cliente BD + Auth + Storage |
+| scikit-learn | ≥1.5 | Modelos ML |
+| imbalanced-learn | ≥0.12 | SMOTE |
+| statsmodels | ≥0.14 | SARIMA proyecciones |
+| pandas | 2.2 | ETL y análisis de datos |
+| numpy | ≥1.26 | Operaciones numéricas |
+| joblib | ≥1.4 | Serialización de modelos |
+| httpx | 0.27 | Cliente HTTP async (Groq/Gemini) |
+| google-genai | ≥1.0 | Google Gemini (reportes IA) |
+| aiosmtplib | ≥3.0 | Envío de correos SMTP |
+| openpyxl | ≥3.1 | Generación Excel |
+| python-multipart | 0.0.9 | Upload de archivos |
+| python-jose | 3.3 | JWT (verificación complementaria) |
+
+### Infraestructura
+| Servicio | Uso |
+|---|---|
+| Google Cloud Run | Backend containerizado (min-instances=1, timeout=3600s) |
+| Google Artifact Registry | Registro de imágenes Docker |
+| Google Cloud Storage | Modelos .joblib · datasets CSV · informes PDF |
+| Supabase | PostgreSQL · Auth · Storage · Row Level Security |
+| Vercel | Frontend React (CDN global) |
+| GitHub Actions | CI/CD automático al hacer push a `main` |
+
+---
+
+## Roles y paneles
+
+```
+                    ┌─────────────────────────────┐
+                    │         Login               │
+                    │   /login → Supabase Auth    │
+                    └──────────┬──────────────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              ▼                ▼                ▼
+    ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+    │   CLI /cli   │  │   ANL /anl   │  │   ADM /adm   │
+    │              │  │              │  │              │
+    │ Personal     │  │ Analistas    │  │ Administra-  │
+    │ Clínico      │  │ Salud Pública│  │ dores Sistema│
+    └──────────────┘  └──────────────┘  └──────────────┘
+```
+
+| Rol | Acceso a | No accede a |
+|---|---|---|
+| **CLI** | Pacientes, controles, alertas, NIVI clínica | Configuración, datasets, modelos, dashboards ANL |
+| **ANL** | Dashboard epidemiológico, reportes, proyecciones, modelos (lectura), NIVI ANL | Administración de usuarios, entrenamiento, datasets |
+| **ADM** | Todo lo administrativo: usuarios, datasets, entrenamiento, modelos, informe ML | Panel clínico, dashboard epidemiológico ANL |
+
+---
+
+## Funcionalidades por panel
+
+### Panel Clínico — CLI
+
+#### Gestión de pacientes
+- Registro completo con datos sociodemográficos (estrato, etnia, área, municipio, establecimiento)
+- Datos perinatales: peso al nacer, edad gestacional, lactancia, complementaria
+- Indicadores de salud: esquema vacunal, seguimiento C&D, factores de riesgo social
+- Búsqueda y filtros por nombre, estado nutricional, municipio, establecimiento
+
+#### Controles nutricionales
+- Registro: peso, talla, perímetro braquial, IMC calculado automáticamente
+- Z-score P/E calculado con tablas OMS 2006
+- Predicción ML automática del estado nutricional (6 clases)
+- Signos clínicos: edema, delgadez visible, palidez, piel reseca, hiperpigmentación, cambios cabello
+- Historial visual de todos los controles del paciente
+- Generación automática de alertas si el resultado es crítico
+
+#### Alertas
+- Niveles: severa (rojo), moderada (naranja), riesgo (amarillo)
+- Marcar como leída individualmente o todas a la vez
+- Contador de no leídas en el sidebar
+- Filtro por nivel de severidad
+
+#### Asistente NIVI (CLI)
+- Chat con IA especializada en nutrición infantil (Llama 3.3 70B via Groq)
+- Detección automática de nombre de paciente en el mensaje → búsqueda en BD → carga de contexto
+- Desambiguación visual con tarjetas si hay varios pacientes con el mismo nombre
+- Entrada de voz con transcripción automática (Groq Whisper)
+- Animación Spline 3D reactiva al volumen del micrófono
+- Recomendaciones basadas en OMS/MSPS/ICBF
+- Historial persistente durante la sesión
+- Ventana flotante redimensionable que emerge del botón con animación spring
+
+---
+
+### Dashboard Analítico — ANL
+
+#### Banner de estado epidemiológico
+Se actualiza automáticamente con los filtros activos y muestra:
+- **GAM** (Global Acute Malnutrition): % moderada + severa
+- **SAM** (Severe Acute Malnutrition): % severa únicamente
+- **Hosp.**: tasa de hospitalización
+- **Sin C&D**: % sin seguimiento de crecimiento y desarrollo
+
+Niveles con paleta estándar salud: 🔴 Crítica · 🟠 Alta · 🟡 Media · 🟢 Favorable
+
+#### KPIs en tiempo real
+- Total casos monitoreados (BD + datasets históricos SIVIGILA)
+- Tasa de desnutrición severa + moderada
+- Tasa de hospitalización
+- Actualización automática cada 2 minutos
+
+#### Filtros geográficos
+- Por defecto: CESAR → VALLEDUPAR
+- Opciones dinámicas desde BD + datasets procesados
+- Los municipios se filtran al departamento seleccionado
+- Todos los charts y KPIs respetan el filtro activo
+
+#### Vista Proyecciones (Vista 1)
+- Gráfica principal con línea histórica azul sólida y pronóstico morado discontinuo
+- Bandas de confianza IC 80% (`#B39DDB`) e IC 95% (`#EDE7F6`)
+- Toggle métrica: Casos · Tasa severa · Tasa moderada · Z-score
+- Toggle vista: Mensual · Anual (agrega datos por año)
+- Banner de nivel de datos (municipio / departamento / departamento-fallback / nacional)
+- Alertas normativas automáticas basadas en umbrales OMS/MSPS/ICBF
+
+#### Vista Distribuciones (Vista 2)
+- Por estrato socioeconómico (barras apiladas severo/moderado/adecuado)
+- Por sexo M/F con barras proporcionales de severidad
+- Por grupo etario (0–1, 1, 2, 3, 4, 5+ años)
+- Crecimiento y desarrollo (donut con/sin seguimiento + alerta si >30% sin)
+
+#### Análisis IA del dashboard
+- NIVI analiza automáticamente al abrir el panel con los datos del filtro activo
+- Genera resumen interpretativo, alertas críticas y recomendaciones
+- Conversación libre sobre los datos, posibilidad de pedir planes de acción
+- Entrada de voz con Spline 3D reactiva (mismo comportamiento que CLI)
+
+#### Informes
+- Tipos: Nutricional · Epidemiológico · Clínico de Pacientes
+- Gráficas primero, texto después
+- Análisis IA con Gemini incluido en el informe
+- **Descargar PDF**: `window.print()` con CSS de impresión
+- **Compartir**: subir a Supabase Storage → link de descarga → opciones Correo / Outlook / WhatsApp
+
+---
+
+### Panel Administrativo — ADM
+
+#### Gestión de usuarios
+- Lista completa de todos los usuarios del sistema (CLI + ANL + ADM)
+- KPIs: total, clínicos, analíticos, administradores
+- Filtros por rol con estilo clay activo
+- Edición de rol inline con dropdown sin confirmación adicional
+- Toggle habilitado/inhabilitado (sincronizado con Supabase Auth)
+- Creación de nuevos usuarios con selector de rol visual y descripción de permisos
+
+#### Datasets SIVIGILA
+- Carga de archivos Excel SIVIGILA Evento 113
+- Pipeline ETL completo: filtro pediátrico → outliers → imputación → columnas ML
+- Columnas extra para dashboard: `sexo_`, `pac_hos_`, `ndep_resi`, `nmun_resi`, `anio_mes`
+- Habilitación/deshabilitación para entrenamiento
+- Estado: pendiente → procesando → procesado / error
+
+#### Entrenamiento ML
+- Selección de algoritmos: Random Forest · XGBoost (HistGB) · Gradient Boosting · Logistic Regression
+- Parámetros configurables por algoritmo (n_estimators, max_depth, learning_rate, etc.)
+- Fuentes de datos: datasets SIVIGILA + registros BD con filtros opcionales
+- SMOTE opcional para balanceo de clases
+- Ejecución en thread pool para no bloquear el servidor durante el entrenamiento
+- Estado persistido en tabla `jobs_entrenamiento` (sobrevive reinicios del contenedor)
+- **Auto-selección**: al terminar, activa automáticamente el modelo con mejor F1 Weighted
+- **1 versión por tipo**: limpieza automática de versiones anteriores del mismo algoritmo
+
+#### Modelos ML
+- Comparativa gráfica: barras agrupadas (Accuracy, F1 Weighted, F1 Macro) + radar
+- Ranking por F1 Weighted con badge dorado para el mejor
+- Lista colapsable (3 visibles → "Ver más" con scroll)
+- Multi-selección con checkbox + "Seleccionar todos (excepto activo)"
+- Eliminación individual o masiva
+- Detalle del modelo seleccionado con métricas A y B
+- NIVI explica las métricas en lenguaje no técnico
+
+#### Informe ML
+- Radar de métricas del modelo activo
+- Tabla con interpretación (Excelente/Bueno/Aceptable/Requiere mejora)
+- Modelo A vs Modelo B (barras comparativas)
+- Evolución histórica: Accuracy + F1 Weighted + CV por versión
+- F1 promedio por tipo de algoritmo
+- Scatter: volumen de datos vs rendimiento
+- Exportar PDF + Compartir (Supabase Storage)
+
+---
+
+## Machine Learning
+
+### Algoritmos disponibles
+
+| Algoritmo | Clave | Hiperparámetros configurables |
+|---|---|---|
+| Random Forest | `rf` | n_estimators, max_depth, min_samples_split, max_features |
+| XGBoost (HistGB) | `xgb` | max_iter, learning_rate, max_depth |
+| Gradient Boosting | `gb` | n_estimators, learning_rate, max_depth, min_samples_leaf |
+| Regresión Logística | `lr` | C, max_iter, solver |
+
+### Features del modelo
+
+**Modelo A** (con IMC — 25 features):
+`edad_meses, per_etn_, estrato_, area_, cod_dpto_o, niv_educat, menores, gp_pobicbf, peso_nac, edad_ges, peso_act, per_braqui, imc, t_lechem, e_complem, crec_dllo, esq_vac, carne_vac, edema, delgadez, palidez, piel_rese, hiperpigm, cambios_cabello, ruta_atenc`
+
+**Modelo B** (sin IMC — 24 features): igual que A sin `imc`
+
+### Pipeline ETL SIVIGILA
+
+```
+Excel SIVIGILA
+  → Filtro pediátrico ≤ 5 años (uni_med_ + edad_)
+  → Fix coma decimal (formato es-CO)
+  → Ceros clínicos → NaN (peso_nac, talla_nac, per_braqui, edad_ges)
+  → Outliers físicos: peso_act [1-25kg] · talla_act [45-150cm] · imc [10-30]
+  → Eliminar clas_peso == 7
+  → Validación coherencia edad vs fecha_nac
+  → Calcular edad_meses
+  → Imputación estratificada por clas_peso (mediana para continuas)
+  → peso_nac por grupo edad_ges · edad_ges → mediana
+  → Moda para binarias/categóricas (edema, esq_vac, etc.)
+  → Castear a Int64
+  → Adjuntar columnas dashboard: sexo_, pac_hos_, edad_, ndep_resi, nmun_resi, anio_mes
+  → CSV procesado (features ML + columnas dashboard)
+```
+
+### Auto-selección del mejor modelo
+
+Al finalizar cada entrenamiento:
+1. Compara F1 Weighted del nuevo modelo con el activo actual
+2. Si el nuevo supera al activo → activa el nuevo, desactiva el anterior
+3. Si el actual es mejor → lo mantiene
+4. Log explícito del resultado en el job
+
+```
+✅ Auto-selección: "Random Forest 143256" activado (F1: 0.871 > anterior: 0.843)
+ℹ Modelo actual sigue siendo el mejor (F1 actual: 0.871 ≥ nuevo: 0.855)
+```
+
+---
+
+## Proyecciones epidemiológicas
+
+### Modelo SARIMA
+
+```
+SARIMA(1, 1, 1)(1, 1, 0)[12]
+  p=1: autorregresión de orden 1
+  d=1: diferenciación de orden 1 (tendencia)
+  q=1: media móvil de orden 1
+  P=1: autorregresión estacional
+  D=1: diferenciación estacional
+  Q=0: sin media móvil estacional
+  s=12: período estacional anual
+```
+
+### Fuentes de datos para proyecciones
+
+| Prioridad | Fuente | Datos |
+|---|---|---|
+| 1 | Datasets SIVIGILA procesados (`ndep_resi` + `anio_mes`) | Departamento/municipio |
+| 2 | BD clínica (`pacientes.dpto_residencia` + `controles.fecha`) | Datos actuales |
+| 3 | `serie_temporal_mensual.csv` (73 puntos 2020-2026) | Nacional |
+
+### Fallback jerárquico
+
+```
+Municipio (Valledupar) → si insuficiente (<12 meses reales, <20 casos)
+  → Departamento (Cesar) → si insuficiente
+    → Nacional
+```
+
+### Intervalos de confianza
+
+- **IC 80%**: banda más oscura (`#B39DDB`) — 80% de probabilidad de contener el valor real
+- **IC 95%**: banda más clara (`#EDE7F6`) — 95% de probabilidad
+
+### Alertas de proyección (estándares OMS/MSPS/ICBF)
+
+| Métrica | Nivel crítico | Nivel alto | Nivel medio |
+|---|---|---|---|
+| SAM (tasa severa) | ≥ 5% | ≥ 2% | ≥ 1% |
+| GAM (tasa moderada) | ≥ 15% | ≥ 10% | ≥ 5% (Caribe) |
+| Z-score poblacional | ≤ −3 | ≤ −2 | ≤ −1.5 |
+| Casos (tendencia) | ≥ 50/mes + IC95 confirma | ≥ 50/mes | ≥ 20/mes |
+
+---
+
+## Asistente NIVI
+
+### Arquitectura
+
+```
+Entrada texto/voz → [Groq Whisper STT] → Texto
+Texto + Contexto → [Llama 3.3 70B via Groq] → Respuesta
+
+Contexto inyectado según panel:
+  CLI:  datos del paciente (nombre, edad, peso, talla, z-score, estado)
+  ANL:  datos del dashboard (GAM, SAM, distribuciones, zona filtrada)
+  ADM:  métricas del modelo ML (Accuracy, F1, CV, muestras, fuentes)
+```
+
+### Comportamiento por panel
+
+#### NIVI CLI
+- Sistema prompt: especialista en nutrición infantil, tono de colega clínico
+- Detección de nombre de paciente en el mensaje mediante LLM (Groq, max_tokens=20)
+- Si detecta nombre → búsqueda en BD → contexto inyectado automáticamente
+- Desambiguación si hay varios pacientes con el mismo nombre (tarjetas seleccionables)
+- Ventana flotante que emerge del botón (transform-origin desde esquina)
+- Historial persistente en sesión, se resetea al cambiar filtro de paciente
+
+#### NIVI ANL
+- Sistema prompt: epidemiología nutricional + toma de decisiones en salud pública
+- Al abrir: análisis automático del estado del dashboard (zona, GAM, SAM, distribuciones)
+- Permite preguntar sobre tendencias, municipios críticos, planes de acción
+- Historial persistente durante la sesión, se resetea al cambiar filtros geo
+
+#### NIVI ADM (Modelos)
+- Explica Accuracy, F1 Weighted, F1 Macro, CV Accuracy en lenguaje no técnico
+- Diferencia Modelo A (con IMC) vs Modelo B (sin IMC)
+- No da recomendaciones técnicas, solo explica los números
+
+### Funciones de voz
+- **Transcripción**: Groq Whisper (`whisper-large-v3-turbo`)
+- **Formatos**: audio/webm (MediaRecorder del navegador)
+- **Límites**: máx 25 MB, mínimo 1000 bytes
+- **Idioma**: español (es)
+- **Visualización**: Spline 3D reactiva al volumen (Web Audio API + EMA smoothing α=0.18/0.06)
+
+---
+
+## API REST
+
+### Autenticación
+```
+POST /auth/login        → { email, password } → { access_token, user }
+POST /auth/logout
+```
+Todas las rutas requieren `Authorization: Bearer <token>`
+
+### Pacientes (CLI)
+```
+GET    /pacientes              → lista con último control
+POST   /pacientes              → crear paciente
+GET    /pacientes/:id          → detalle con historial completo
+```
+
+### Controles (CLI)
+```
+GET    /controles?paciente_id  → controles de un paciente
+POST   /controles              → registrar control + predicción ML + alerta automática
+```
+
+### Alertas (CLI)
+```
+GET    /alertas                → alertas del usuario
+PATCH  /alertas/:id/leer       → marcar leída
+PATCH  /alertas/marcar-todas   → marcar todas leídas
+```
+
+### Estadísticas (ANL)
+```
+GET  /estadisticas                     → KPIs + distribuciones + tendencia
+GET  /estadisticas?dpto=X&municipio=Y  → filtrado geográfico
+GET  /estadisticas/detalle             → desglose demográfico (sexo, edad, estrato, C&D)
+GET  /estadisticas/geo                 → opciones de filtros disponibles
+```
+
+### Proyecciones (ANL)
+```
+GET  /proyecciones?metrica=casos&dpto=CESAR&municipio=VALLEDUPAR&vista=mensual
+     metrica: casos | tasa_severa | tasa_moderada | zscore
+     → { datos, fuente, zona_efectiva, modelo, n_train, baja_densidad }
+GET  /proyecciones/departamentos  → dptos con datos suficientes para proyectar
+```
+
+### Análisis IA
+```
+POST /analisis-ia?dpto=X&municipio=Y  → análisis IA del dashboard
+     → { resumen, alertas[], recomendaciones[], tendencia }
+```
+
+### Chat / NIVI
+```
+POST /chat                    → { mensaje, historial, contexto_paciente }
+POST /chat/transcribir        → audio (multipart) → { texto }
+```
+
+### Modelos ML (ADM)
+```
+GET    /modelos               → lista de modelos entrenados
+PUT    /modelos/:id/activar   → activar modelo para producción
+DELETE /modelos/:id           → eliminar modelo + archivos
+POST   /modelos/limpiar-huerfanos → eliminar archivos sin registro en BD
+```
+
+### Entrenamiento (ADM)
+```
+POST /entrenamiento/iniciar   → { modelos, test_size, cv_folds, nombre } → { job_id }
+GET  /entrenamiento/:job_id   → estado del job (en memoria o Supabase)
+```
+
+### Datasets (ADM)
+```
+GET    /datasets              → lista de datasets
+POST   /datasets/upload       → subir Excel SIVIGILA
+POST   /datasets/:id/procesar → ejecutar ETL
+PATCH  /datasets/:id/habilitar → habilitar/deshabilitar para entrenamiento
+DELETE /datasets/:id          → eliminar
+```
+
+### Reportes (ANL/ADM)
+```
+POST /reportes/generar        → { tipo, fecha_desde, fecha_hasta, zona }
+GET  /reportes/historial      → últimos 20 reportes (en memoria)
+GET  /reportes/:id            → reporte completo
+GET  /reportes/:id/excel      → descargar XLSX
+```
+
+### Compartir (ANL)
+```
+POST /compartir/subir-pdf     → { pdf_base64, nombre_archivo } → { url }
+POST /compartir/informe       → { destinatario, asunto, pdf_base64 } (requiere SMTP)
+```
+
+### Usuarios (ADM)
+```
+GET    /usuarios              → todos los usuarios (CLI + ANL + ADM)
+POST   /usuarios              → crear usuario con rol
+PATCH  /usuarios/:id/habilitar → habilitar/inhabilitar
+PATCH  /usuarios/:id/rol      → cambiar rol
+```
+
+---
+
+## Estructura del proyecto
+
+```
 Project/
+├── backend/
+│   ├── app/
+│   │   ├── auth/
+│   │   │   ├── router.py           # login/logout
+│   │   │   └── dependencies.py     # get_current_user, require_cli, require_anl, require_adm
+│   │   ├── routers/
+│   │   │   ├── pacientes.py
+│   │   │   ├── controles.py
+│   │   │   ├── alertas.py
+│   │   │   ├── estadisticas.py     # KPIs + distribuciones + geo
+│   │   │   ├── proyecciones.py     # SARIMA
+│   │   │   ├── analisis_ia.py      # análisis IA del dashboard
+│   │   │   ├── modelos.py
+│   │   │   ├── entrenamiento.py
+│   │   │   ├── datasets.py
+│   │   │   ├── reportes.py
+│   │   │   ├── chat.py             # NIVI + Whisper
+│   │   │   ├── compartir.py        # PDF → Supabase Storage
+│   │   │   └── usuarios.py
+│   │   ├── services/
+│   │   │   ├── entrenamiento.py    # pipeline ML + auto-selección + thread pool
+│   │   │   ├── etl.py              # ETL SIVIGILA
+│   │   │   ├── chat_asistente.py   # NIVI (Groq Llama)
+│   │   │   ├── ai_reportes.py      # análisis reportes (Gemini)
+│   │   │   ├── reportes_data.py    # datos para cada tipo de reporte
+│   │   │   └── etl.py
+│   │   ├── ml/
+│   │   │   ├── loader.py           # carga modelos desde GCS al arrancar
+│   │   │   └── predictor.py        # predicción + z-score OMS
+│   │   ├── schemas/
+│   │   │   ├── paciente.py
+│   │   │   └── control.py
+│   │   ├── config.py               # Settings (pydantic-settings)
+│   │   └── database.py             # clientes Supabase (service + anon)
+│   ├── main.py                     # app FastAPI + lifespan (carga modelos)
+│   ├── Dockerfile
+│   ├── .dockerignore
+│   └── requirements.txt
 │
-├── backend/                          # API REST (FastAPI)
-│   ├── main.py                       # Entry point — lifespan, CORS, routers
-│   ├── requirements.txt              # Dependencias Python
-│   ├── .env.example                  # Variables de entorno ejemplo
-│   └── app/
-│       ├── config.py                 # Configuración (Pydantic Settings)
-│       ├── database.py               # Cliente Supabase
-│       ├── auth/                     # Autenticación JWT
-│       │   └── router.py             # Login, registro, validación de tokens
-│       ├── routers/                  # Endpoints REST
-│       │   ├── pacientes.py          # CRUD de pacientes
-│       │   ├── controles.py          # Controles antropométricos + predicción ML
-│       │   ├── alertas.py            # Sistema de alertas inteligentes
-│       │   ├── usuarios.py           # Gestión de usuarios (RBAC)
-│       │   ├── recomendaciones.py    # Recomendaciones clínicas IA
-│       │   ├── modelos.py            # Gestión de modelos ML (activar, comparar)
-│       │   ├── estadisticas.py       # KPIs y métricas del dashboard
-│       │   ├── entrenamiento.py      # Entrenamiento de modelos ML
-│       │   ├── datasets.py           # Carga y gestión de datasets
-│       │   └── reportes.py           # Generación de reportes PDF/Excel
-│       ├── schemas/                  # Esquemas Pydantic (validación)
-│       ├── services/                 # Lógica de negocio
-│       │   ├── ai_recomendaciones.py # Recomendaciones con Google Gemini
-│       │   ├── ai_reportes.py        # Análisis IA para reportes
-│       │   ├── entrenamiento.py      # Pipeline de entrenamiento ML
-│       │   ├── etl.py                # Limpieza y transformación de datos
-│       │   └── reportes_data.py      # Consultas y datos para reportes
-│       └── ml/                       # Motor de Machine Learning
-│           ├── loader.py             # Carga de modelos serializados
-│           └── predictor.py          # Inferencia y predicción
+├── frontend/
+│   ├── public/
+│   │   ├── Logo.png
+│   │   ├── NIVI 1.png              # NIVI ojos abiertos
+│   │   └── NIVI 2.png              # NIVI ojos cerrados (parpadeo)
+│   ├── src/
+│   │   ├── pages/
+│   │   │   ├── LandingPage.jsx
+│   │   │   ├── NotFound.jsx
+│   │   │   ├── auth/
+│   │   │   │   └── LoginPage.jsx
+│   │   │   ├── cli/
+│   │   │   │   ├── DashboardCLI.jsx
+│   │   │   │   ├── HomeCLI.jsx
+│   │   │   │   ├── PacientesCLI.jsx
+│   │   │   │   ├── DetallePaciente.jsx
+│   │   │   │   └── AlertasCLI.jsx
+│   │   │   ├── anl/
+│   │   │   │   ├── DashboardANL.jsx
+│   │   │   │   ├── HomeANL.jsx     # dashboard epidemiológico completo
+│   │   │   │   ├── ModelosANL.jsx  # comparativa + gestión modelos
+│   │   │   │   └── ReportesANL.jsx
+│   │   │   └── adm/
+│   │   │       ├── DashboardADM.jsx
+│   │   │       ├── HomeADM.jsx
+│   │   │       └── ReportesADM.jsx # informe ML
+│   │   ├── components/
+│   │   │   ├── common/
+│   │   │   │   └── ProtectedRoute.jsx
+│   │   │   ├── cli/
+│   │   │   │   ├── ChatAsistente.jsx   # NIVI CLI (voz + Spline + paciente ctx)
+│   │   │   │   └── SidebarCLI.jsx
+│   │   │   ├── anl/
+│   │   │   │   ├── ChatDashboard.jsx   # NIVI ANL (voz + Spline + dashboard ctx)
+│   │   │   │   └── SidebarANL.jsx
+│   │   │   └── adm/
+│   │   │       └── SidebarADM.jsx
+│   │   ├── contexts/
+│   │   │   └── AuthContext.jsx
+│   │   ├── services/
+│   │   │   └── api.js              # Axios con interceptor JWT
+│   │   ├── App.jsx                 # Rutas principales
+│   │   ├── main.jsx
+│   │   └── index.css               # Tokens Tailwind + clay styles
+│   ├── vercel.json                 # SPA rewrites
+│   └── vite.config.js              # proxy /api → backend local
 │
-├── frontend/                         # Interfaz de usuario (React)
-│   ├── package.json                  # Dependencias Node.js
-│   ├── vite.config.js                # Configuración Vite
-│   ├── tailwind.config.js            # Paleta de colores clínica
-│   ├── index.html                    # HTML raíz
-│   └── src/
-│       ├── App.jsx                   # Router principal
-│       ├── main.jsx                  # Entry point React
-│       ├── index.css                 # Estilos globales
-│       ├── contexts/                 # AuthContext (estado global de sesión)
-│       ├── services/                 # Clientes HTTP (axios)
-│       ├── styles/                   # Estilos adicionales
-│       ├── components/               # Componentes reutilizables
-│       │   ├── common/               # ProtectedRoute, Sidebar, Navbar
-│       │   ├── anl/                  # Componentes del panel ANL
-│       │   └── cli/                  # Componentes del panel CLI
-│       └── pages/                    # Páginas de la aplicación
-│           ├── LandingPage.jsx       # Página de inicio pública
-│           ├── NotFound.jsx          # Página 404
-│           ├── auth/
-│           │   └── LoginPage.jsx     # Inicio de sesión
-│           ├── anl/                  # Vistas del rol ANL
-│           │   ├── HomeANL.jsx       # Dashboard principal analítico
-│           │   ├── DashboardANL.jsx  # Layout con sidebar
-│           │   ├── DashboardsPBI.jsx # Dashboards Power BI embebidos
-│           │   ├── DatasetsANL.jsx   # Gestión de datasets
-│           │   ├── EntrenamientoANL.jsx # Entrenamiento de modelos
-│           │   ├── ModelosANL.jsx    # Comparación y activación de modelos
-│           │   ├── ReportesANL.jsx   # Generación de reportes
-│           │   └── UsuariosANL.jsx   # Gestión de usuarios
-│           └── cli/                  # Vistas del rol CLI
-│               ├── HomeCLI.jsx       # Dashboard clínico
-│               ├── DashboardCLI.jsx  # Layout con sidebar
-│               ├── PacientesCLI.jsx  # Lista y registro de pacientes
-│               ├── DetallePaciente.jsx # Ficha completa del paciente
-│               └── AlertasCLI.jsx    # Centro de alertas
+├── notebooks/
+│   ├── 01_estructura_datos.ipynb
+│   ├── 02_calidad_datos.ipynb
+│   ├── 03_etl_limpieza_datos.ipynb
+│   ├── 04_analisis_exploratorio.ipynb
+│   ├── 05_modelos_ml.ipynb
+│   ├── 06_predicciones.ipynb
+│   └── 07_proyecciones_temporales.ipynb  # SARIMA hasta dic 2027
 │
-├── models/                           # Modelos ML serializados (.joblib)
-│   ├── modelo_A_*.joblib             # Modelos Modo Clínica (con IMC)
-│   ├── modelo_B_*.joblib             # Modelos Modo Campo (sin IMC)
-│   ├── scaler_A_*.joblib             # Escaladores Modo Clínica
-│   ├── scaler_B_*.joblib             # Escaladores Modo Campo
-│   ├── le_dpto_*.joblib              # Label Encoders de departamento
-│   └── model_metadata.json           # Metadatos del modelo activo
+├── data/
+│   └── processed/
+│       ├── serie_temporal_mensual.csv    # 73 meses 2020-2026 (nacional)
+│       └── serie_temporal_departamento.csv
 │
-├── data/                             # Datos del proyecto
-│   ├── raw/                          # Datos originales SIVIGILA
-│   ├── processed/                    # Datasets limpios y transformados
-│   │   ├── 01_registros.csv          # Dataset limpio principal (2,438 registros)
-│   │   ├── dataset_ml.csv            # Dataset para modelado (3,428 registros)
-│   │   ├── serie_temporal_mensual.csv
-│   │   └── serie_temporal_departamento.csv
-│   └── external/                     # Datos complementarios externos
+├── .github/
+│   └── workflows/
+│       └── deploy-backend.yml    # build → Artifact Registry → Cloud Run
 │
-├── notebooks/                        # Jupyter Notebooks (CRISP-DM)
-│   ├── 01_estructura_datos.ipynb     # Exploración inicial y estructura
-│   ├── 02_calidad_datos.ipynb        # Auditoría de calidad y nulos
-│   ├── 03_etl_limpieza_datos.ipynb   # ETL y limpieza
-│   ├── 04_analisis_exploratorio.ipynb # EDA — factores de riesgo y correlaciones
-│   ├── 05_modelos_ml.ipynb           # Entrenamiento y evaluación de modelos
-│   ├── 06_predicciones.ipynb         # Predicciones individuales y perfiles de riesgo
-│   └── 07_proyecciones_temporales.ipynb # Proyecciones SARIMA hasta dic 2027
-│
-├── supabase/                         # Configuración de base de datos
-│   ├── schema.sql                    # Esquema de tablas (DDL)
-│   ├── seed.sql                      # Datos iniciales
-│   └── migrations/                   # Migraciones incrementales
-│
-├── reports/                          # Reportes y figuras generadas
-├── docs/                             # Documentación adicional
-├── scripts/                          # Scripts auxiliares
-├── api/                              # Documentación de la API
-│
-├── AI.md                             # Especificación de diseño y arquitectura
-├── requirements.txt                  # Dependencias globales (notebooks)
-├── .gitignore                        # Archivos excluidos de Git
-└── README.md                         # ← Este archivo
+└── README.md
 ```
 
 ---
 
-## 📌 Requisitos Previos
+## Base de datos
 
-| Herramienta | Versión mínima | Propósito |
-|-------------|---------------|-----------|
-| **Python** | 3.11+ | Backend, ML, notebooks |
-| **Node.js** | 18+ | Frontend React |
-| **npm** | 9+ | Gestor de paquetes |
-| **Git** | 2.x | Control de versiones |
-| **Supabase** | Cuenta gratuita | Base de datos + Auth |
-| **Google Cloud** (opcional) | — | BigQuery, GCS, API Gemini |
+### Tablas principales
+
+```sql
+-- Perfiles de usuario (complementa Supabase Auth)
+profiles (
+  id uuid PK,           -- mismo id que auth.users
+  nombre text,
+  email text,
+  rol text,             -- 'CLI' | 'ANL' | 'ADM'
+  establecimiento text,
+  habilitado boolean,
+  created_at timestamptz
+)
+
+-- Pacientes
+pacientes (
+  id serial PK,
+  nombre, apellidos, dni, fecha_nac, sexo,
+  -- Datos sociodemográficos
+  per_etn_, estrato_, area_, cod_dpto_o, municipio_res, dpto_residencia,
+  zona, establecimiento, niv_educat, menores, factores_sociales,
+  -- Datos perinatales
+  peso_nac, talla_nac, edad_ges, t_lechem, e_complem,
+  -- Indicadores
+  crec_dllo, esq_vac, carne_vac, gp_pobicbf,
+  registrado_por uuid FK → profiles,
+  created_at
+)
+
+-- Controles nutricionales
+controles (
+  id serial PK,
+  paciente_id FK → pacientes,
+  fecha date,
+  peso_act, talla_act, per_braqui, imc, zscore_pt,
+  clas_peso_pred int,   -- predicción ML 1-6
+  clas_nombre text,     -- 'Desnut. severa' etc.
+  prob_desnutrido float,
+  -- Signos clínicos
+  edema, delgadez, palidez, piel_rese, hiperpigm, cambios_cabello,
+  ruta_atenc int,       -- 1=ambulatorio, 2=hospitalario
+  observaciones text,
+  registrado_por uuid FK → profiles,
+  created_at
+)
+
+-- Alertas automáticas
+alertas (
+  id serial PK,
+  paciente_id FK → pacientes,
+  control_id FK → controles,
+  tipo text,            -- 'Desnutrición severa detectada' etc.
+  nivel text,           -- 'severe' | 'moderate' | 'risk'
+  mensaje text,
+  leida boolean DEFAULT false,
+  registrado_por uuid FK → profiles,
+  created_at
+)
+
+-- Modelos ML entrenados
+modelos_ml (
+  id serial PK,
+  nombre text,
+  tipo text,            -- 'rf' | 'xgb' | 'gb' | 'lr'
+  descripcion text,
+  version text,         -- timestamp del entrenamiento
+  archivo_a text,       -- nombre del .joblib Modelo A en GCS
+  archivo_b text,       -- nombre del .joblib Modelo B en GCS
+  scaler_a text,
+  scaler_b text,
+  metricas jsonb,       -- { modelo_A: {accuracy, f1_weighted, ...}, modelo_B: {...}, n_muestras, ... }
+  activo boolean,
+  entrenado_por uuid FK → profiles,
+  created_at
+)
+
+-- Datasets SIVIGILA
+datasets_ml (
+  id serial PK,
+  nombre text,
+  archivo_raw text,     -- nombre en GCS/local (Excel original)
+  archivo_proc text,    -- nombre CSV procesado
+  filas_raw int,
+  filas_proc int,
+  estado text,          -- 'pendiente' | 'procesando' | 'procesado' | 'error'
+  mensaje_etl text,
+  habilitado boolean,
+  created_at
+)
+
+-- Jobs de entrenamiento (persistencia entre reinicios)
+jobs_entrenamiento (
+  job_id text PK,
+  estado text,          -- 'running' | 'done' | 'error'
+  progreso int,         -- 0-100
+  log_msgs jsonb,       -- últimos 50 mensajes del log
+  resultado jsonb,
+  created_at, updated_at
+)
+```
+
+### Bucket Supabase Storage
+```
+reportes/              ← informes PDF compartidos (bucket público)
+```
 
 ---
 
-## 🚀 Instalación y Configuración
+## Despliegue en producción
 
-### 1. Clonar el repositorio
+### Prerequisitos
+- Cuenta Google Cloud con proyecto creado
+- Cuenta Supabase con proyecto creado
+- Repositorio GitHub conectado
+- Cuenta Vercel
+
+### 1. Google Cloud (una sola vez)
 
 ```bash
-git clone <url-del-repositorio>
-cd Project
+export PROJECT_ID=tu-proyecto-gcp
+export REGION=us-central1
+
+# APIs necesarias
+gcloud services enable run.googleapis.com artifactregistry.googleapis.com storage.googleapis.com
+
+# Repositorio Docker
+gcloud artifacts repositories create nutrivigilancia \
+  --repository-format=docker --location=$REGION
+
+# Bucket para modelos y datos
+gsutil mb -l $REGION gs://$PROJECT_ID-data
+gsutil cp gs://vacío/.keep gs://$PROJECT_ID-data/models/.keep
+gsutil cp gs://vacío/.keep gs://$PROJECT_ID-data/uploads/.keep
+gsutil cp gs://vacío/.keep gs://$PROJECT_ID-data/processed/.keep
+
+# Service account para GitHub Actions (deploy)
+gcloud iam service-accounts create github-deploy
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:github-deploy@$PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/run.admin"
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:github-deploy@$PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/artifactregistry.writer"
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:github-deploy@$PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/iam.serviceAccountUser"
+
+# Service account para Cloud Run (accede al bucket)
+gcloud iam service-accounts create cloudrun-sa
+gsutil iam ch serviceAccount:cloudrun-sa@$PROJECT_ID.iam.gserviceaccount.com:roles/storage.objectAdmin \
+  gs://$PROJECT_ID-data
+
+# Clave JSON para GitHub Actions
+gcloud iam service-accounts keys create gcp-key.json \
+  --iam-account="github-deploy@$PROJECT_ID.iam.gserviceaccount.com"
 ```
 
-### 2. Configurar Supabase
-
-1. Crear un proyecto en [supabase.com](https://supabase.com).
-2. Ir a **SQL Editor** y ejecutar el archivo `supabase/schema.sql`.
-3. Ejecutar `supabase/seed.sql` para crear datos iniciales.
-4. Copiar las credenciales desde **Settings → API**:
-   - `SUPABASE_URL`
-   - `SUPABASE_ANON_KEY`
-   - `SUPABASE_SERVICE_KEY`
-   - `SUPABASE_JWT_SECRET`
-
-### 3. Configurar el Backend
+### 2. Configuración post-deploy
 
 ```bash
+# Mantener instancia activa (necesario para entrenamiento)
+gcloud run services update nutrivigilancia-api \
+  --region us-central1 --min-instances 1 --timeout 3600
+
+# Actualizar CORS cuando cambia la URL de Vercel
+gcloud run services update nutrivigilancia-api \
+  --region us-central1 \
+  --update-env-vars "CORS_ORIGINS=https://tu-app.vercel.app"
+```
+
+### 3. GitHub Secrets requeridos
+
+```
+GCP_PROJECT_ID          → ID del proyecto GCP
+GCP_SA_KEY              → contenido completo de gcp-key.json
+GCP_RUN_SA              → cloudrun-sa@PROJECT_ID.iam.gserviceaccount.com
+GCP_DATA_BUCKET         → PROJECT_ID-data
+CORS_ORIGINS            → https://tu-app.vercel.app
+SUPABASE_URL            → URL del proyecto Supabase
+SUPABASE_ANON_KEY       → clave pública anon
+SUPABASE_SERVICE_KEY    → clave privada service_role
+SUPABASE_JWT_SECRET     → JWT secret del dashboard Supabase
+GROQ_API_KEY            → clave API de console.groq.com
+GOOGLE_API_KEY          → clave API de Google AI Studio
+```
+
+### 4. Vercel
+
+1. Conectar repositorio → Root Directory: `frontend`
+2. Variable de entorno: `VITE_API_URL=https://tu-cloud-run-url.run.app`
+
+### 5. Supabase — tabla adicional requerida
+
+```sql
+create table if not exists jobs_entrenamiento (
+  job_id     text primary key,
+  estado     text    not null default 'running',
+  progreso   integer not null default 0,
+  log_msgs   jsonb            default '[]'::jsonb,
+  resultado  jsonb,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- Constraint de roles
+ALTER TABLE profiles DROP CONSTRAINT IF EXISTS profiles_rol_check;
+ALTER TABLE profiles ADD CONSTRAINT profiles_rol_check
+  CHECK (rol IN ('CLI', 'ANL', 'ADM'));
+```
+
+---
+
+## Instalación local
+
+```bash
+# Clonar el repositorio
+git clone https://github.com/ynavier/Desnutricion-PG.git
+cd Desnutricion-PG/Project
+
+# ─── Backend ───────────────────────────────────────────────────────────────
 cd backend
-
-# Crear entorno virtual
 python -m venv venv
+venv\Scripts\activate          # Windows
+# source venv/bin/activate     # Linux/Mac
 
-# Activar entorno (Windows)
-venv\Scripts\activate
-
-# Instalar dependencias
 pip install -r requirements.txt
+cp .env.example .env           # completar con tus credenciales
 
-# Crear archivo de variables de entorno
-copy .env.example .env
+uvicorn main:app --reload --port 8000
+# API disponible en http://localhost:8000
+# Docs en http://localhost:8000/docs
+
+# ─── Frontend ──────────────────────────────────────────────────────────────
+cd ../frontend
+npm install
+npm run dev
+# App disponible en http://localhost:3000
+# /api se redirige automáticamente a localhost:8000
 ```
 
-Editar `backend/.env` con las credenciales de Supabase:
+---
+
+## Variables de entorno
+
+### Backend `.env`
 
 ```env
 # Supabase
-SUPABASE_URL=https://tu-proyecto.supabase.co
-SUPABASE_ANON_KEY=eyJhbGci...
-SUPABASE_SERVICE_KEY=eyJhbGci...
+SUPABASE_URL=https://xxxx.supabase.co
+SUPABASE_ANON_KEY=eyJ...
+SUPABASE_SERVICE_KEY=eyJ...
 SUPABASE_JWT_SECRET=tu-jwt-secret
 
-# ML models directory (relativo a backend/)
+# IA
+GROQ_API_KEY=gsk_...
+GOOGLE_API_KEY=AIza...
+
+# Rutas (relativas al directorio backend/)
 MODELS_DIR=../models
+DATA_UPLOADS_DIR=../data/uploads
+DATA_PROC_DIR=../data/processed
 
 # App
 APP_ENV=development
-CORS_ORIGINS=http://localhost:5173
+CORS_ORIGINS=http://localhost:5173,http://localhost:3000
 
-# Google Gemini (opcional — recomendaciones IA)
-GOOGLE_API_KEY=
+# SMTP (opcional — para envío de informes por correo)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=tu@gmail.com
+SMTP_PASS=app-password-16-chars
+SMTP_FROM=NutriVigilancia <tu@gmail.com>
 ```
 
-### 4. Configurar el Frontend
-
-```bash
-cd frontend
-npm install
-```
-
-El frontend se conecta por defecto a `http://localhost:8000`. Si el backend corre en otro puerto, ajustar la variable en `src/services/`.
-
-### 5. Configurar la IA (Opcional)
-
-Para habilitar las **recomendaciones clínicas personalizadas** con IA:
-
-1. Ir a [Google AI Studio](https://aistudio.google.com/apikey) y obtener una API key gratuita (sin tarjeta de crédito).
-2. Agregar a `backend/.env`:
+### Frontend `.env.local` (solo en producción)
 
 ```env
-GOOGLE_API_KEY=tu-api-key
+VITE_API_URL=https://nutrivigilancia-api-XXX.us-central1.run.app
 ```
 
-> Si no se configura, el sistema retorna recomendaciones estáticas igualmente funcionales.
+En desarrollo no se necesita — Vite usa el proxy configurado en `vite.config.js`.
 
 ---
 
-## ▶️ Ejecución
+## Estándares normativos
 
-Abrir dos terminales:
-
-**Terminal 1 — Backend (FastAPI):**
-```bash
-cd backend
-python -m uvicorn main:app --reload --port 8000
-```
-
-**Terminal 2 — Frontend (Vite):**
-```bash
-cd frontend
-npm run dev
-```
-
-Acceder a la aplicación en: **http://localhost:5173**
-
-| Servicio | URL |
-|----------|-----|
-| Frontend | http://localhost:5173 |
-| API Backend | http://localhost:8000 |
-| Docs API (Swagger) | http://localhost:8000/docs |
-| Health Check | http://localhost:8000/health |
+| Estándar | Organismo | Aplicación en el sistema |
+|---|---|---|
+| **Tablas de crecimiento 2006** | OMS | Z-score P/E para clasificación nutricional |
+| **SAM ≥ 2%** | MSPS 2016 | Activar respuesta urgente territorial |
+| **GAM ≥ 10%** | MSPS 2016 | Declarar emergencia nutricional |
+| **GAM ≥ 15%** | OMS/OPS — IPC | Emergencia crítica → respuesta humanitaria |
+| **SAM ≥ 5%** | OMS/OPS | Emergencia crítica SAM |
+| **GAM ≥ 5% (Caribe)** | OPS | Umbral reducido por agravantes regionales |
+| **Z < −1.5 poblacional** | ICBF | Intervención preventiva C&D |
+| **Z < −2 poblacional** | OMS 2006 | Desnutrición moderada colectiva |
+| **Z < −3 poblacional** | OMS 2006 | Desnutrición severa colectiva — AIEPI |
+| **SIVIGILA Evento 113** | INS Colombia | Fuente de datos históricos (2020-2026) |
+| **Protocolo AIEPI** | OPS/MSPS | Criterios referencia urgente |
 
 ---
 
-## 👥 Roles del Sistema
+## Licencia
 
-La plataforma implementa **Control de Acceso Basado en Roles (RBAC)** con dos roles:
-
-### 🔬 Rol ANL (Analítica)
-
-Personal administrativo y analítico responsable de la vigilancia epidemiológica.
-
-| Permiso | Descripción |
-|---------|-------------|
-| ✅ Dashboard analítico avanzado | KPIs epidemiológicos, tendencias, mapas |
-| ✅ Gestión de datasets | Carga CSV/Excel, ETL automático |
-| ✅ Entrenamiento de modelos ML | Selección de algoritmo, hiperparámetros |
-| ✅ Comparación de modelos | Accuracy, F1, Recall, AUC-ROC, matrices de confusión |
-| ✅ Generación de reportes | PDF/Excel con análisis clínico y epidemiológico |
-| ✅ Gestión de usuarios | Crear, habilitar/inhabilitar usuarios CLI |
-| ✅ Dashboards Power BI | Visualización de dashboards embebidos |
-| ✅ Configuración de alertas | Umbrales y reglas |
-
-### 🩺 Rol CLI (Clínica)
-
-Personal médico y de enfermería responsable de la atención directa del paciente.
-
-| Permiso | Descripción |
-|---------|-------------|
-| ✅ Registrar pacientes | Datos personales, antropométricos, socioeconómicos |
-| ✅ Controles antropométricos | Peso, talla, IMC, perímetro braquial, signos clínicos |
-| ✅ Ver predicciones ML | Clasificación nutricional y probabilidad de riesgo |
-| ✅ Consultar alertas | Centro de alertas con filtros por severidad |
-| ✅ Ver recomendaciones IA | Recomendaciones clínicas personalizadas |
-| ✅ Historial del paciente | Evolución nutricional con gráficos |
-| ❌ Gestión de usuarios | Solo ANL |
-| ❌ Entrenamiento de modelos | Solo ANL |
-| ❌ Configuración del sistema | Solo ANL |
-
----
-
-## 📦 Módulos Funcionales
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                 NutriVigilancia — Módulos                │
-├─────────────────┬───────────────────────────────────────┤
-│ 1. Autenticación│ JWT, Supabase Auth, RLS               │
-│ 2. Dashboard ANL│ KPIs, estadísticas, tendencias        │
-│ 3. Dashboard CLI│ Panel clínico, pacientes activos      │
-│ 4. Pacientes    │ CRUD, búsqueda, ficha completa        │
-│ 5. Controles    │ Antropometría, Z-scores, predicción   │
-│ 6. Machine Learn│ Entrenamiento, evaluación, inferencia  │
-│ 7. Alertas      │ Detección temprana, niveles, lectura   │
-│ 8. Recomendacio.│ IA Gemini + fallback estático          │
-│ 9. Reportes     │ 4 tipos, PDF/Excel, análisis IA       │
-│10. Datasets     │ Carga, ETL, validación, limpieza       │
-│11. Usuarios     │ RBAC, habilitación, registro           │
-│12. Estadísticas │ Indicadores poblacionales y temporales  │
-└─────────────────┴───────────────────────────────────────┘
-```
-
----
-
-## 🤖 Modelos de Machine Learning
-
-### Resultados
-
-| Modelo | Accuracy | F1-ponderado | Recall Desnut. severa | AUC-ROC |
-|--------|----------|-------------|----------------------|---------|
-| Random Forest (con IMC) | 83.1% | 82.0% | 59.2% | — |
-| Gradient Boosting (con IMC) | 82.9% | 82.0% | 63.3% | — |
-| Gradient Boosting — Predictor binario | — | — | — | 91.3% |
-
-### Modos de Operación
-
-| Modo | Variables | Equipo requerido | Uso recomendado |
-|------|-----------|-----------------|-----------------|
-| **Modo Clínica (Modelo A)** | Incluye IMC, peso, talla | Báscula + tallímetro | Centros de salud, hospitales |
-| **Modo Campo (Modelo B)** | Sin IMC, usa perímetro braquial | Solo cinta métrica | Jornadas rurales, tamizaje comunitario |
-
-### Algoritmos Disponibles
-
-- **Random Forest** — Robusto, buen desempeño general
-- **Gradient Boosting** — Mejor recall en desnutrición severa
-- **Logistic Regression** — Rápido, interpretable
-- **XGBoost** — Alto rendimiento, regularización avanzada
-
-### Pipeline de Entrenamiento
-
-```
-CSV/Excel → ETL (limpieza, normalización) → Feature Engineering
-     → Train/Test Split → Entrenamiento → Evaluación de métricas
-     → Serialización (.joblib) → Activación en producción
-```
-
----
-
-## 🌐 API REST — Endpoints
-
-Base URL: `http://localhost:8000`
-
-| Grupo | Ruta | Descripción |
-|-------|------|-------------|
-| **Health** | `GET /` | Info de la API |
-| | `GET /health` | Estado del sistema y modelos |
-| **Auth** | `POST /auth/login` | Inicio de sesión |
-| | `POST /auth/register` | Registro de usuario (solo ANL) |
-| **Pacientes** | `GET /pacientes` | Listar pacientes |
-| | `POST /pacientes` | Registrar paciente |
-| | `GET /pacientes/{id}` | Detalle del paciente |
-| | `PUT /pacientes/{id}` | Actualizar paciente |
-| **Controles** | `POST /controles` | Nuevo control antropométrico + predicción ML |
-| | `GET /controles/{paciente_id}` | Historial de controles |
-| **Alertas** | `GET /alertas` | Listar alertas |
-| | `PATCH /alertas/{id}` | Marcar como leída |
-| **Recomendaciones** | `POST /recomendaciones` | Obtener recomendación IA |
-| **Modelos** | `GET /modelos` | Listar modelos entrenados |
-| | `POST /modelos/{id}/activar` | Activar un modelo |
-| **Estadísticas** | `GET /estadisticas` | KPIs del dashboard |
-| **Entrenamiento** | `POST /entrenamiento` | Entrenar nuevo modelo |
-| **Datasets** | `POST /datasets/upload` | Subir dataset CSV/Excel |
-| | `POST /datasets/etl` | Ejecutar ETL sobre el dataset |
-| **Reportes** | `GET /reportes/{tipo}` | Generar reporte (PDF/Excel) |
-| **Usuarios** | `GET /usuarios` | Listar usuarios |
-| | `PATCH /usuarios/{id}` | Habilitar/inhabilitar usuario |
-
-> 📖 Documentación interactiva completa en: http://localhost:8000/docs
-
----
-
-## 🗄 Base de Datos
-
-El sistema usa **Supabase (PostgreSQL)** con las siguientes tablas:
-
-```
-┌──────────────┐       ┌──────────────┐
-│   profiles   │       │  pacientes   │
-│──────────────│       │──────────────│
-│ id (UUID)    │◄──────│ registrado_  │
-│ nombre       │       │  por (FK)    │
-│ email        │       │ nombre       │
-│ rol (ANL/CLI)│       │ apellidos    │
-│ habilitado   │       │ fecha_nac    │
-│ establecim.  │       │ sexo         │
-└──────────────┘       │ per_etn_     │
-                       │ peso_nac     │
-                       │ cod_dpto_o   │
-                       │ area_        │
-                       │ estrato_     │
-                       │ ...          │
-                       └──────┬───────┘
-                              │ 1:N
-                   ┌──────────┴──────────┐
-                   │                     │
-            ┌──────┴──────┐       ┌──────┴──────┐
-            │  controles  │       │   alertas   │
-            │─────────────│       │─────────────│
-            │ paciente_id │       │ paciente_id │
-            │ peso_act    │       │ control_id  │
-            │ talla_act   │       │ tipo        │
-            │ per_braqui  │       │ nivel       │
-            │ imc         │       │ (severe/    │
-            │ zscore_pt   │       │  moderate/  │
-            │ zscore_te   │       │  mild/risk) │
-            │ edema       │       │ mensaje     │
-            │ clas_nombre │       │ leida       │
-            │ prob_desnut.│       └─────────────┘
-            │ modelo_usado│
-            └─────────────┘
-```
-
-**Seguridad:**
-- Row Level Security (RLS) habilitada en todas las tablas.
-- El backend usa `service_key` para bypass de RLS.
-- Trigger automático para crear perfil al registrar usuario en Supabase Auth.
-
----
-
-## 📄 Reportes Clínicos
-
-El sistema genera **4 tipos de reportes** clínicamente útiles, disponibles en PDF y Excel:
-
-### 1. Reporte de Evaluación Nutricional Individual
-
-| Sección | Contenido |
-|---------|-----------|
-| Datos del paciente | Nombre, edad, sexo, zona, establecimiento |
-| Evaluación antropométrica | Peso, talla, IMC, perímetro braquial, Z-scores WHO |
-| Clasificación nutricional | Estado asignado por ML, probabilidad de riesgo, modelo usado |
-| Signos clínicos | Edema, delgadez, palidez, piel reseca, hiperpigmentación, cambios en cabello |
-| Historial de controles | Evolución temporal del peso, talla, IMC y Z-scores |
-| Alertas activas | Alertas generadas para el paciente |
-| Recomendaciones IA | Intervenciones clínicas personalizadas |
-
-### 2. Reporte Poblacional
-
-| Sección | Contenido |
-|---------|-----------|
-| Resumen general | Total de pacientes evaluados, distribución por estado nutricional |
-| Análisis demográfico | Distribución por edad, sexo, zona (urbana/rural), etnia |
-| Prevalencia | Tasas de desnutrición por severidad, municipio, departamento |
-| Factores de riesgo | Estrato socioeconómico, nivel educativo del cuidador, esquema de vacunación |
-| Indicadores críticos | Top pacientes en riesgo severo, municipios prioritarios |
-| Tendencias | Evolución mensual y anual de casos |
-
-### 3. Reporte Epidemiológico
-
-| Sección | Contenido |
-|---------|-----------|
-| Contexto regional | Distribución geográfica (Cesar, Guajira, Magdalena) |
-| Incidencia/prevalencia | Tasas por período, comparativas inter-anuales |
-| Análisis espacial | Concentración de casos por municipio |
-| Proyecciones SARIMA | Tendencias estimadas hasta diciembre 2027 |
-| Bandas de confianza | Intervalos al 80% y 95% |
-| Recomendaciones | Acciones sugeridas para salud pública |
-
-### 4. Reporte de Intervención y Monitoreo
-
-| Sección | Contenido |
-|---------|-----------|
-| Indicadores de proceso | Pacientes registrados, controles realizados, completitud de datos |
-| Indicadores de resultado | Cambios en tasas de desnutrición, mejoras en Z-scores |
-| Efectividad | Comparación pre/post intervención |
-| Cobertura | Municipios y establecimientos atendidos |
-| Alertas generadas | Distribución por severidad y tipo |
-| Seguimiento | Pacientes con y sin seguimiento activo |
-
----
-
-## 📊 Dashboards Power BI
-
-Los dashboards se conectan a BigQuery (`proyecto.desnutricion.*`) y cubren cuatro perspectivas:
-
-| Dashboard | Pregunta que responde | Tablas BigQuery |
-|-----------|----------------------|-----------------|
-| **Epidemiológico** | ¿Cuántos casos hay, dónde y cuándo? | `limpio_unificado`, `serie_temporal_mensual` |
-| **Factores de riesgo** | ¿Por qué se desnutren? | `limpio_unificado` |
-| **Proyección temporal** | ¿Qué pasará hasta 2027? | `proy_casos_mensual`, `proy_tasa_severa`, `proy_tasa_moderada`, `proy_zscore_mensual`, `proy_casos_departamento` |
-| **Cuadro de mando** | ¿Cuál es el estado general del sistema? | Todas las tablas |
-
----
-
-## 📊 Datos y Fuentes
-
-| Atributo | Valor |
-|----------|-------|
-| **Fuente** | SIVIGILA — Evento 113 (Desnutrición aguda en menores de 5 años) |
-| **Período** | 2020–2025 (73 meses) |
-| **Cobertura** | 45 municipios, 9 departamentos |
-| **Registros (limpio)** | 2,438 |
-| **Registros (ML)** | 3,428 (con sobre-muestreo SMOTE) |
-| **Almacenamiento** | Google Cloud Storage + BigQuery |
-
-> ⚠️ Los datos crudos no se incluyen en el repositorio por restricciones de privacidad. Contactar al equipo para acceso.
-
----
-
-## 🔬 Metodología
-
-El proyecto sigue la metodología **CRISP-DM** (Cross-Industry Standard Process for Data Mining):
-
-```
-1. Entendimiento del negocio          ── Objetivo y alcance
-2. Entendimiento de los datos         ── Notebooks 01, 02
-3. Preparación de los datos           ── Notebook 03 (ETL)
-4. Modelado                           ── Notebooks 04, 05, 06
-5. Evaluación                         ── Notebook 05
-6. Despliegue                         ── Notebook 07 + App Web + Power BI
-```
-
----
-
-## 🛠 Stack Tecnológico
-
-### Backend
-| Tecnología | Versión | Propósito |
-|-----------|---------|-----------|
-| Python | 3.11+ | Lenguaje principal |
-| FastAPI | 0.115 | Framework web (REST API) |
-| Uvicorn | 0.30.6 | Servidor ASGI |
-| Supabase SDK | ≥2.10 | Cliente de base de datos |
-| python-jose | 3.3.0 | Autenticación JWT |
-| Pydantic | 2.8.2 | Validación de esquemas |
-| scikit-learn | ≥1.5.2 | Modelos de ML |
-| imbalanced-learn | ≥0.12.3 | SMOTE (sobre-muestreo) |
-| pandas | 2.2.2 | Manipulación de datos |
-| numpy | ≥1.26 | Cálculos numéricos |
-| google-genai | ≥1.0 | Google Gemini (recomendaciones IA) |
-| openpyxl | ≥3.1 | Generación de Excel |
-| httpx | 0.27.2 | Cliente HTTP asíncrono |
-
-### Frontend
-| Tecnología | Versión | Propósito |
-|-----------|---------|-----------|
-| React | 18.3 | Framework de UI |
-| Vite | 5.3 | Build tool y dev server |
-| TailwindCSS | 3.4 | Estilos utilitarios |
-| React Router | 6.24 | Enrutamiento SPA |
-| Recharts | 2.12 | Gráficos y visualizaciones |
-| Framer Motion | 11.3 | Animaciones suaves |
-| Lucide React | 0.395 | Iconografía |
-| Axios | 1.7 | Cliente HTTP |
-
-### Infraestructura
-| Tecnología | Propósito |
-|-----------|-----------|
-| Supabase | PostgreSQL + Auth + Row Level Security |
-| Google Cloud Storage | Almacenamiento de datos |
-| BigQuery | Data warehouse para Power BI |
-| Power BI | Dashboards de visualización |
-
----
-
-## 🔐 Variables de Entorno
-
-Archivo: `backend/.env`
-
-| Variable | Requerida | Descripción |
-|----------|-----------|-------------|
-| `SUPABASE_URL` | ✅ | URL del proyecto Supabase |
-| `SUPABASE_ANON_KEY` | ✅ | Clave anónima (pública) |
-| `SUPABASE_SERVICE_KEY` | ✅ | Clave de servicio (bypasa RLS) |
-| `SUPABASE_JWT_SECRET` | ✅ | Secret para verificar tokens JWT |
-| `MODELS_DIR` | ❌ | Directorio de modelos (default: `../models`) |
-| `DATA_UPLOADS_DIR` | ❌ | Directorio de uploads (default: `../data/uploads`) |
-| `DATA_PROC_DIR` | ❌ | Directorio procesados (default: `../data/processed`) |
-| `APP_ENV` | ❌ | Entorno (default: `development`) |
-| `CORS_ORIGINS` | ❌ | Orígenes CORS separados por coma |
-| `GOOGLE_API_KEY` | ❌ | API key de Google Gemini para recomendaciones IA |
-
----
-
-## 🤝 Contribución
-
-1. Fork del repositorio
-2. Crear una rama feature: `git checkout -b feature/mi-feature`
-3. Commit de los cambios: `git commit -m 'feat: descripción'`
-4. Push a la rama: `git push origin feature/mi-feature`
-5. Abrir un Pull Request
-
----
-
-## 👨‍💻 Autores
-
-**Proyecto de Grado**  
-Universidad Popular del Cesar (UPC)  
-Programa de Ingeniería de Sistemas
-
----
-
-## 📜 Licencia
-
-Este proyecto fue desarrollado con fines académicos como Proyecto de Grado. Todos los derechos reservados.  
-Los datos del SIVIGILA son de uso público conforme a la normativa colombiana de datos abiertos.
-
----
-
-<p align="center">
-  <sub>Hecho con ❤️ para la salud infantil de Valledupar, Colombia</sub>
-</p>
+Proyecto académico — Universidad Popular del Cesar · 2026  
+Para uso educativo y de investigación.
