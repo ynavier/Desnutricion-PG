@@ -4,6 +4,7 @@ from app.auth.dependencies import require_cli
 from app.database import supabase
 from app.schemas.control import ControlCreate, ControlOut, PrediccionOut
 from app.ml.predictor import predecir, calcular_zscore
+from app.ml.who_tables import clasificar_muac
 from app.routers.pacientes import _generar_alertas
 
 router = APIRouter(prefix='/pacientes/{paciente_id}/controles', tags=['controles'])
@@ -61,9 +62,10 @@ async def registrar_control(
         'ruta_atenc':    body.ruta_atenc,
     }
 
-    pred   = predecir(datos)
-    zscore = calcular_zscore(body.peso_act, em, p['sexo'])
-    imc    = pred.get('imc_calculado')
+    pred      = predecir(datos)
+    zscore    = calcular_zscore(body.peso_act, em, p['sexo'])
+    imc       = pred.get('imc_calculado')
+    muac_clas = clasificar_muac(body.per_braqui, em)
 
     ctrl = {
         'paciente_id':   paciente_id,
@@ -102,6 +104,7 @@ async def registrar_control(
     return PrediccionOut(
         **pred,
         zscore_pt=zscore,
+        muac_clas=muac_clas,
     )
 
 

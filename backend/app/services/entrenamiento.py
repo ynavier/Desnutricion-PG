@@ -28,7 +28,7 @@ from sklearn.ensemble import (
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import LabelEncoder, RobustScaler
 from sklearn.model_selection import train_test_split, StratifiedKFold, cross_val_score
-from sklearn.metrics import accuracy_score, f1_score
+from sklearn.metrics import accuracy_score, f1_score, recall_score
 
 from app.config import settings
 from app.database import supabase
@@ -86,6 +86,24 @@ def _make_model(tipo: str, params: dict):
 _jobs: dict[str, dict] = {}
 
 MAX_VERSIONS_DEFAULT = 1  # Un solo modelo por tipo — siempre el mejor
+
+
+class _Cancelado(Exception):
+    pass
+
+
+def cancelar_job(job_id: str) -> bool:
+    """Señala cancelación. Retorna False si el job no existe o ya terminó."""
+    job = _jobs.get(job_id)
+    if not job or job.get('estado') != 'running':
+        return False
+    job['cancelado'] = True
+    return True
+
+
+def _check_cancelado(job: dict):
+    if job.get('cancelado'):
+        raise _Cancelado('Cancelado por el usuario')
 
 
 def _persistir_job(job_id: str, job: dict):
@@ -224,8 +242,8 @@ def _cargar_db(filtros: dict | None) -> pd.DataFrame:
 
 async def iniciar_entrenamiento(config: dict) -> str:
     job_id = str(uuid.uuid4())[:8]
-    _jobs[job_id] = {'estado': 'running', 'progreso': 0, 'log': [], 'resultado': None}
-    _persistir_job(job_id, _jobs[job_id])   # guardar estado inicial en Supabase
+    _jobs[job_id] = {'estado': 'running', 'progreso': 0, 'log': [], 'resultado': None, 'cancelado': False}
+    _persistir_job(job_id, _jobs[job_id])
     asyncio.create_task(_run(job_id, config))
     return job_id
 
@@ -233,11 +251,12 @@ async def iniciar_entrenamiento(config: dict) -> str:
 async def _run(job_id: str, config: dict):
     job = _jobs[job_id]
     try:
-        # Ejecutar en thread pool para no bloquear el event loop de asyncio.
-        # model.fit() es CPU-intensivo y bloquearía todas las peticiones al servidor.
         await asyncio.get_event_loop().run_in_executor(None, lambda: _run_sync(job, config))
-        if job['estado'] != 'error':
+        if job['estado'] not in ('error', 'cancelado'):
             job['estado'] = 'done'
+    except _Cancelado:
+        job['estado'] = 'cancelado'
+        _log(job, 'Entrenamiento cancelado por el usuario')
     except Exception as exc:
         job['estado'] = 'error'
         _log(job, f'ERROR: {exc}')
@@ -308,6 +327,7 @@ async def _entrenar(job: dict, config: dict):
             'Se necesitan al menos 20 registros válidos.'
         )
 
+    _check_cancelado(job)
     _pct(job, 12)
 
     # ── 2. LabelEncoder cod_dpto_o ─────────────────────────────────────────────
@@ -330,6 +350,7 @@ async def _entrenar(job: dict, config: dict):
     resultados: list[dict] = []
 
     for idx, (tipo, params) in enumerate(modelos_sel.items()):
+        _check_cancelado(job)
         nombre_algo = NOMBRE_LEGIBLE.get(tipo, tipo.upper())
         _log(job, f'── {nombre_algo} ──')
 
@@ -365,6 +386,7 @@ async def _entrenar(job: dict, config: dict):
             met_A = {}
 
         await asyncio.sleep(0.1)
+        _check_cancelado(job)
         _pct(job, base + int(78 / n_modelos) // 2)
 
         # ── Modelo B (sin IMC) ─────────────────────────────────────────────────
@@ -469,15 +491,16 @@ def _auto_activar_mejor(resultados: list[dict], job: dict):
     if not resultados:
         return
 
-    # F1 Weighted del mejor modelo recién entrenado
-    mejor_f1   = 0.0
+    # Score clínico del mejor modelo recién entrenado
+    # Criterio: 0.6 × Recall(clases 1+2) + 0.4 × F1 Macro
+    mejor_score  = 0.0
     mejor_nombre = None
     for r in resultados:
         met   = r.get('metricas', {})
         met_a = met.get('modelo_A', met)
-        f1    = float(met_a.get('f1_weighted', 0))
-        if f1 > mejor_f1:
-            mejor_f1     = f1
+        score = float(met_a.get('score_clinico', 0))
+        if score > mejor_score:
+            mejor_score  = score
             mejor_nombre = r['nombre']
 
     if not mejor_nombre:
@@ -493,13 +516,21 @@ def _auto_activar_mejor(resultados: list[dict], job: dict):
     )
     activo_actual = res_activo.data[0] if res_activo.data else None
 
-    activo_f1 = 0.0
+    activo_score = 0.0
     if activo_actual:
-        met_act  = activo_actual.get('metricas') or {}
-        met_a    = met_act.get('modelo_A', met_act)
-        activo_f1 = float(met_a.get('f1_weighted', 0))
+        met_act      = activo_actual.get('metricas') or {}
+        met_a        = met_act.get('modelo_A', met_act)
+        # Compatibilidad con modelos viejos que no tienen score_clinico:
+        # reconstruir desde recall_critico + f1_macro si están disponibles,
+        # o caer a f1_weighted como aproximación conservadora.
+        if 'score_clinico' in met_a:
+            activo_score = float(met_a['score_clinico'])
+        elif 'recall_critico' in met_a and 'f1_macro' in met_a:
+            activo_score = 0.6 * float(met_a['recall_critico']) + 0.4 * float(met_a['f1_macro'])
+        else:
+            activo_score = float(met_a.get('f1_weighted', 0))
 
-    if mejor_f1 > activo_f1:
+    if mejor_score > activo_score:
         # Buscar el ID del nuevo mejor modelo
         res_nuevo = (
             supabase.table('modelos_ml')
@@ -519,14 +550,30 @@ def _auto_activar_mejor(resultados: list[dict], job: dict):
         supabase.table('modelos_ml').update({'activo': False}).neq('id', 0).execute()
         supabase.table('modelos_ml').update({'activo': True}).eq('id', nuevo_id).execute()
 
+        # Recargar en memoria inmediatamente (igual que la activación manual)
+        try:
+            from app.ml.loader import load_models
+            rec_nuevo = (
+                supabase.table('modelos_ml')
+                .select('*')
+                .eq('id', nuevo_id)
+                .single()
+                .execute()
+            )
+            if rec_nuevo.data:
+                load_models(rec_nuevo.data)
+                _log(job, f'Modelo recargado en memoria: {rec_nuevo.data.get("nombre")}')
+        except Exception as e:
+            _log(job, f'Advertencia: modelo activado en BD pero no recargado en memoria: {e}')
+
         _log(job,
             f'✅ Auto-selección: "{mejor_nombre}" activado automáticamente '
-            f'(F1: {mejor_f1:.3f} > anterior: {activo_f1:.3f})'
+            f'(score clínico: {mejor_score:.3f} > anterior: {activo_score:.3f})'
         )
     else:
         _log(job,
             f'ℹ Modelo actual sigue siendo el mejor '
-            f'(F1 actual: {activo_f1:.3f} ≥ nuevo: {mejor_f1:.3f})'
+            f'(score clínico actual: {activo_score:.3f} ≥ nuevo: {mejor_score:.3f})'
         )
 
 
@@ -558,10 +605,27 @@ def _smote_if_possible(X_tr, y_tr, usar_smote: bool, job: dict):
 
 def _evaluar(model, X_te, y_te) -> dict:
     y_pred = model.predict(X_te)
+
+    # Recall por clase — extraer clases críticas 1 (severa) y 2 (moderada)
+    clases = sorted(np.unique(y_te).tolist())
+    recalls = recall_score(y_te, y_pred, average=None, labels=clases, zero_division=0)
+    recall_map = dict(zip(clases, recalls))
+    r1 = float(recall_map.get(1, 0.0))
+    r2 = float(recall_map.get(2, 0.0))
+    recall_critico = round((r1 + r2) / 2, 4)
+
+    # Score compuesto: prioriza sensibilidad en desnutrición + rendimiento general
+    f1_mac = round(float(f1_score(y_te, y_pred, average='macro', zero_division=0)), 4)
+    score_clinico = round(0.6 * recall_critico + 0.4 * f1_mac, 4)
+
     return {
-        'accuracy':    round(float(accuracy_score(y_te, y_pred)), 4),
-        'f1_weighted': round(float(f1_score(y_te, y_pred, average='weighted', zero_division=0)), 4),
-        'f1_macro':    round(float(f1_score(y_te, y_pred, average='macro',    zero_division=0)), 4),
+        'accuracy':       round(float(accuracy_score(y_te, y_pred)), 4),
+        'f1_weighted':    round(float(f1_score(y_te, y_pred, average='weighted', zero_division=0)), 4),
+        'f1_macro':       f1_mac,
+        'recall_clase_1': round(r1, 4),
+        'recall_clase_2': round(r2, 4),
+        'recall_critico': recall_critico,
+        'score_clinico':  score_clinico,
     }
 
 
