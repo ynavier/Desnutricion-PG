@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import {
   Play, ChevronDown, ChevronUp, CheckSquare, Square,
-  Cpu, AlertCircle, CheckCircle, RefreshCw, Database, FileText,
+  Cpu, AlertCircle, CheckCircle, RefreshCw, Database, FileText, XCircle,
 } from 'lucide-react'
 import api from '../../services/api'
 
@@ -202,8 +202,19 @@ export default function EntrenamientoANL() {
         clearInterval(pollRef.current)
         pollRef.current = null
         setStatus('error')
+      } else if (data.estado === 'cancelado') {
+        clearInterval(pollRef.current)
+        pollRef.current = null
+        setStatus('cancelado')
       }
     } catch { /* reintentar */ }
+  }
+
+  async function cancelTraining() {
+    if (!jobId) return
+    try {
+      await api.post(`/entrenamiento/${jobId}/cancelar`)
+    } catch { /* el poll detectará el cambio de estado */ }
   }
 
   function resetTraining() {
@@ -217,6 +228,7 @@ export default function EntrenamientoANL() {
 
   const sinFuente = datasetsHabilitados.length === 0 && !incluirBD
   const canStart  = selectedCount > 0 && !sinFuente && status !== 'training'
+  const isFinished = ['done', 'error', 'cancelado'].includes(status)
 
   return (
     <div className="p-3 sm:p-4 md:p-6 space-y-4 md:space-y-6 bg-neutral-bg min-h-screen">
@@ -454,7 +466,7 @@ export default function EntrenamientoANL() {
             {sinFuente && <Alert msg="Habilita al menos un dataset o activa «Incluir BD»" />}
 
             <button
-              onClick={status === 'done' || status === 'error' ? resetTraining : startTraining}
+              onClick={isFinished ? resetTraining : startTraining}
               disabled={!canStart}
               className="w-full mt-4 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all"
               style={
@@ -471,6 +483,8 @@ export default function EntrenamientoANL() {
                   ? <><RefreshCw className="w-4 h-4" /> Nuevo entrenamiento</>
                   : status === 'error'
                     ? <><RefreshCw className="w-4 h-4" /> Reintentar</>
+                  : status === 'cancelado'
+                    ? <><RefreshCw className="w-4 h-4" /> Nuevo entrenamiento</>
                     : <><Play className="w-4 h-4" /> Iniciar entrenamiento</>
               }
             </button>
@@ -480,6 +494,11 @@ export default function EntrenamientoANL() {
                 ✓ Guardado. Ve a <strong>Modelos ML</strong> para activar.
               </p>
             )}
+            {status === 'cancelado' && (
+              <p className="text-[11px] text-center mt-2" style={{ color: '#9CA3AF' }}>
+                Entrenamiento cancelado.
+              </p>
+            )}
           </div>
 
           {/* Progreso */}
@@ -487,17 +506,35 @@ export default function EntrenamientoANL() {
             <div style={CARD}>
               <div className="flex items-center justify-between mb-3">
                 <p className="text-sm font-semibold" style={{ color: '#1A1F2B' }}>Progreso</p>
-                <div className="flex items-center gap-1.5">
-                  {status === 'done'
-                    ? <CheckCircle className="w-3.5 h-3.5" style={{ color: '#3DAB6B' }} />
-                    : status === 'error'
-                      ? <AlertCircle className="w-3.5 h-3.5" style={{ color: '#E53935' }} />
-                      : <Cpu className="w-3.5 h-3.5" style={{ color: '#4FB4D2' }} />
-                  }
-                  <span className="text-xs font-bold"
-                    style={{ color: status === 'done' ? '#3DAB6B' : status === 'error' ? '#E53935' : '#4FB4D2' }}>
-                    {progress}%
-                  </span>
+                <div className="flex items-center gap-2">
+                  {status === 'training' && (
+                    <button
+                      onClick={cancelTraining}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all hover:opacity-60"
+                      style={{ background: 'transparent', color: '#E53935' }}
+                    >
+                      <XCircle className="w-3.5 h-3.5" />
+                      Cancelar
+                    </button>
+                  )}
+                  <div className="flex items-center gap-1.5">
+                    {status === 'done'
+                      ? <CheckCircle className="w-3.5 h-3.5" style={{ color: '#3DAB6B' }} />
+                      : status === 'error'
+                        ? <AlertCircle className="w-3.5 h-3.5" style={{ color: '#E53935' }} />
+                        : status === 'cancelado'
+                          ? <XCircle className="w-3.5 h-3.5" style={{ color: '#9CA3AF' }} />
+                          : <Cpu className="w-3.5 h-3.5" style={{ color: '#4FB4D2' }} />
+                    }
+                    <span className="text-xs font-bold" style={{
+                      color: status === 'done' ? '#3DAB6B'
+                        : status === 'error' ? '#E53935'
+                        : status === 'cancelado' ? '#9CA3AF'
+                        : '#4FB4D2',
+                    }}>
+                      {progress}%
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -517,7 +554,9 @@ export default function EntrenamientoANL() {
                 <div className="flex items-center gap-2 px-3 py-2"
                   style={{ borderBottom: '1px solid #1e293b', background: 'rgba(15,23,42,0.8)' }}>
                   <span className="w-2 h-2 rounded-full flex-shrink-0" style={{
-                    background: status === 'error' ? '#ef4444' : status === 'done' ? '#6FCF97' : '#6FCF97',
+                    background: status === 'error' ? '#ef4444'
+                      : status === 'cancelado' ? '#9CA3AF'
+                      : '#6FCF97',
                     boxShadow: status === 'training' ? '0 0 7px #6FCF97' : 'none',
                     animation: status === 'training' ? 'glow-pulse 1.5s infinite ease-in-out' : 'none',
                   }} />

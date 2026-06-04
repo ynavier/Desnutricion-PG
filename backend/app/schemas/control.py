@@ -52,3 +52,4 @@ class PrediccionOut(BaseModel):
     modelo_usado: str
     imc_calculado: Optional[float]
     zscore_pt: Optional[float]
+    muac_clas: Optional[str] = None

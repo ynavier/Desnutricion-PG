@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from app.auth.dependencies import require_adm
-from app.services.entrenamiento import iniciar_entrenamiento, get_job
+from app.services.entrenamiento import iniciar_entrenamiento, get_job, cancelar_job
 from app.database import supabase
 
 router = APIRouter(prefix='/entrenamiento', tags=['entrenamiento'])
@@ -23,6 +23,14 @@ async def iniciar(body: EntrenamientoConfig, user: dict = Depends(require_adm)):
         'user_id': user.get('id', ''),
     })
     return {'job_id': job_id}
+
+
+@router.post('/{job_id}/cancelar')
+async def cancelar(job_id: str, user: dict = Depends(require_adm)):
+    ok = cancelar_job(job_id)
+    if not ok:
+        raise HTTPException(status_code=422, detail='El job no existe o ya terminó')
+    return {'message': 'Cancelación solicitada'}
 
 
 @router.get('/{job_id}')

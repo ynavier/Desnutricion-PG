@@ -7,8 +7,8 @@ import {
   MapPin, Calendar, X, TrendingDown, CheckCircle, Sparkles,
 } from 'lucide-react'
 import {
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer,
+  AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, ReferenceLine,
 } from 'recharts'
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -65,6 +65,20 @@ function formatTiempo(isoStr) {
 
 function mesesATexto(m) { return `${Math.floor((m||0)/12)}a ${(m||0)%12}m` }
 
+function computeAgeMeses(birthIso, measureIso) {
+  if (!birthIso || !measureIso) return null
+  const [by, bm] = birthIso.split('-').map(Number)
+  const [my, mm] = measureIso.split('-').map(Number)
+  return (my - by) * 12 + (mm - bm)
+}
+
+function clasificarMuac(muac, ageMeses) {
+  if (!muac || muac <= 0 || ageMeses < 6 || ageMeses > 59) return null
+  if (muac < 11.5) return { label: 'SAM', color: '#B71C1C', bg: 'rgba(183,28,28,0.10)' }
+  if (muac < 12.5) return { label: 'MAM', color: '#E53935', bg: 'rgba(229,57,53,0.10)' }
+  return { label: 'Normal', color: '#52C41A', bg: 'rgba(82,196,26,0.10)' }
+}
+
 function genRecomendaciones(estado) {
   const map = {
     severe:   ['URGENTE: Derivación hospitalaria inmediata', 'Evaluación pediátrica en < 24 horas', 'Iniciar protocolo de recuperación nutricional', 'Notificar a autoridad de salud pública'],
@@ -118,13 +132,15 @@ function mapPacienteDetalle(p) {
     })),
     recomendaciones: genRecomendaciones(estado),
     historial: (p.controles || []).map(c => ({
-      fecha:  formatFechaCorta(c.fecha),
-      peso:   c.peso_act,
-      talla:  c.talla_act ?? '—',
-      imc:    c.imc ? parseFloat(c.imc).toFixed(1) : '—',
-      zScore: c.zscore_pt ?? '—',
-      estado: clasNombreToEstado(c.clas_nombre),
-      obs:    c.observaciones || '',
+      fecha:     formatFechaCorta(c.fecha),
+      peso:      c.peso_act,
+      talla:     c.talla_act ?? '—',
+      imc:       c.imc ? parseFloat(c.imc).toFixed(1) : '—',
+      zScore:    c.zscore_pt ?? '—',
+      estado:    clasNombreToEstado(c.clas_nombre),
+      obs:       c.observaciones || '',
+      perBraqui: c.per_braqui ?? null,
+      ageMeses:  computeAgeMeses(p.fecha_nac, c.fecha),
     })),
   }
 }
@@ -174,6 +190,21 @@ function ChartTooltip({ active, payload, label }) {
       <p className="text-neutral-sub">Z-score: <span className="font-semibold" style={{ color: zScoreColor(p?.zScore) }}>{p?.zScore}</span></p>
     </div>
   )
+}
+
+function ZScoreTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null
+  const z = payload[0]?.value
+  return (
+    <div className="clay-card px-3 py-2.5 text-xs shadow-lg">
+      <p className="font-bold text-neutral-text mb-1">{label}</p>
+      <p className="text-neutral-sub">Z-score P/E: <span className="font-semibold" style={{ color: zScoreColor(z) }}>{z}</span></p>
+    </div>
+  )
+}
+
+function ZScoreLineDot({ cx, cy, payload }) {
+  return <circle cx={cx} cy={cy} r={5} fill={zScoreColor(payload.zScore)} stroke="white" strokeWidth={2} />
 }
 
 // ─── Drawer Nuevo Control ────────────────────────────────────────────────────
@@ -290,6 +321,13 @@ function NuevoControlDrawer({ paciente, onClose, onControlAdded }) {
                     Prob. desnutrición: {Math.round(prediccion.prob_desnutrido * 100)}%
                     {' · '}{prediccion.modelo_usado?.replace('modelo_', 'Modelo ').replace('_rf', ' RF')}
                   </p>
+                  {prediccion.muac_clas && (
+                    <p className="text-xs font-semibold mt-1" style={{
+                      color: ({ SAM: '#B71C1C', MAM: '#E53935', Normal: '#52C41A' })[prediccion.muac_clas] ?? '#64748B',
+                    }}>
+                      MUAC: {prediccion.muac_clas}
+                    </p>
+                  )}
                 </>
               )}
             </div>
@@ -597,6 +635,14 @@ export default function DetallePaciente() {
     zScore: c.zScore,
   }))
 
+  const zScoreData = chartData.filter(c => c.zScore !== '—' && c.zScore !== null && !isNaN(parseFloat(c.zScore)))
+    .map(c => ({ ...c, zScore: parseFloat(c.zScore) }))
+
+  const ucHistorial = paciente.historial[0]
+  const muacInfo = ucHistorial?.perBraqui
+    ? clasificarMuac(ucHistorial.perBraqui, ucHistorial.ageMeses)
+    : null
+
   const s = statusConfig[paciente.estado] ?? statusConfig.risk
 
   return (
@@ -640,7 +686,7 @@ export default function DetallePaciente() {
       </motion.div>
 
       {/* Métricas rápidas */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className={`grid grid-cols-2 gap-4 mb-8 ${muacInfo ? 'lg:grid-cols-5' : 'lg:grid-cols-4'}`}>
         {[
           { label: 'Peso',    value: `${paciente.peso} kg`,  color: '#4FB4D2', bg: 'rgba(79,180,210,0.10)'  },
           { label: 'Talla',   value: `${paciente.talla} cm`, color: '#6FCF97', bg: 'rgba(111,207,151,0.12)' },
@@ -653,6 +699,20 @@ export default function DetallePaciente() {
             <p className="text-2xl font-bold" style={{ color }}>{value}</p>
           </motion.div>
         ))}
+
+        {muacInfo && (
+          <motion.div custom={4} initial="hidden" animate="visible" variants={fadeUp}
+            className="clay-card p-5">
+            <p className="text-xs text-neutral-sub mb-2">MUAC</p>
+            <p className="text-2xl font-bold" style={{ color: muacInfo.color }}>
+              {ucHistorial.perBraqui} cm
+            </p>
+            <span className="inline-flex items-center mt-1.5 px-2 py-0.5 rounded-lg text-[10px] font-bold"
+              style={{ background: muacInfo.bg, color: muacInfo.color }}>
+              {muacInfo.label}
+            </span>
+          </motion.div>
+        )}
       </div>
 
       {/* Información del paciente */}
@@ -796,6 +856,76 @@ export default function DetallePaciente() {
 
         </motion.div>
       </div>
+
+      {/* Gráfico Z-score con bandas OMS */}
+      {zScoreData.length >= 2 && (
+        <motion.div custom={6} initial="hidden" animate="visible" variants={fadeUp}
+          className="clay-card p-6 mb-6">
+          <div className="flex items-start justify-between mb-5">
+            <div>
+              <h2 className="text-sm font-bold text-neutral-text">Evolución Z-score P/E · OMS</h2>
+              <p className="text-[10px] text-neutral-sub mt-0.5">Peso para la edad — estándares OMS 2006</p>
+            </div>
+            <div className="flex items-center gap-3">
+              {[
+                { label: 'Normal (>−1)',   color: '#52C41A' },
+                { label: 'Riesgo (−1 a −2)',  color: '#FBC02D' },
+                { label: 'MAM (−2 a −3)', color: '#FB8C00' },
+                { label: 'SAM (<−3)',     color: '#E53935' },
+              ].map(({ label, color }) => (
+                <span key={label} className="hidden lg:flex items-center gap-1.5 text-[10px] text-neutral-sub">
+                  <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
+                  {label}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={zScoreData} margin={{ top: 10, right: 10, bottom: 5, left: -10 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#D9EEF5" />
+              <XAxis dataKey="fecha" tick={{ fontSize: 11, fill: '#64748B' }} />
+              <YAxis tick={{ fontSize: 11, fill: '#64748B' }} domain={['auto', 'auto']} />
+              <Tooltip content={<ZScoreTooltip />} />
+
+              {/* Bandas de referencia OMS */}
+              <ReferenceLine y={0}  stroke="#52C41A" strokeDasharray="4 3" strokeWidth={1}
+                label={{ value: 'Mediana', position: 'insideTopRight', fill: '#52C41A', fontSize: 9 }} />
+              <ReferenceLine y={-1} stroke="#FBC02D" strokeDasharray="4 3" strokeWidth={1.5}
+                label={{ value: 'Z=−1', position: 'insideTopRight', fill: '#FBC02D', fontSize: 9 }} />
+              <ReferenceLine y={-2} stroke="#FB8C00" strokeDasharray="4 3" strokeWidth={1.5}
+                label={{ value: 'Z=−2 (MAM)', position: 'insideTopRight', fill: '#FB8C00', fontSize: 9 }} />
+              <ReferenceLine y={-3} stroke="#E53935" strokeDasharray="4 3" strokeWidth={1.5}
+                label={{ value: 'Z=−3 (SAM)', position: 'insideTopRight', fill: '#E53935', fontSize: 9 }} />
+
+              <Line
+                type="monotone"
+                dataKey="zScore"
+                stroke="#4FB4D2"
+                strokeWidth={2.5}
+                dot={<ZScoreLineDot />}
+                activeDot={{ r: 7, stroke: '#4FB4D2', fill: 'white', strokeWidth: 2 }}
+                connectNulls={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+
+          {/* Leyenda mobile */}
+          <div className="flex flex-wrap items-center gap-3 mt-3 lg:hidden">
+            {[
+              { label: 'Normal (>−1)',   color: '#52C41A' },
+              { label: 'Riesgo (−1 a −2)',  color: '#FBC02D' },
+              { label: 'MAM (−2 a −3)', color: '#FB8C00' },
+              { label: 'SAM (<−3)',     color: '#E53935' },
+            ].map(({ label, color }) => (
+              <span key={label} className="flex items-center gap-1.5 text-[10px] text-neutral-sub">
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color }} />
+                {label}
+              </span>
+            ))}
+          </div>
+        </motion.div>
+      )}
 
       {/* Recomendaciones + Alertas */}
       <div className="grid lg:grid-cols-2 gap-6 mb-6">

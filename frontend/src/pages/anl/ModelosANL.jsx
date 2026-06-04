@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import {
   CheckCircle, TrendingUp, RefreshCw, Trash2, FolderX,
-  Award, Zap, Info, Sparkles, X, Send, Loader2,
+  Award, Zap, Info, Sparkles, X, Send, Loader2, Crown,
   ChevronDown, ChevronUp, Square, CheckSquare,
 } from 'lucide-react'
 import {
@@ -24,9 +24,16 @@ const CARD = {
 
 const PALETTE = ['#4FB4D2', '#6FCF97', '#FBC02D', '#E53935', '#9B59B6', '#E67E22']
 const METRICAS = [
-  { key: 'accuracy',    label: 'Accuracy',    desc: 'Exactitud global' },
-  { key: 'f1_weighted', label: 'F1 Weighted',  desc: 'Criterio de selección' },
-  { key: 'f1_macro',    label: 'F1 Macro',     desc: 'Balance entre clases' },
+  { key: 'score_clinico',  label: 'Score Clínico', desc: '0.6×Recall(SAM+MAM) + 0.4×F1 Macro — criterio de selección' },
+  { key: 'recall_critico', label: 'Recall Crítico', desc: 'Promedio recall desnutrición severa + moderada' },
+  { key: 'f1_macro',       label: 'F1 Macro',       desc: 'Balance entre las 6 clases nutricionales' },
+  { key: 'accuracy',       label: 'Accuracy',       desc: 'Exactitud global' },
+]
+
+const METRICAS_DETALLE_B = [
+  { key: 'score_clinico',  label: 'Score Clínico' },
+  { key: 'f1_macro',       label: 'F1 Macro' },
+  { key: 'accuracy',       label: 'Accuracy' },
 ]
 const COLLAPSED_COUNT = 3  // modelos visibles antes de "Ver más"
 
@@ -100,10 +107,11 @@ function formatearContextoModelo(models) {
   return [
     `Explícame las métricas del modelo ML activo:`,
     `Modelo: ${activo.nombre} (${tipo[activo.tipo]||activo.tipo||'N/D'})`,
-    `Modelo A — Accuracy: ${pct(ma.accuracy)} | F1 Weighted: ${pct(ma.f1_weighted)} | F1 Macro: ${pct(ma.f1_macro)} | CV: ${pct(ma.cv_accuracy)}`,
-    `Modelo B — Accuracy: ${pct(mb.accuracy)} | F1 Weighted: ${pct(mb.f1_weighted)} | F1 Macro: ${pct(mb.f1_macro)}`,
+    `Modelo A — Score clínico: ${pct(ma.score_clinico)} | Recall crítico: ${pct(ma.recall_critico)} | Recall clase 1 (severa): ${pct(ma.recall_clase_1)} | Recall clase 2 (moderada): ${pct(ma.recall_clase_2)} | F1 Macro: ${pct(ma.f1_macro)} | Accuracy: ${pct(ma.accuracy)} | CV: ${pct(ma.cv_accuracy)}`,
+    `Modelo B — Score clínico: ${pct(mb.score_clinico)} | F1 Macro: ${pct(mb.f1_macro)} | Accuracy: ${pct(mb.accuracy)}`,
     `Muestras: ${met.n_muestras?.toLocaleString()||'N/D'} | SMOTE: ${met.smote?'Sí':'No'} | Fuentes: ${(met.fuentes||[]).join(', ')||'N/D'}`,
-    `Por favor explícame qué significa cada métrica y qué nos dice del rendimiento. No des recomendaciones, solo explica los números y la diferencia entre A y B.`,
+    `El Score clínico es 0.6×Recall(clases 1+2) + 0.4×F1 Macro. Es el criterio de selección automática del mejor modelo.`,
+    `Por favor explícame qué significa cada métrica y qué nos dice del rendimiento clínico. No des recomendaciones, solo explica los números y la diferencia entre A y B.`,
   ].join('\n')
 }
 
@@ -186,9 +194,10 @@ export default function ModelosANL() {
   const [deleting,      setDeleting]      = useState(false)
   const [cleaning,      setCleaning]      = useState(false)
   const [niviAbierto,   setNiviAbierto]   = useState(false)
-  const [expanded,      setExpanded]      = useState(false)       // lista expandida
-  const [seleccionados, setSeleccionados] = useState(new Set())   // ids seleccionados para eliminar
+  const [expanded,      setExpanded]      = useState(false)
+  const [seleccionados, setSeleccionados] = useState(new Set())
   const [deletingBulk,  setDeletingBulk]  = useState(false)
+  const [activating,    setActivating]    = useState(false)
 
   function fetchModels() {
     setLoading(true)
@@ -211,6 +220,16 @@ export default function ModelosANL() {
       showToast(data.total === 0 ? 'Sin archivos huérfanos' : `${data.total} archivo(s) eliminado(s)`)
     } catch (err) { showToast(err.response?.data?.detail || 'Error al limpiar', true) }
     finally { setCleaning(false) }
+  }
+
+  async function handleActivar(id) {
+    setActivating(true)
+    try {
+      await api.put(`/modelos/${id}/activar`)
+      await fetchModels()
+      showToast('Modelo activado correctamente')
+    } catch (err) { showToast(err.response?.data?.detail || 'Error al activar', true) }
+    finally { setActivating(false) }
   }
 
   async function handleEliminar(id) {
@@ -257,7 +276,8 @@ export default function ModelosANL() {
 
   const selected     = models.find(m => m.id === selectedId) ?? models[0]
   const modeloActivo = models.find(m => m.activo)
-  const ranking      = [...models].sort((a, b) => (flatMetrics(b.metricas).f1_weighted ?? 0) - (flatMetrics(a.metricas).f1_weighted ?? 0))
+  const scoreOf = m => flatMetrics(m.metricas).score_clinico ?? flatMetrics(m.metricas).f1_weighted ?? 0
+  const ranking = [...models].sort((a, b) => scoreOf(b) - scoreOf(a))
   const visibles     = expanded ? ranking : ranking.slice(0, COLLAPSED_COUNT)
 
   const barData = METRICAS.map(({ key, label }) => {
@@ -322,7 +342,7 @@ export default function ModelosANL() {
           style={{ background:'rgba(255,255,255,0.72)', backdropFilter:'blur(14px)', WebkitBackdropFilter:'blur(14px)', boxShadow:'inset 0 3px 12px rgba(255,255,255,0.90), inset 0 -4px 8px rgba(0,0,0,0.07), 0 4px 18px rgba(0,0,0,0.07)', borderRadius:20 }}>
           <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ boxShadow:'inset 0 2px 6px rgba(255,255,255,0.92), inset 0 -2px 4px rgba(0,0,0,0.06), 0 4px 10px rgba(0,0,0,0.07)' }}>
-            <Zap className="w-5 h-5" style={{ color: '#27AE60' }} />
+            <Crown className="w-5 h-5" style={{ color: '#27AE60' }} />
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
@@ -334,8 +354,8 @@ export default function ModelosANL() {
               </span>
             </div>
             <p className="text-xs mt-1 text-neutral-sub">
-              Seleccionado automáticamente · F1 Weighted: <strong className="text-neutral-text">{((flatMetrics(modeloActivo.metricas).f1_weighted ?? 0) * 100).toFixed(1)}%</strong>
-              {' · '}Criterio: mejor F1 Weighted entre todos los modelos
+              Seleccionado automáticamente · Score clínico: <strong className="text-neutral-text">{((flatMetrics(modeloActivo.metricas).score_clinico ?? flatMetrics(modeloActivo.metricas).f1_weighted ?? 0) * 100).toFixed(1)}%</strong>
+              {' · '}Criterio: 0.6×Recall(SAM+MAM) + 0.4×F1 Macro
             </p>
           </div>
           <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -416,8 +436,8 @@ export default function ModelosANL() {
             <div style={{ ...CARD, padding: '20px' }}>
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <p className="text-sm font-bold" style={{ color: '#1A1F2B' }}>Ranking por F1 Weighted</p>
-                  <p className="text-xs mt-0.5" style={{ color: '#54606E' }}>Criterio de auto-selección</p>
+                  <p className="text-sm font-bold" style={{ color: '#1A1F2B' }}>Ranking por Score Clínico</p>
+                  <p className="text-xs mt-0.5" style={{ color: '#54606E' }}>0.6×Recall(SAM+MAM) + 0.4×F1 Macro</p>
                 </div>
                 {/* Acciones bulk */}
                 {seleccionados.size > 0 && (
@@ -500,7 +520,7 @@ export default function ModelosANL() {
                             {m.activo && <Zap className="w-3 h-3 flex-shrink-0" style={{ color: '#27AE60' }} />}
                           </div>
                           <div className="flex items-center gap-2 text-[10px]" style={{ color: '#64748B' }}>
-                            <span>F1: <strong style={{ color: metricColor(f1) }}>{(f1*100).toFixed(1)}%</strong></span>
+                            <span>Score: <strong style={{ color: metricColor(scoreOf(m)) }}>{(scoreOf(m)*100).toFixed(1)}%</strong></span>
                             <span>Acc: <strong>{(acc*100).toFixed(1)}%</strong></span>
                           </div>
                         </div>
@@ -537,22 +557,38 @@ export default function ModelosANL() {
                       <p className="text-sm font-bold" style={{ color: '#1A1F2B' }}>{selected.nombre}</p>
                       <p className="text-xs mt-0.5" style={{ color: '#54606E' }}>{selected.descripcion || `Versión ${selected.version}`}</p>
                     </div>
-                    {selected.activo && (
+                    {selected.activo ? (
                       <div className="flex items-center gap-1" style={{ color: '#27AE60' }}>
                         <CheckCircle className="w-4 h-4" /><span className="text-xs font-bold">Activo</span>
                       </div>
+                    ) : (
+                      <button
+                        onClick={() => handleActivar(selected.id)}
+                        disabled={activating}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
+                        style={{
+                          background: 'rgba(39,174,96,0.10)',
+                          color: '#27AE60',
+                          boxShadow: 'inset 0 2px 5px rgba(255,255,255,0.85), inset 0 -2px 3px rgba(39,174,96,0.08), 0 2px 8px rgba(39,174,96,0.12)',
+                        }}
+                      >
+                        {activating
+                          ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Activando...</>
+                          : <><Zap className="w-3.5 h-3.5" /> Activar</>
+                        }
+                      </button>
                     )}
                   </div>
                   <div className="space-y-3 mb-4">
                     {METRICAS.map(({ key, label, desc }) => {
                       const v = flatMetrics(selected.metricas)[key]
-                      if (v === undefined) return null
+                      if (v == null) return null
                       return (
                         <div key={key}>
                           <div className="flex justify-between mb-1">
                             <div>
                               <span className="text-xs font-semibold" style={{ color: '#374151' }}>{label}</span>
-                              {key === 'f1_weighted' && (
+                              {key === 'score_clinico' && (
                                 <span className="ml-1.5 text-[9px] px-1.5 py-0.5 rounded-full font-bold"
                                   style={{ background:'rgba(251,192,45,0.15)', color:'#B45309' }}>CRITERIO</span>
                               )}
@@ -566,13 +602,35 @@ export default function ModelosANL() {
                         </div>
                       )
                     })}
+
+                    {/* Recall por clase crítica */}
+                    {(() => {
+                      const met = flatMetrics(selected.metricas)
+                      const r1  = met.recall_clase_1
+                      const r2  = met.recall_clase_2
+                      if (r1 == null && r2 == null) return null
+                      return (
+                        <div className="pt-3" style={{ borderTop: '1px solid #F1F5F9' }}>
+                          <p className="text-[10px] font-semibold mb-2" style={{ color: '#9CA3AF' }}>DETECCIÓN POR CLASE — Modelo A</p>
+                          {[{ label: 'Recall Desnut. Severa (clase 1)', v: r1 }, { label: 'Recall Desnut. Moderada (clase 2)', v: r2 }]
+                            .filter(x => x.v != null)
+                            .map(({ label, v }) => (
+                              <div key={label} className="flex justify-between text-xs mb-1">
+                                <span style={{ color: '#54606E' }}>{label}</span>
+                                <span className="font-bold" style={{ color: metricColor(v) }}>{(v*100).toFixed(1)}%</span>
+                              </div>
+                            ))}
+                        </div>
+                      )
+                    })()}
                   </div>
+
                   {selected.metricas?.modelo_B && (
                     <div className="pt-3" style={{ borderTop: '1px solid #F1F5F9' }}>
                       <p className="text-[10px] font-semibold mb-2" style={{ color: '#9CA3AF' }}>MODELO B — Fallback sin IMC</p>
-                      {METRICAS.slice(0, 2).map(({ key, label }) => {
+                      {METRICAS_DETALLE_B.map(({ key, label }) => {
                         const v = selected.metricas.modelo_B[key]
-                        if (!v) return null
+                        if (v == null) return null
                         return (
                           <div key={key} className="flex justify-between text-xs mb-1">
                             <span style={{ color: '#54606E' }}>{label}</span>

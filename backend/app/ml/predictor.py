@@ -14,6 +14,7 @@ para garantizar que predictor y entrenamiento siempre usen las mismas columnas.
 import numpy as np
 import pandas as pd
 from app.ml.loader import ml
+from app.ml.who_tables import calcular_zscore_who
 from app.services.etl import FEATURES_A, FEATURES_B, COLS_ESC_A as COLS_ESCALAR, IMPUTE_MODA
 
 CLASES = {
@@ -108,28 +109,7 @@ def predecir(datos: dict) -> dict:
 
 def calcular_zscore(peso: float, edad_meses: int, sexo: str) -> float | None:
     """
-    Z-score peso/edad aproximado usando la ecuación OMS simplificada.
-    Para producción usar tablas LMS completas de la OMS.
-    Referencia: WHO Child Growth Standards (2006).
+    Z-score Peso/Edad (WAZ) usando tablas LMS OMS 2006.
+    Delega a who_tables.calcular_zscore_who con resolución mensual completa.
     """
-    if not peso or not edad_meses or edad_meses > 60:
-        return None
-
-    # Medianas aproximadas por sexo y grupo de edad (WHO 2006, cada 6 meses)
-    medianas_M = {0: 3.3, 6: 7.9, 12: 9.6, 18: 10.9, 24: 12.2,
-                  30: 13.3, 36: 14.3, 42: 15.3, 48: 16.3, 54: 17.3, 60: 18.3}
-    medianas_F = {0: 3.2, 6: 7.3, 12: 8.9, 18: 10.2, 24: 11.5,
-                  30: 12.7, 36: 13.9, 42: 14.9, 48: 15.9, 54: 16.9, 60: 17.9}
-
-    tabla = medianas_M if sexo == 'M' else medianas_F
-    grupo = (edad_meses // 6) * 6
-    grupo = min(grupo, 60)
-
-    mediana = tabla.get(grupo)
-    if not mediana:
-        return None
-
-    # Aproximación lineal del CV (coeficiente de variación OMS ~13%)
-    cv = 0.13
-    z  = (peso - mediana) / (mediana * cv)
-    return round(z, 2)
+    return calcular_zscore_who(peso, edad_meses, sexo)
