@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" modified="2026-06-05T00:00:00.000Z" agent="Claude" version="21.0.0" type="device">
+  <diagram name="Diagrama de Componentes - NutriVigilancia" id="nutrivigilancia-components">
+    <mxGraphModel dx="1800" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- TÍTULO PRINCIPAL -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <mxCell id="title" value="NutriVigilancia — Diagrama de Componentes" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=22;fontStyle=1;fontColor=#1a1a2e;" vertex="1" parent="1">
+          <mxGeometry x="300" y="20" width="1054" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- CONTENEDOR FRONTEND -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <mxCell id="frontend-container" value="FRONTEND — React 18 + Vite + Tailwind CSS  |  Vercel" style="swimlane;startSize=30;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=13;fontStyle=1;rounded=1;arcSize=3;" vertex="1" parent="1">
+          <mxGeometry x="30" y="80" width="1600" height="380" as="geometry" />
+        </mxCell>
+
+        <!-- App.jsx -->
+        <mxCell id="app-jsx" value="App.jsx&#xa;React Router v6&#xa;Rutas protegidas por rol" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontStyle=1;" vertex="1" parent="frontend-container">
+          <mxGeometry x="680" y="50" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- AuthContext -->
+        <mxCell id="auth-context" value="AuthContext.jsx&#xa;Estado global auth&#xa;JWT + localStorage" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="frontend-container">
+          <mxGeometry x="680" y="140" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- api.js -->
+        <mxCell id="api-service" value="services/api.js&#xa;Axios · Bearer JWT&#xa;Auto-logout 401" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="frontend-container">
+          <mxGeometry x="680" y="230" width="200" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- ProtectedRoute -->
+        <mxCell id="protected-route" value="ProtectedRoute.jsx&#xa;Verifica auth + rol&#xa;Redirige si no autorizado" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="frontend-container">
+          <mxGeometry x="680" y="310" width="200" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- PANEL CLI -->
+        <mxCell id="panel-cli" value="PANEL CLÍNICO (rol: CLI)" style="swimlane;startSize=25;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;rounded=1;arcSize=3;" vertex="1" parent="frontend-container">
+          <mxGeometry x="30" y="50" width="580" height="310" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sidebar-cli" value="SidebarCLI.jsx&#xa;Navegación clínica" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="panel-cli">
+          <mxGeometry x="20" y="40" width="160" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="home-cli" value="HomeCLI.jsx&#xa;KPIs · Gráficos&#xa;Tendencias" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="panel-cli">
+          <mxGeometry x="200" y="40" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="pacientes-cli" value="PacientesCLI.jsx&#xa;Lista + Filtros&#xa;Estado nutricional" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="panel-cli">
+          <mxGeometry x="20" y="120" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="detalle-paciente" value="DetallePaciente.jsx&#xa;Historial + Control&#xa;Formulario control" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="panel-cli">
+          <mxGeometry x="200" y="120" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="alertas-cli" value="AlertasCLI.jsx&#xa;Severidad · Marcar leída&#xa;Vínculo a paciente" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="panel-cli">
+          <mxGeometry x="360" y="120" width="160" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="chat-asistente" value="ChatAsistente.jsx (NIVI)&#xa;Entrada por voz · Spline 3D&#xa;Historial de mensajes" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;fontStyle=1;" vertex="1" parent="panel-cli">
+          <mxGeometry x="20" y="220" width="500" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="animated-counter" value="AnimatedCounter.jsx&#xa;KPI animado" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="panel-cli">
+          <mxGeometry x="360" y="40" width="160" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- PANEL ANL -->
+        <mxCell id="panel-anl" value="PANEL ANALÍTICO (rol: ANL)" style="swimlane;startSize=25;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;fontStyle=1;rounded=1;arcSize=3;" vertex="1" parent="frontend-container">
+          <mxGeometry x="930" y="50" width="630" height="310" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sidebar-anl" value="SidebarANL.jsx&#xa;Navegación analítica" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="panel-anl">
+          <mxGeometry x="20" y="40" width="160" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="home-anl" value="HomeANL.jsx&#xa;Dashboard epid.&#xa;KPIs + Charts" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="panel-anl">
+          <mxGeometry x="200" y="40" width="140" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="reportes-anl" value="ReportesANL.jsx&#xa;4 tipos · Excel&#xa;Análisis IA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="panel-anl">
+          <mxGeometry x="360" y="40" width="130" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="datasets-anl" value="DatasetsANL.jsx&#xa;Upload SIVIGILA&#xa;Habilitar/deshabilitar" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="panel-anl">
+          <mxGeometry x="500" y="40" width="110" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="modelos-anl" value="ModelosANL.jsx&#xa;Activar modelo&#xa;Ver métricas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="panel-anl">
+          <mxGeometry x="20" y="140" width="140" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="entrenamiento-anl" value="EntrenamientoANL.jsx&#xa;Configurar job&#xa;Monitor progreso" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="panel-anl">
+          <mxGeometry x="180" y="140" width="140" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="usuarios-anl" value="UsuariosANL.jsx&#xa;Gestión usuarios" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="panel-anl">
+          <mxGeometry x="340" y="140" width="140" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="pbi-anl" value="DashboardsPBI.jsx&#xa;Power BI embed" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=11;" vertex="1" parent="panel-anl">
+          <mxGeometry x="500" y="140" width="110" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="chat-dashboard" value="ChatDashboard.jsx&#xa;Chat analítico IA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="panel-anl">
+          <mxGeometry x="20" y="240" width="590" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- PANEL ADM -->
+        <mxCell id="panel-adm" value="PANEL ADMIN (rol: ADM)" style="swimlane;startSize=25;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;fontStyle=1;rounded=1;arcSize=3;" vertex="1" parent="frontend-container">
+          <mxGeometry x="1580" y="50" width="0" height="0" as="geometry" />
+        </mxCell>
+
+        <!-- ADM standalone boxes since panel would overflow -->
+        <mxCell id="sidebar-adm" value="SidebarADM.jsx" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="frontend-container">
+          <mxGeometry x="1430" y="80" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="home-adm" value="HomeADM.jsx" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="frontend-container">
+          <mxGeometry x="1430" y="150" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="reportes-adm" value="ReportesADM.jsx" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="frontend-container">
+          <mxGeometry x="1430" y="220" width="130" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="landing-page" value="LandingPage.jsx&#xa;Página pública&#xa;Framer Motion" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;" vertex="1" parent="frontend-container">
+          <mxGeometry x="1430" y="300" width="130" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- Flecha App.jsx -> AuthContext -->
+        <mxCell id="e-app-auth" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="app-jsx" target="auth-context" parent="frontend-container">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <!-- Flecha AuthContext -> api.js -->
+        <mxCell id="e-auth-api" style="edgeStyle=orthogonalEdgeStyle;" edge="1" source="auth-context" target="api-service" parent="frontend-container">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- FLECHA HTTPS -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <mxCell id="arrow-https" value="HTTPS / REST&#xa;Bearer JWT" style="edgeStyle=orthogonalEdgeStyle;fontSize=11;fontStyle=1;strokeWidth=3;strokeColor=#0050ef;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" source="api-service" target="backend-container" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- CONTENEDOR BACKEND -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <mxCell id="backend-container" value="BACKEND — FastAPI Python 3.11  |  Google Cloud Run (Docker)" style="swimlane;startSize=30;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=13;fontStyle=1;rounded=1;arcSize=3;" vertex="1" parent="1">
+          <mxGeometry x="30" y="520" width="1600" height="460" as="geometry" />
+        </mxCell>
+
+        <!-- main.py -->
+        <mxCell id="main-py" value="main.py&#xa;Lifespan: carga modelos ML&#xa;CORS · 13 routers montados" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=11;fontStyle=1;" vertex="1" parent="backend-container">
+          <mxGeometry x="680" y="50" width="220" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- AUTH -->
+        <mxCell id="auth-layer" value="AUTENTICACIÓN" style="swimlane;startSize=22;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;fontStyle=1;rounded=1;arcSize=3;" vertex="1" parent="backend-container">
+          <mxGeometry x="30" y="50" width="580" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="auth-router" value="auth/router.py&#xa;POST /auth/login&#xa;POST /auth/logout" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="auth-layer">
+          <mxGeometry x="20" y="32" width="240" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="auth-deps" value="auth/dependencies.py&#xa;get_current_user()&#xa;require_adm / anl / cli" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=11;" vertex="1" parent="auth-layer">
+          <mxGeometry x="290" y="32" width="270" height="48" as="geometry" />
+        </mxCell>
+
+        <!-- CONFIG & DB -->
+        <mxCell id="config-db" value="CONFIGURACIÓN" style="swimlane;startSize=22;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;fontStyle=1;rounded=1;arcSize=3;" vertex="1" parent="backend-container">
+          <mxGeometry x="930" y="50" width="380" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="config-py" value="app/config.py&#xa;Pydantic BaseSettings&#xa;Credenciales + API keys" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="config-db">
+          <mxGeometry x="20" y="32" width="160" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="database-py" value="app/database.py&#xa;Cliente Supabase&#xa;service key + anon key" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="config-db">
+          <mxGeometry x="200" y="32" width="160" height="48" as="geometry" />
+        </mxCell>
+
+        <!-- SCHEMAS -->
+        <mxCell id="schemas-layer" value="SCHEMAS (Pydantic)" style="swimlane;startSize=22;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;fontStyle=1;rounded=1;arcSize=3;" vertex="1" parent="backend-container">
+          <mxGeometry x="1330" y="50" width="240" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="schema-paciente" value="paciente.py&#xa;PacienteCreate (25 campos)&#xa;PacienteOut / Detalle" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="schemas-layer">
+          <mxGeometry x="10" y="32" width="100" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="schema-control" value="control.py&#xa;ControlCreate&#xa;PrediccionOut (6 clases)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=11;" vertex="1" parent="schemas-layer">
+          <mxGeometry x="125" y="32" width="100" height="48" as="geometry" />
+        </mxCell>
+
+        <!-- ROUTERS GROUP -->
+        <mxCell id="routers-layer" value="ROUTERS — 13 Endpoints API" style="swimlane;startSize=25;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;fontStyle=1;rounded=1;arcSize=3;" vertex="1" parent="backend-container">
+          <mxGeometry x="30" y="170" width="1550" height="140" as="geometry" />
+        </mxCell>
+
+        <mxCell id="r-pacientes" value="/pacientes&#xa;CRUD pacientes&#xa;Alertas riesgo" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="routers-layer">
+          <mxGeometry x="10" y="35" width="130" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="r-controles" value="/controles&#xa;Registro visitas&#xa;→ ML predict&#xa;→ Z-scores" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="routers-layer">
+          <mxGeometry x="155" y="35" width="130" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="r-alertas" value="/alertas&#xa;Listar/leer&#xa;Por severidad" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="routers-layer">
+          <mxGeometry x="300" y="35" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="r-usuarios" value="/usuarios&#xa;Crear/listar&#xa;Habilitar" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="routers-layer">
+          <mxGeometry x="435" y="35" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="r-recomendaciones" value="/recomendaciones&#xa;Gemini AI&#xa;Caché 24h" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;" vertex="1" parent="routers-layer">
+          <mxGeometry x="570" y="35" width="130" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="r-modelos" value="/modelos&#xa;Listar/activar&#xa;Métricas" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="routers-layer">
+          <mxGeometry x="715" y="35" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="r-estadisticas" value="/estadisticas&#xa;Epidemiología&#xa;Zona/edad/clase" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="routers-layer">
+          <mxGeometry x="850" y="35" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="r-entrenamiento" value="/entrenamiento&#xa;Jobs ML&#xa;4 algoritmos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="routers-layer">
+          <mxGeometry x="985" y="35" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="r-datasets" value="/datasets&#xa;Upload SIVIGILA&#xa;ETL Excel" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="routers-layer">
+          <mxGeometry x="1120" y="35" width="110" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="r-reportes" value="/reportes&#xa;4 tipos&#xa;Excel/Caché" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;fontSize=10;" vertex="1" parent="routers-layer">
+          <mxGeometry x="1245" y="35" width="110" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="r-chat" value="/chat&#xa;Voz Whisper&#xa;Groq Llama" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;" vertex="1" parent="routers-layer">
+          <mxGeometry x="1370" y="35" width="80" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="r-analisis" value="/analisis_ia&#xa;Groq LLM&#xa;Insights epid." style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;" vertex="1" parent="routers-layer">
+          <mxGeometry x="1460" y="35" width="80" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- SERVICIOS GROUP -->
+        <mxCell id="services-layer" value="SERVICIOS (Lógica de Negocio)" style="swimlane;startSize=25;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;fontStyle=1;rounded=1;arcSize=3;" vertex="1" parent="backend-container">
+          <mxGeometry x="30" y="330" width="900" height="110" as="geometry" />
+        </mxCell>
+
+        <mxCell id="svc-etl" value="etl.py&#xa;Pipeline SIVIGILA&#xa;Limpieza + impute&#xa;CSV procesado" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="services-layer">
+          <mxGeometry x="10" y="35" width="150" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-entrenamiento" value="entrenamiento.py&#xa;4 algoritmos ML&#xa;SMOTE · CV 5-fold&#xa;Serializa joblib" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=10;" vertex="1" parent="services-layer">
+          <mxGeometry x="175" y="35" width="150" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-ai-reportes" value="ai_reportes.py&#xa;Google Gemini&#xa;Análisis informes&#xa;Round-robin mods" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;" vertex="1" parent="services-layer">
+          <mxGeometry x="340" y="35" width="150" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-chat" value="chat_asistente.py&#xa;Búsqueda pacientes&#xa;Contexto clínico&#xa;Respuestas Groq" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;" vertex="1" parent="services-layer">
+          <mxGeometry x="505" y="35" width="150" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="svc-recomendaciones" value="ai_recomendaciones.py&#xa;Gemini personalizado&#xa;Caché 24h&#xa;Fallback estático" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=10;" vertex="1" parent="services-layer">
+          <mxGeometry x="670" y="35" width="210" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- ML MODULE -->
+        <mxCell id="ml-layer" value="MÓDULO ML (Motor de Predicción)" style="swimlane;startSize=25;fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;fontStyle=1;rounded=1;arcSize=3;" vertex="1" parent="backend-container">
+          <mxGeometry x="950" y="330" width="630" height="110" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ml-loader" value="ml/loader.py&#xa;Carga joblib al inicio&#xa;Modelo A (c/IMC)&#xa;Modelo B (s/IMC)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="ml-layer">
+          <mxGeometry x="10" y="35" width="185" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="ml-predictor" value="ml/predictor.py&#xa;Encode + Impute + Scale&#xa;Selecciona A o B&#xa;6 clases probabilidad" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="ml-layer">
+          <mxGeometry x="215" y="35" width="200" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="ml-who" value="ml/who_tables.py&#xa;Z-scores OMS 2006&#xa;Tablas P/E&#xa;Clasificación MUAC" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="ml-layer">
+          <mxGeometry x="430" y="35" width="185" height="65" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- CAPA INFERIOR: DB + IA + PIPELINE OFFLINE -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+
+        <!-- SUPABASE -->
+        <mxCell id="supabase-container" value="SUPABASE — PostgreSQL" style="swimlane;startSize=30;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=13;fontStyle=1;rounded=1;arcSize=3;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1050" width="560" height="270" as="geometry" />
+        </mxCell>
+
+        <mxCell id="t-profiles" value="profiles&#xa;Usuarios + rol" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="supabase-container">
+          <mxGeometry x="20" y="50" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="t-pacientes" value="pacientes&#xa;25+ campos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="supabase-container">
+          <mxGeometry x="200" y="50" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="t-controles" value="controles&#xa;30+ campos + predicción" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="supabase-container">
+          <mxGeometry x="380" y="50" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="t-alertas" value="alertas&#xa;Nivel · Leída" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="supabase-container">
+          <mxGeometry x="20" y="130" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="t-modelos" value="modelos_ml&#xa;Métricas + activo" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="supabase-container">
+          <mxGeometry x="200" y="130" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="t-datasets" value="datasets_ml&#xa;Estado + habilitado" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontSize=11;" vertex="1" parent="supabase-container">
+          <mxGeometry x="380" y="130" width="150" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="t-migrations" value="migrations/&#xa;4 archivos SQL" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="supabase-container">
+          <mxGeometry x="20" y="210" width="150" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="t-seed" value="seed.sql&#xa;Datos iniciales" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontSize=11;" vertex="1" parent="supabase-container">
+          <mxGeometry x="200" y="210" width="150" height="40" as="geometry" />
+        </mxCell>
+
+        <!-- APIS EXTERNAS IA -->
+        <mxCell id="ai-container" value="APIS EXTERNAS — Inteligencia Artificial" style="swimlane;startSize=30;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=13;fontStyle=1;rounded=1;arcSize=3;" vertex="1" parent="1">
+          <mxGeometry x="630" y="1050" width="560" height="270" as="geometry" />
+        </mxCell>
+
+        <mxCell id="gemini-api" value="Google Gemini API&#xa;Recomendaciones clínicas&#xa;personalizadas por paciente&#xa;Análisis de reportes&#xa;epidemiológicos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="ai-container">
+          <mxGeometry x="20" y="50" width="240" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="groq-llm" value="Groq — Llama 3.3 70B&#xa;Chat asistente NIVI&#xa;Análisis estadísticas&#xa;epidemiológicas (dashboard)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="ai-container">
+          <mxGeometry x="290" y="50" width="240" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="groq-whisper" value="Groq — Whisper&#xa;Transcripción de voz&#xa;Entrada de audio del&#xa;asistente NIVI (CLI)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontSize=11;" vertex="1" parent="ai-container">
+          <mxGeometry x="155" y="170" width="240" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- PIPELINE ML OFFLINE -->
+        <mxCell id="offline-container" value="PIPELINE ML OFFLINE — Notebooks + Artefactos" style="swimlane;startSize=30;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=13;fontStyle=1;rounded=1;arcSize=3;" vertex="1" parent="1">
+          <mxGeometry x="1230" y="1050" width="400" height="270" as="geometry" />
+        </mxCell>
+
+        <mxCell id="nb-01" value="01 Estructura datos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="offline-container">
+          <mxGeometry x="10" y="45" width="175" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-02" value="02 Calidad de datos" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="offline-container">
+          <mxGeometry x="205" y="45" width="175" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-03" value="03 ETL y limpieza" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="offline-container">
+          <mxGeometry x="10" y="90" width="175" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-04" value="04 Análisis exploratorio" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="offline-container">
+          <mxGeometry x="205" y="90" width="175" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-05" value="05 Modelos ML" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="offline-container">
+          <mxGeometry x="10" y="135" width="175" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-06" value="06 Predicciones" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="offline-container">
+          <mxGeometry x="205" y="135" width="175" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="nb-07" value="07 Proyecciones SARIMA" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=10;" vertex="1" parent="offline-container">
+          <mxGeometry x="10" y="180" width="175" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="train-script" value="train_and_export.py&#xa;→ *.joblib (Modelos A/B)&#xa;→ scaler · encoder" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;fontSize=10;" vertex="1" parent="offline-container">
+          <mxGeometry x="205" y="180" width="175" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════════ -->
+        <!-- FLECHAS BACKEND → CAPAS INFERIORES -->
+        <!-- ═══════════════════════════════════════════════════════════ -->
+
+        <!-- Backend → Supabase -->
+        <mxCell id="e-back-supa" value="Supabase SDK" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;fontStyle=1;strokeWidth=2;strokeColor=#82b366;" edge="1" source="database-py" target="supabase-container" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Backend → IA APIs -->
+        <mxCell id="e-back-gemini" value="google-genai SDK" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;fontStyle=1;strokeWidth=2;strokeColor=#d79b00;" edge="1" source="svc-recomendaciones" target="gemini-api" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-back-groq" value="Groq SDK" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;fontStyle=1;strokeWidth=2;strokeColor=#d79b00;" edge="1" source="svc-chat" target="groq-llm" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- ML offline → ML loader -->
+        <mxCell id="e-offline-loader" value="joblib artefactos" style="edgeStyle=orthogonalEdgeStyle;fontSize=10;fontStyle=1;strokeWidth=2;strokeColor=#9673a6;dashed=1;" edge="1" source="train-script" target="ml-loader" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Main.py → ML loader -->
+        <mxCell id="e-main-loader" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=2;strokeColor=#b85450;" edge="1" source="main-py" target="ml-loader" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- controles → predictor -->
+        <mxCell id="e-controles-predictor" style="edgeStyle=orthogonalEdgeStyle;strokeWidth=2;strokeColor=#b85450;" edge="1" source="r-controles" target="ml-predictor" parent="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
