@@ -106,6 +106,10 @@ export default function ChatDashboard({
   mensajes, setMensajes,
   analizado, setAnalizado,
   onClose,
+  welcomeMessage = null,
+  headerSubtitle = null,
+  accentColor = '#4FB4D2,#3DA0BC',
+  modo = null,
 }) {
   const [input,        setInput]       = useState('')
   const [cargando,     setCargando]    = useState(false)
@@ -148,6 +152,13 @@ export default function ChatDashboard({
   // Análisis inicial automático
   useEffect(() => {
     if (analizado) { setTimeout(() => inputRef.current?.focus(), 150); return }
+    if (!stats) {
+      const msg = welcomeMessage || 'Hola, soy **NIVI**. Puedo ayudarte a analizar indicadores epidemiológicos, interpretar resultados y recomendar acciones. ¿Sobre qué quieres consultar?'
+      setMensajes([{ role: 'assistant', content: msg }])
+      setAnalizado(true)
+      setTimeout(() => inputRef.current?.focus(), 100)
+      return
+    }
     async function analisisInicial() {
       setCargando(true)
       try {
@@ -239,7 +250,9 @@ export default function ChatDashboard({
     setMensajes(prev => [...prev, { role: 'user', content: msg }])
     setCargando(true)
     try {
-      const { data } = await api.post('/chat', { mensaje: msg, historial: hist.slice(-16) })
+      const payload = { mensaje: msg, historial: hist.slice(-16) }
+      if (modo) payload.modo = modo
+      const { data } = await api.post('/chat', payload)
       setMensajes(prev => [...prev, { role: 'assistant', content: data.respuesta }])
     } catch {
       setMensajes(prev => [...prev, { role: 'assistant', content: 'Error al conectar. Intenta de nuevo.' }])
@@ -273,7 +286,7 @@ export default function ChatDashboard({
           <NiviAvatar size={46} />
           <div className="flex-1 min-w-0">
             <p className="text-base font-bold text-neutral-text leading-none">NIVI</p>
-            <p className="text-xs mt-1 font-medium" style={{ color: '#52C41A' }}>● Análisis epidemiológico · {zona}</p>
+            <p className="text-xs mt-1 font-medium" style={{ color: '#52C41A' }}>● {headerSubtitle ?? `Análisis epidemiológico · ${zona}`}</p>
           </div>
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-neutral-bg transition-colors text-neutral-sub">
             <X className="w-4 h-4" />
@@ -302,7 +315,7 @@ export default function ChatDashboard({
                 {m.role === 'assistant' && <div className="mt-0.5 flex-shrink-0"><NiviAvatar size={42} /></div>}
                 <div className="px-5 py-4 rounded-2xl text-base"
                   style={m.role === 'user'
-                    ? { background: 'linear-gradient(135deg,#4FB4D2,#3DA0BC)', color: '#fff', borderRadius: '18px 18px 4px 18px', maxWidth: '65%' }
+                    ? { background: `linear-gradient(135deg,${accentColor})`, color: '#fff', borderRadius: '18px 18px 4px 18px', maxWidth: '65%' }
                     : { background: '#F1F8FB', color: '#374151', borderRadius: '4px 18px 18px 18px', maxWidth: '80%' }
                   }>
                   {m.role === 'assistant' ? <MensajeMarkdown texto={m.content} /> : <p className="leading-relaxed">{m.content}</p>}
@@ -382,7 +395,7 @@ export default function ChatDashboard({
             {/* Botón enviar */}
             <button onClick={enviar} disabled={!input.trim() || cargando || grabando || transcribiendo}
               className="flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all disabled:opacity-40"
-              style={{ background: 'linear-gradient(135deg,#4FB4D2,#3DA0BC)' }}>
+              style={{ background: `linear-gradient(135deg,${accentColor})` }}>
               <Send className="w-4 h-4 text-white" />
             </button>
           </div>

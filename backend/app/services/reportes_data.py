@@ -517,32 +517,37 @@ async def reporte_pacientes(filtros: dict) -> dict:
 
 async def reporte_modelo(_filtros: dict) -> dict:
     """
-    Genera el reporte del modelo ML activo con métricas reales.
+    Genera el reporte de TODOS los modelos entrenados con métricas reales.
     Estructura de metricas en BD:
-      { modelo_A: {accuracy, f1_weighted, f1_macro, cv_accuracy},
-        modelo_B: {accuracy, f1_weighted, f1_macro, cv_accuracy},
-        n_muestras, test_size, cv_folds, fuentes, smote, le_dpto }
+      { modelo_A: {accuracy, f1_weighted, f1_macro, score_clinico, recall_critico,
+                   recall_clase_1, recall_clase_2, cv_accuracy},
+        modelo_B: {…}, n_muestras, test_size, cv_folds, fuentes, smote, le_dpto }
     """
-    # ── Datos de Supabase ─────────────────────────────────────────────────────
-    activo_res = supabase.table('modelos_ml').select('*').eq('activo', True).limit(1).execute()
-    activo     = (activo_res.data or [{}])[0]
+    tipo_labels = {
+        'rf':  'Random Forest',
+        'xgb': 'XGBoost (HistGB)',
+        'gb':  'Gradient Boosting',
+        'lr':  'Regr. Logística',
+    }
 
+    # ── Datos de Supabase ─────────────────────────────────────────────────────
     hist_res  = supabase.table('modelos_ml').select(
         'id, nombre, tipo, created_at, version, metricas, activo'
-    ).order('created_at', desc=True).limit(15).execute()
+    ).order('created_at', desc=True).limit(20).execute()
     historial = hist_res.data or []
+
+    activo = next((m for m in historial if m.get('activo')), historial[0] if historial else {})
 
     pred_res           = supabase.table('controles').select('id', count='exact').execute()
     total_predicciones = pred_res.count or 0
 
-    # ── Extracción de métricas (soporta formato plano y anidado) ─────────────
+    # ── Helpers ───────────────────────────────────────────────────────────────
     def _extraer(met: dict | None, sub: str = 'modelo_A') -> dict:
-        """Extrae métricas del submodelo o del nivel raíz."""
         if not met:
             return {}
         if sub in met and isinstance(met[sub], dict):
             return met[sub]
-        return met   # formato plano (versiones antiguas)
+        return met
 
     def _pct(v) -> float:
         if v is None: return 0.0
@@ -551,118 +556,133 @@ async def reporte_modelo(_filtros: dict) -> dict:
             return round(f * 100, 1) if f <= 1.0 else round(f, 1)
         except Exception: return 0.0
 
-    met_activo = activo.get('metricas') or {}
-    ma  = _extraer(met_activo, 'modelo_A')   # con IMC
-    mb  = _extraer(met_activo, 'modelo_B')   # sin IMC
+    # ── Métricas del modelo activo ────────────────────────────────────────────
+    met_activo  = activo.get('metricas') or {}
+    ma_activo   = _extraer(met_activo, 'modelo_A')
 
-    acc_a  = _pct(ma.get('accuracy'))
-    f1w_a  = _pct(ma.get('f1_weighted'))
-    f1m_a  = _pct(ma.get('f1_macro'))
-    cv_a   = _pct(ma.get('cv_accuracy'))
-
-    acc_b  = _pct(mb.get('accuracy'))
-    f1w_b  = _pct(mb.get('f1_weighted'))
-    f1m_b  = _pct(mb.get('f1_macro'))
-    cv_b   = _pct(mb.get('cv_accuracy'))
+    score_a     = _pct(ma_activo.get('score_clinico'))
+    recall_cr_a = _pct(ma_activo.get('recall_critico'))
+    acc_a       = _pct(ma_activo.get('accuracy'))
+    f1m_a       = _pct(ma_activo.get('f1_macro'))
+    f1w_a       = _pct(ma_activo.get('f1_weighted'))
+    cv_a        = _pct(ma_activo.get('cv_accuracy'))
+    r1_a        = _pct(ma_activo.get('recall_clase_1'))
+    r2_a        = _pct(ma_activo.get('recall_clase_2'))
 
     n_muestras  = met_activo.get('n_muestras', 0)
     test_size   = met_activo.get('test_size', 0.2)
     fuentes     = met_activo.get('fuentes', [])
     smote_usado = met_activo.get('smote', False)
 
-    # ── Gráfica 1: Radar — Modelo A (métricas del activo) ────────────────────
+    # ── Gráfica 1: Radar — métricas del modelo activo ─────────────────────────
     radar_metricas = [
-        {'metric': 'Accuracy',    'value': acc_a},
-        {'metric': 'F1 Weighted', 'value': f1w_a},
-        {'metric': 'F1 Macro',    'value': f1m_a},
-        {'metric': 'CV Accuracy', 'value': cv_a},
+        {'metric': 'Score Clínico',   'value': score_a},
+        {'metric': 'Recall Crítico',  'value': recall_cr_a},
+        {'metric': 'F1 Macro',        'value': f1m_a},
+        {'metric': 'Accuracy',        'value': acc_a},
     ]
 
-    # ── Gráfica 2: Modelo A vs Modelo B (barras comparativas) ────────────────
-    modelo_ab = [
-        {'metrica': 'Accuracy',    'Modelo A (con IMC)': acc_a, 'Modelo B (sin IMC)': acc_b},
-        {'metrica': 'F1 Weighted', 'Modelo A (con IMC)': f1w_a, 'Modelo B (sin IMC)': f1w_b},
-        {'metrica': 'F1 Macro',    'Modelo A (con IMC)': f1m_a, 'Modelo B (sin IMC)': f1m_b},
-        {'metrica': 'CV Accuracy', 'Modelo A (con IMC)': cv_a,  'Modelo B (sin IMC)': cv_b},
-    ]
+    # ── Gráfica 2: Comparativa de TODOS los modelos entrenados ────────────────
+    comparativa_modelos = []
+    for m in reversed(historial):   # más viejo primero para orden cronológico
+        met = m.get('metricas') or {}
+        sub = _extraer(met, 'modelo_A')
+        comparativa_modelos.append({
+            'nombre':        m.get('nombre', '—'),
+            'tipo':          tipo_labels.get(m.get('tipo', ''), (m.get('tipo') or '').upper()),
+            'activo':        m.get('activo', False),
+            'score_clinico': _pct(sub.get('score_clinico')),
+            'recall_critico':_pct(sub.get('recall_critico')),
+            'recall_clase_1':_pct(sub.get('recall_clase_1')),
+            'recall_clase_2':_pct(sub.get('recall_clase_2')),
+            'accuracy':      _pct(sub.get('accuracy')),
+            'f1_macro':      _pct(sub.get('f1_macro')),
+            'f1_weighted':   _pct(sub.get('f1_weighted')),
+            'n_muestras':    met.get('n_muestras', 0),
+            'fecha':         (m.get('version') or m.get('created_at') or '')[:16],
+        })
 
-    # ── Gráfica 3: Evolución histórica (líneas accuracy + F1W por versión) ───
+    # ── Gráfica 3: Evolución histórica (score clínico + accuracy por versión) ──
     evolucion = []
     for m in reversed(historial):
         met  = m.get('metricas') or {}
         sub  = _extraer(met, 'modelo_A')
         fecha_raw = (m.get('version') or m.get('created_at') or '')[:16]
         evolucion.append({
-            'nombre':       m.get('nombre', '—'),
-            'fecha':        fecha_raw,
-            'accuracy':     _pct(sub.get('accuracy')),
-            'f1_weighted':  _pct(sub.get('f1_weighted')),
-            'cv_accuracy':  _pct(sub.get('cv_accuracy')),
-            'activo':       m.get('activo', False),
-            'n_muestras':   (met.get('n_muestras') or 0),
+            'nombre':        m.get('nombre', '—'),
+            'fecha':         fecha_raw,
+            'accuracy':      _pct(sub.get('accuracy')),
+            'score_clinico': _pct(sub.get('score_clinico')),
+            'recall_critico':_pct(sub.get('recall_critico')),
+            'f1_macro':      _pct(sub.get('f1_macro')),
+            'activo':        m.get('activo', False),
+            'n_muestras':    (met.get('n_muestras') or 0),
         })
 
-    # ── Gráfica 4: Scatter — tamaño dataset vs accuracy (todos los modelos) ──
+    # ── Gráfica 4: Scatter — tamaño dataset vs score clínico ─────────────────
     scatter_datos = [
         {
-            'nombre':    m.get('nombre', '—'),
-            'n_muestras': (m.get('metricas') or {}).get('n_muestras', 0),
-            'accuracy':   _pct(_extraer(m.get('metricas') or {}, 'modelo_A').get('accuracy')),
-            'f1_weighted':_pct(_extraer(m.get('metricas') or {}, 'modelo_A').get('f1_weighted')),
-            'activo':     m.get('activo', False),
+            'nombre':        m.get('nombre', '—'),
+            'n_muestras':    (m.get('metricas') or {}).get('n_muestras', 0),
+            'score_clinico': _pct(_extraer(m.get('metricas') or {}, 'modelo_A').get('score_clinico')),
+            'accuracy':      _pct(_extraer(m.get('metricas') or {}, 'modelo_A').get('accuracy')),
+            'activo':        m.get('activo', False),
         }
         for m in historial
         if (m.get('metricas') or {}).get('n_muestras', 0) > 0
     ]
 
-    # ── Gráfica 5: Comparativa por tipo de modelo (RF, XGB, GB, LR) ──────────
+    # ── Gráfica 5: Comparativa por tipo de algoritmo ──────────────────────────
     tipos_perf: dict[str, list] = {}
     for m in historial:
         tipo = m.get('tipo', 'rf')
         met  = m.get('metricas') or {}
         sub  = _extraer(met, 'modelo_A')
-        f1   = sub.get('f1_weighted', 0)
+        sc   = sub.get('score_clinico') or sub.get('f1_weighted') or 0
         if tipo not in tipos_perf:
             tipos_perf[tipo] = []
-        tipos_perf[tipo].append(_pct(f1))
+        tipos_perf[tipo].append(_pct(sc))
 
-    tipo_labels = {'rf': 'Random Forest', 'xgb': 'XGBoost (HistGB)', 'gb': 'Gradient Boosting', 'lr': 'Regr. Logística'}
     comparativa_tipos = [
         {
-            'tipo':         tipo_labels.get(t, t.upper()),
-            'f1_promedio':  round(sum(vals) / len(vals), 1),
-            'f1_max':       max(vals),
-            'n_versiones':  len(vals),
+            'tipo':           tipo_labels.get(t, t.upper()),
+            'f1_promedio':    round(sum(vals) / len(vals), 1),
+            'f1_max':         max(vals),
+            'n_versiones':    len(vals),
         }
         for t, vals in tipos_perf.items()
     ]
 
     return {
         'kpis': {
-            'Nombre del modelo':        activo.get('nombre') or 'N/A',
-            'Tipo de algoritmo':        tipo_labels.get(activo.get('tipo', ''), activo.get('tipo', 'N/A')),
-            'Accuracy (Modelo A)':      f'{acc_a}%',
-            'F1 Weighted (Modelo A)':   f'{f1w_a}%',
-            'F1 Macro (Modelo A)':      f'{f1m_a}%',
-            'CV Accuracy':              f'{cv_a}%',
-            'Accuracy (Modelo B)':      f'{acc_b}%',
-            'F1 Weighted (Modelo B)':   f'{f1w_b}%',
+            'Modelo activo':              activo.get('nombre') or 'N/A',
+            'Tipo de algoritmo':          tipo_labels.get(activo.get('tipo', ''), activo.get('tipo', 'N/A')),
+            'Score Clínico':              f'{score_a}%',
+            'Recall Crítico (Sev+Mod)':   f'{recall_cr_a}%',
+            'Recall Desnut. Severa':      f'{r1_a}%',
+            'Recall Desnut. Moderada':    f'{r2_a}%',
+            'F1 Macro':                   f'{f1m_a}%',
+            'Accuracy':                   f'{acc_a}%',
+            'CV Accuracy':                f'{cv_a}%',
             'Total muestras entrenamiento': f'{n_muestras:,}',
-            'Tamaño conjunto prueba':   f'{int(test_size * 100)}%',
-            'SMOTE aplicado':           'Sí' if smote_usado else 'No',
-            'Fuentes de datos':         ', '.join(fuentes) if fuentes else 'N/A',
-            'Total predicciones en BD': f'{total_predicciones:,}',
-            'Versiones entrenadas':     len(historial),
+            'Tamaño conjunto prueba':     f'{int(test_size * 100)}%',
+            'SMOTE aplicado':             'Sí' if smote_usado else 'No',
+            'Fuentes de datos':           ', '.join(fuentes) if fuentes else 'N/A',
+            'Total predicciones en BD':   f'{total_predicciones:,}',
+            'Versiones entrenadas':       len(historial),
         },
         'charts': {
-            'radar_metricas':     radar_metricas,
-            'modelo_ab':          modelo_ab,
-            'evolucion_accuracy': evolucion,
-            'scatter_datos':      scatter_datos,
-            'comparativa_tipos':  comparativa_tipos,
+            'radar_metricas':       radar_metricas,
+            'comparativa_modelos':  comparativa_modelos,
+            'evolucion_accuracy':   evolucion,
+            'scatter_datos':        scatter_datos,
+            'comparativa_tipos':    comparativa_tipos,
         },
         'distribucion': {
-            'modelo_A': {'accuracy': acc_a, 'f1_weighted': f1w_a, 'f1_macro': f1m_a, 'cv': cv_a},
-            'modelo_B': {'accuracy': acc_b, 'f1_weighted': f1w_b, 'f1_macro': f1m_b, 'cv': cv_b},
+            'score_clinico':   score_a,
+            'recall_critico':  recall_cr_a,
+            'accuracy':        acc_a,
+            'f1_macro':        f1m_a,
+            'total_modelos':   len(historial),
         },
     }

@@ -6,12 +6,11 @@ import {
 } from 'recharts'
 import {
   Users, AlertTriangle, Activity, Heart, TrendingUp,
-  RefreshCw, ChevronDown, X, Filter, Sparkles, Loader2,
+  RefreshCw, ChevronDown, X, Filter, Loader2,
   ChevronLeft, ChevronRight, BarChart2,
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../services/api'
-import ChatDashboard from '../../components/anl/ChatDashboard'
 
 const REFRESH_MS = 120_000
 
@@ -437,30 +436,6 @@ function FilterSelect({ options, value, onChange, placeholder }) {
   )
 }
 
-// ── Avatar flotante NIVI con parpadeo ────────────────────────────────────────
-function NiviAvatarFloat({ size = 36 }) {
-  const [parpadeando, setParpadeando] = useState(false)
-  const timerRef = useRef(null)
-  useEffect(() => {
-    function tick() {
-      timerRef.current = setTimeout(() => {
-        setParpadeando(true)
-        timerRef.current = setTimeout(() => {
-          setParpadeando(false)
-          tick()
-        }, 120)
-      }, 2000 + Math.random() * 3000)
-    }
-    tick()
-    return () => clearTimeout(timerRef.current)
-  }, [])
-  return (
-    <div style={{ width: size, height: size, position: 'relative', borderRadius: '50%', overflow: 'hidden' }}>
-      <img src="/NIVI 1.png" alt="NIVI" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: parpadeando ? 0 : 1, transition: 'opacity 55ms ease' }} />
-      <img src="/NIVI 2.png" alt=""   style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: parpadeando ? 1 : 0, transition: 'opacity 55ms ease' }} />
-    </div>
-  )
-}
 
 // ── Componente principal ──────────────────────────────────────────────────────
 export default function HomeANL() {
@@ -475,10 +450,7 @@ export default function HomeANL() {
   const [vistaProj,   setVistaProj]   = useState('mensual')
   const [loading,     setLoading]     = useState(true)
   const [lastUpd,     setLastUpd]     = useState(null)
-  const [niviAbierto,  setNiviAbierto]  = useState(false)
   const [vistaActual,  setVistaActual]  = useState(0)  // 0 = proyecciones, 1 = distribuciones
-  const [niviMensajes, setNiviMensajes] = useState([])     // persiste durante la sesión
-  const [niviAnalizado,setNiviAnalizado]= useState(false)  // evita re-analizar al reabrir
   const timerRef = useRef(null)
 
   const fetchProyecc = useCallback(async () => {
@@ -598,15 +570,6 @@ export default function HomeANL() {
             style={{ boxShadow: 'inset 0 1px 3px rgba(255,255,255,0.9), 0 2px 6px rgba(0,0,0,0.07)' }}>
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             Actualizar
-          </button>
-          {/* Botón NIVI */}
-          <button
-            onClick={() => setNiviAbierto(true)}
-            disabled={!stats}
-            className="clay-btn flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
-          >
-            <Sparkles className="w-4 h-4" />
-            Analizar con NIVI
           </button>
         </div>
       </div>
@@ -1029,37 +992,6 @@ export default function HomeANL() {
         Actualización automática cada 2 min · BD + Datasets SIVIGILA · NutriVigilancia
       </p>
 
-      {/* ── Botón flotante NIVI ────────────────────────────────── */}
-      <motion.button
-        onClick={() => setNiviAbierto(v => !v)}
-        animate={niviAbierto ? { scale: 0, opacity: 0 } : { scale: 1, opacity: 1 }}
-        whileHover={!niviAbierto ? { scale: 1.08 } : {}}
-        whileTap={!niviAbierto  ? { scale: 0.92 } : {}}
-        transition={{ type: 'spring', damping: 24, stiffness: 260 }}
-        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full flex items-center justify-center shadow-xl"
-        style={{ background: 'white', border: '2px solid rgba(79,180,210,0.25)' }}
-        title="Analizar con NIVI"
-        disabled={!stats}
-      >
-        <NiviAvatarFloat size={48} />
-      </motion.button>
-
-      {/* ── Panel NIVI ─────────────────────────────────────────── */}
-      <AnimatePresence>
-        {niviAbierto && stats && (
-          <ChatDashboard
-            stats={stats}
-            detalle={detalle}
-            dpto={dpto}
-            municipio={municipio}
-            mensajes={niviMensajes}
-            setMensajes={setNiviMensajes}
-            analizado={niviAnalizado}
-            setAnalizado={setNiviAnalizado}
-            onClose={() => setNiviAbierto(false)}
-          />
-        )}
-      </AnimatePresence>
     </div>
   )
 }
