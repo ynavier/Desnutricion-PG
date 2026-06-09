@@ -83,12 +83,78 @@ async def _buscar_pacientes_por_nombre(nombre: str) -> list[dict]:
         return []
 
 
+# ─── Contexto de modelos ML para modo admin ───────────────────────────────────
+
+def _formatear_metricas_modelos() -> str:
+    """
+    Consulta modelos_ml y retorna un resumen legible para el LLM.
+    Incluye métricas de modelo_A (con IMC) y modelo_B (sin IMC) de cada entrenamiento.
+    """
+    try:
+        res = (
+            supabase.table('modelos_ml')
+            .select('id, nombre, tipo, created_at, version, metricas, activo')
+            .order('created_at', desc=True)
+            .limit(10)
+            .execute()
+        )
+        modelos = res.data or []
+    except Exception as e:
+        print(f'[CHAT-ADM] Error consultando modelos: {e}', flush=True)
+        return ''
+
+    if not modelos:
+        return 'No hay modelos entrenados registrados en el sistema.'
+
+    tipo_labels = {
+        'rf': 'Random Forest',
+        'gb': 'Gradient Boosting',
+        'hgb': 'HistGradientBoosting',
+        'lr': 'Logistic Regression',
+    }
+
+    def pct(v):
+        if v is None:
+            return 'N/D'
+        return f'{round(float(v) * 100, 1)}%'
+
+    lineas = ['MODELOS ML ENTRENADOS EN EL SISTEMA (del más reciente al más antiguo):']
+    for m in modelos:
+        met = m.get('metricas') or {}
+        nombre = m.get('nombre') or f'Modelo #{m["id"]}'
+        tipo = tipo_labels.get(m.get('tipo', ''), m.get('tipo', 'Desconocido'))
+        activo = '★ ACTIVO (en producción)' if m.get('activo') else ''
+        fecha = (m.get('version') or m.get('created_at') or '')[:16]
+
+        lineas.append(f'\n--- {nombre} ({tipo}) {activo}')
+        lineas.append(f'  Fecha: {fecha}')
+        lineas.append(f'  Muestras entrenamiento: {met.get("n_muestras", "N/D")} | Test: {met.get("test_size", "N/D")}%')
+
+        for sub_key, sub_label in [('modelo_A', 'Modelo A (con IMC)'), ('modelo_B', 'Modelo B (sin IMC)')]:
+            sub = met.get(sub_key) or {}
+            if sub:
+                lineas.append(f'  {sub_label}:')
+                lineas.append(f'    Score Clínico: {pct(sub.get("score_clinico"))}')
+                lineas.append(f'    Recall Crítico (clases 1+2): {pct(sub.get("recall_critico"))}')
+                lineas.append(f'    Recall Desnut. Severa (clase 1): {pct(sub.get("recall_clase_1"))}')
+                lineas.append(f'    Recall Desnut. Moderada (clase 2): {pct(sub.get("recall_clase_2"))}')
+                lineas.append(f'    Accuracy: {pct(sub.get("accuracy"))}')
+                lineas.append(f'    F1 Macro: {pct(sub.get("f1_macro"))}')
+                lineas.append(f'    F1 Weighted: {pct(sub.get("f1_weighted"))}')
+
+    lineas.append('\nCRITERIO DE SELECCIÓN: El mejor modelo es el que tiene mayor Score Clínico. '
+                  'Un buen modelo debe tener Score Clínico ≥ 80% y Recall Crítico ≥ 80% para '
+                  'garantizar que no se pierden casos de desnutrición severa o moderada.')
+    return '\n'.join(lineas)
+
+
 # ─── Chat texto ───────────────────────────────────────────────────────────────
 
 class ChatMensaje(BaseModel):
     mensaje: str = Field(..., min_length=1, max_length=2000)
     historial: list[dict] | None = Field(default=None, max_length=20)
     contexto_paciente: dict | None = None
+    modo: str | None = None  # 'admin' para habilitar contexto de modelos ML
 
 
 class ChatRespuesta(BaseModel):
@@ -141,10 +207,15 @@ async def enviar_mensaje(
                     'pacientes':         candidatos,
                 }
 
+    contexto_sistema = None
+    if body.modo == 'admin':
+        contexto_sistema = _formatear_metricas_modelos()
+
     resultado = await chat_responder(
         mensaje=body.mensaje,
         historial=body.historial,
         contexto_paciente=ctx,
+        contexto_sistema=contexto_sistema,
     )
     return resultado
 

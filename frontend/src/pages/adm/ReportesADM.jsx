@@ -109,27 +109,45 @@ function metricColor(v) {
   return v >= 85 ? '#2E7D32' : v >= 75 ? '#1565C0' : v >= 60 ? '#E65100' : '#C62828'
 }
 
+const ALGO_COLORS = { 'Random Forest':'#0D47A1', 'XGBoost (HistGB)':'#6FCF97', 'Gradient Boosting':'#FBC02D', 'Regr. Logística':'#9B59B6' }
+const ALGO_FALLBACK = ['#0D47A1','#6FCF97','#FBC02D','#9B59B6','#4FB4D2']
+
 // ── Sección de gráficas del modelo ML ────────────────────────────────────────
 function SectionsModelo({ charts }) {
   const {
-    radar_metricas     = [],
-    modelo_ab          = [],
-    evolucion_accuracy = [],
-    scatter_datos      = [],
-    comparativa_tipos  = [],
+    radar_metricas      = [],
+    comparativa_modelos = [],
+    evolucion_accuracy  = [],
+    scatter_datos       = [],
+    comparativa_tipos   = [],
   } = charts
 
-  const noData = (arr) => <p style={{ color:'#9CA3AF', fontSize:13, fontStyle:'italic' }}>Sin datos disponibles.</p>
+  const noData = () => <p style={{ color:'#9CA3AF', fontSize:13, fontStyle:'italic' }}>Sin datos disponibles.</p>
+
+  // Umbrales clínicos por métrica
+  const thresholds = {
+    'Score Clínico':  { optimal:80, label:'≥ 80%' },
+    'Recall Crítico': { optimal:80, label:'≥ 80%' },
+    'F1 Macro':       { optimal:60, label:'≥ 60%' },
+    'Accuracy':       { optimal:80, label:'≥ 80%' },
+  }
+  function interpreta(metric, v) {
+    const t = thresholds[metric]?.optimal ?? 80
+    if (v >= t + 10) return ['Excelente', '#2E7D32']
+    if (v >= t)      return ['Óptimo',    '#1565C0']
+    if (v >= t - 10) return ['Aceptable', '#E65100']
+    return ['Requiere mejora', '#C62828']
+  }
 
   return (
     <>
       {/* ── Sección 2: Métricas del modelo activo ── */}
       <ReportSection number="2" title="Métricas del Modelo Activo">
 
-        <ReportSubsection number="2.1" title="Radar de métricas — Modelo A (con IMC)">
+        <ReportSubsection number="2.1" title="Radar de métricas clínicas">
           {radar_metricas.some(r => r.value > 0) ? (
             <>
-              <ChartCaption text="Perfil de rendimiento del submodelo principal (Accuracy, F1 Weighted, F1 Macro, CV Accuracy)" />
+              <ChartCaption text="Perfil de rendimiento clínico: Score Clínico, Recall Crítico, F1 Macro y Accuracy" />
               <ResponsiveContainer width="100%" height={260}>
                 <RadarChart data={radar_metricas} margin={{ top:10, right:40, bottom:10, left:40 }}>
                   <PolarGrid stroke="#BBDEFB"/>
@@ -142,26 +160,26 @@ function SectionsModelo({ charts }) {
           ) : noData()}
         </ReportSubsection>
 
-        <ReportSubsection number="2.2" title="Tabla de métricas con interpretación técnica">
+        <ReportSubsection number="2.2" title="Tabla de métricas con interpretación clínica">
           {radar_metricas.some(r => r.value > 0) ? (
             <div style={{ borderRadius:8, overflow:'hidden', border:'1px solid #BBDEFB' }}>
               <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
                 <thead>
                   <tr style={{ background:'#0D47A1' }}>
-                    {['Métrica','Valor','Umbral óptimo','Interpretación'].map((h,i)=>(
+                    {['Métrica','Valor','Umbral','Interpretación'].map((h,i)=>(
                       <th key={h} style={{ padding:'9px 14px', textAlign:i===0?'left':'right', color:'#fff', fontWeight:600, fontSize:11 }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {radar_metricas.map((row,i)=>{
-                    const v = row.value
-                    const [interp,ic] = v>=90?['Excelente','#2E7D32']:v>=80?['Bueno','#1565C0']:v>=70?['Aceptable','#E65100']:['Requiere mejora','#C62828']
+                    const [interp, ic] = interpreta(row.metric, row.value)
+                    const thr = thresholds[row.metric]?.label ?? '≥ 80%'
                     return (
                       <tr key={i} style={{ background:i%2===0?'#F7F9FC':'#fff', borderBottom:'1px solid #E3F2FD' }}>
                         <td style={{ padding:'8px 14px', color:'#374151', fontWeight:500 }}>{row.metric}</td>
-                        <td style={{ padding:'8px 14px', textAlign:'right', fontWeight:700, color:'#0D47A1' }}>{v}%</td>
-                        <td style={{ padding:'8px 14px', textAlign:'right', color:'#546E7A' }}>≥ 80%</td>
+                        <td style={{ padding:'8px 14px', textAlign:'right', fontWeight:700, color:'#0D47A1' }}>{row.value}%</td>
+                        <td style={{ padding:'8px 14px', textAlign:'right', color:'#546E7A' }}>{thr}</td>
                         <td style={{ padding:'8px 14px', textAlign:'right', fontWeight:600, fontSize:11, color:ic }}>{interp}</td>
                       </tr>
                     )
@@ -173,35 +191,74 @@ function SectionsModelo({ charts }) {
         </ReportSubsection>
       </ReportSection>
 
-      {/* ── Sección 3: Modelo A vs Modelo B ── */}
-      <ReportSection number="3" title="Comparativa Modelo A vs Modelo B">
-        <ReportSubsection number="3.1" title="Modelo A (con IMC) vs Modelo B (sin IMC — fallback rural)">
-          {modelo_ab.some(r => r['Modelo A (con IMC)'] > 0 || r['Modelo B (sin IMC)'] > 0) ? (
+      {/* ── Sección 3: Comparativa de todos los modelos entrenados ── */}
+      <ReportSection number="3" title="Comparativa de Todos los Modelos Entrenados">
+        <ReportSubsection number="3.1" title="Score Clínico y Recall Crítico por modelo">
+          {comparativa_modelos.length > 0 ? (
             <>
-              <ChartCaption text="Comparación de métricas entre el submodelo principal y el submodelo de fallback" />
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={modelo_ab} margin={{ top:5, right:10, left:-15, bottom:5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#EEF2F7"/>
-                  <XAxis dataKey="metrica" tick={{ fontSize:10, fill:'#546E7A' }} axisLine={false} tickLine={false}/>
-                  <YAxis domain={[0,100]} unit="%" tick={{ fontSize:10, fill:'#546E7A' }} axisLine={false} tickLine={false}/>
-                  <Tooltip contentStyle={{ borderRadius:8, border:'1px solid #E0E6ED', fontSize:12 }} formatter={v=>[`${v}%`,'']}/>
+              <ChartCaption text="Cada barra es un modelo entrenado. Corona = modelo activo en producción." />
+              <ResponsiveContainer width="100%" height={Math.max(180, comparativa_modelos.length * 38)}>
+                <BarChart data={comparativa_modelos} layout="vertical" margin={{ top:5, right:60, left:10, bottom:5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#EEF2F7" horizontal={false}/>
+                  <XAxis type="number" domain={[0,100]} unit="%" tick={{ fontSize:10, fill:'#546E7A' }} axisLine={false} tickLine={false}/>
+                  <YAxis type="category" dataKey="nombre" tick={{ fontSize:9, fill:'#546E7A' }} width={120} axisLine={false} tickLine={false}/>
+                  <Tooltip contentStyle={{ borderRadius:8, border:'1px solid #E0E6ED', fontSize:12 }}
+                    formatter={(v,n) => [`${v}%`, n]}
+                    labelFormatter={label => {
+                      const m = comparativa_modelos.find(x => x.nombre === label)
+                      return `${label}${m?.activo ? ' 👑' : ''} — ${m?.tipo || ''}`
+                    }}/>
                   <Legend wrapperStyle={{ fontSize:11 }}/>
-                  <ReferenceLine y={80} stroke="#E53935" strokeDasharray="4 2" label={{ value:'80%', fontSize:9, fill:'#E53935', position:'right' }}/>
-                  <Bar dataKey="Modelo A (con IMC)" fill="#0D47A1" radius={[4,4,0,0]}/>
-                  <Bar dataKey="Modelo B (sin IMC)" fill="#4FB4D2" radius={[4,4,0,0]}/>
+                  <ReferenceLine x={80} stroke="#E53935" strokeDasharray="4 2" label={{ value:'80%', fontSize:9, fill:'#E53935' }}/>
+                  <Bar dataKey="score_clinico"  name="Score Clínico"   fill="#0D47A1" radius={[0,4,4,0]}>
+                    {comparativa_modelos.map((entry,i)=>(
+                      <Cell key={i} fill={entry.activo ? '#27AE60' : '#0D47A1'} fillOpacity={entry.activo ? 1 : 0.7}/>
+                    ))}
+                  </Bar>
+                  <Bar dataKey="recall_critico" name="Recall Crítico"  fill="#4FB4D2" radius={[0,4,4,0]} fillOpacity={0.8}/>
                 </BarChart>
               </ResponsiveContainer>
               <p style={{ fontSize:11, color:'#546E7A', marginTop:8, fontStyle:'italic' }}>
-                Línea roja punteada = umbral óptimo (80%). El Modelo B se usa como fallback cuando no hay dato de IMC.
+                Barra verde = modelo activo. Score Clínico = 0.6 × Recall(Sev+Mod) + 0.4 × F1 Macro.
               </p>
             </>
+          ) : noData()}
+        </ReportSubsection>
+
+        <ReportSubsection number="3.2" title="Tabla detallada por modelo">
+          {comparativa_modelos.length > 0 ? (
+            <div style={{ borderRadius:8, overflow:'hidden', border:'1px solid #BBDEFB', overflowX:'auto' }}>
+              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:11, minWidth:560 }}>
+                <thead>
+                  <tr style={{ background:'#0D47A1' }}>
+                    {['Modelo','Algoritmo','Score Clínico','Recall Crítico','Recall Sev.','Recall Mod.','Accuracy','F1 Macro'].map((h,i)=>(
+                      <th key={h} style={{ padding:'8px 10px', textAlign:i<=1?'left':'right', color:'#fff', fontWeight:600, fontSize:10, whiteSpace:'nowrap' }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...comparativa_modelos].reverse().map((row,i)=>(
+                    <tr key={i} style={{ background: row.activo ? '#F0FDF4' : i%2===0?'#F7F9FC':'#fff', borderBottom:'1px solid #E3F2FD' }}>
+                      <td style={{ padding:'7px 10px', color:'#374151', fontWeight:row.activo?700:500, maxWidth:130, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        {row.activo ? '👑 ' : ''}{row.nombre}
+                      </td>
+                      <td style={{ padding:'7px 10px', color:'#546E7A' }}>{row.tipo}</td>
+                      {[row.score_clinico, row.recall_critico, row.recall_clase_1, row.recall_clase_2, row.accuracy, row.f1_macro].map((v,j)=>{
+                        const good = j <= 1 ? v >= 80 : v >= 60
+                        return <td key={j} style={{ padding:'7px 10px', textAlign:'right', fontWeight:600, color: v === 0 ? '#9CA3AF' : good ? '#1565C0' : '#C62828' }}>{v > 0 ? `${v}%` : '—'}</td>
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           ) : noData()}
         </ReportSubsection>
       </ReportSection>
 
       {/* ── Sección 4: Evolución histórica ── */}
       <ReportSection number="4" title="Evolución Histórica del Rendimiento">
-        <ReportSubsection number="4.1" title="Accuracy y F1 Weighted por versión entrenada">
+        <ReportSubsection number="4.1" title="Score Clínico y Accuracy por versión entrenada">
           {evolucion_accuracy.length > 0 ? (
             <>
               <ChartCaption text="Evolución del rendimiento a través de todas las versiones del modelo predictivo" />
@@ -213,9 +270,9 @@ function SectionsModelo({ charts }) {
                   <Tooltip contentStyle={{ borderRadius:8, border:'1px solid #E0E6ED', fontSize:12 }} formatter={v=>[`${v}%`,'']}/>
                   <Legend wrapperStyle={{ fontSize:11 }}/>
                   <ReferenceLine y={80} stroke="#E53935" strokeDasharray="4 2"/>
-                  <Line type="monotone" dataKey="accuracy"    stroke="#0D47A1" strokeWidth={2.5} dot={{ r:3, fill:'#0D47A1' }} name="Accuracy"/>
-                  <Line type="monotone" dataKey="f1_weighted" stroke="#6FCF97" strokeWidth={2.5} dot={{ r:3, fill:'#6FCF97' }} name="F1 Weighted"/>
-                  <Line type="monotone" dataKey="cv_accuracy" stroke="#FBC02D" strokeWidth={1.5} dot={{ r:2, fill:'#FBC02D' }} strokeDasharray="4 2" name="CV Accuracy"/>
+                  <Line type="monotone" dataKey="score_clinico"  stroke="#27AE60" strokeWidth={2.5} dot={{ r:3, fill:'#27AE60' }} name="Score Clínico"/>
+                  <Line type="monotone" dataKey="recall_critico" stroke="#E67E22" strokeWidth={2}   dot={{ r:3, fill:'#E67E22' }} name="Recall Crítico"/>
+                  <Line type="monotone" dataKey="accuracy"       stroke="#0D47A1" strokeWidth={1.5} dot={{ r:2, fill:'#0D47A1' }} strokeDasharray="4 2" name="Accuracy"/>
                 </LineChart>
               </ResponsiveContainer>
             </>
@@ -223,8 +280,8 @@ function SectionsModelo({ charts }) {
         </ReportSubsection>
 
         {comparativa_tipos.length > 1 && (
-          <ReportSubsection number="4.2" title="F1 Weighted promedio por tipo de algoritmo">
-            <ChartCaption text="Comparativa del rendimiento promedio entre los distintos algoritmos entrenados" />
+          <ReportSubsection number="4.2" title="Score Clínico promedio por tipo de algoritmo">
+            <ChartCaption text="Comparativa del rendimiento clínico promedio entre los distintos algoritmos entrenados" />
             <ResponsiveContainer width="100%" height={180}>
               <BarChart data={comparativa_tipos} margin={{ top:5, right:10, left:-15, bottom:5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#EEF2F7"/>
@@ -232,9 +289,9 @@ function SectionsModelo({ charts }) {
                 <YAxis domain={[0,100]} unit="%" tick={{ fontSize:10, fill:'#546E7A' }} axisLine={false} tickLine={false}/>
                 <Tooltip contentStyle={{ borderRadius:8, border:'1px solid #E0E6ED', fontSize:12 }} formatter={v=>[`${v}%`,'']}/>
                 <ReferenceLine y={80} stroke="#E53935" strokeDasharray="4 2"/>
-                <Bar dataKey="f1_promedio" name="F1 Promedio" radius={[4,4,0,0]}>
+                <Bar dataKey="f1_promedio" name="Score Prom." radius={[4,4,0,0]}>
                   {comparativa_tipos.map((entry, i) => (
-                    <Cell key={i} fill={['#0D47A1','#4FB4D2','#6FCF97','#FBC02D'][i % 4]}/>
+                    <Cell key={i} fill={ALGO_COLORS[entry.tipo] ?? ALGO_FALLBACK[i % ALGO_FALLBACK.length]}/>
                   ))}
                 </Bar>
               </BarChart>
@@ -243,19 +300,19 @@ function SectionsModelo({ charts }) {
         )}
       </ReportSection>
 
-      {/* ── Sección 5: Volumen vs rendimiento ── */}
+      {/* ── Sección 5: Volumen vs score clínico ── */}
       {scatter_datos.length > 1 && (
         <ReportSection number="5" title="Volumen de Datos vs Rendimiento">
-          <ReportSubsection number="5.1" title="Relación entre tamaño del dataset y F1 Weighted">
-            <ChartCaption text="Cada punto es una versión del modelo. Muestra si más datos implica mejor rendimiento." />
+          <ReportSubsection number="5.1" title="Relación entre tamaño del dataset y Score Clínico">
+            <ChartCaption text="Cada punto es un modelo entrenado. Muestra si más datos implica mejor score clínico." />
             <ResponsiveContainer width="100%" height={200}>
               <ScatterChart margin={{ top:5, right:10, left:-10, bottom:5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#EEF2F7"/>
                 <XAxis dataKey="n_muestras" name="Muestras" type="number" tick={{ fontSize:10, fill:'#546E7A' }} axisLine={false} tickLine={false} label={{ value:'Muestras de entrenamiento', position:'insideBottom', offset:-3, fontSize:10, fill:'#546E7A' }}/>
-                <YAxis dataKey="f1_weighted" name="F1 Weighted" unit="%" domain={[0,100]} tick={{ fontSize:10, fill:'#546E7A' }} axisLine={false} tickLine={false}/>
+                <YAxis dataKey="score_clinico" name="Score Clínico" unit="%" domain={[0,100]} tick={{ fontSize:10, fill:'#546E7A' }} axisLine={false} tickLine={false}/>
                 <ZAxis range={[40,40]}/>
                 <Tooltip contentStyle={{ borderRadius:8, border:'1px solid #E0E6ED', fontSize:12 }}
-                  formatter={(v,n) => [`${v}${n==='F1 Weighted'?'%':''}`, n]}/>
+                  formatter={(v,n) => [`${v}${n==='Score Clínico'?'%':''}`, n]}/>
                 <Scatter data={scatter_datos} name="Modelos">
                   {scatter_datos.map((entry, i) => (
                     <Cell key={i} fill={entry.activo ? '#27AE60' : '#0D47A1'} fillOpacity={0.7}/>
@@ -382,8 +439,8 @@ export default function ReportesADM() {
       {modalComp && <ModalCompartir reportData={reportData} onClose={()=>setModalComp(false)}/>}
 
       <div className="print:hidden">
-        <h1 className="text-xl font-bold" style={{color:'#1A1F2B'}}>Informe del Modelo ML</h1>
-        <p className="text-sm mt-0.5" style={{color:'#54606E'}}>Desempeño del modelo predictivo activo — exportación PDF</p>
+        <h1 className="text-xl font-bold" style={{color:'#1A1F2B'}}>Informe de Modelos ML</h1>
+        <p className="text-sm mt-0.5" style={{color:'#54606E'}}>Desempeño de todos los modelos entrenados — Score Clínico y Recall Crítico — exportación PDF</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start print:block">
@@ -494,8 +551,8 @@ export default function ReportesADM() {
                 <BarChart2 className="w-7 h-7" style={{color:'#9C27B0'}}/>
               </div>
               <div>
-                <p className="text-sm font-semibold" style={{color:'#1A1F2B'}}>Informe de Desempeño del Modelo Predictivo</p>
-                <p className="text-xs mt-1.5" style={{color:'#54606E'}}>Genera el informe para ver métricas, radar comparativo y evolución del accuracy.</p>
+                <p className="text-sm font-semibold" style={{color:'#1A1F2B'}}>Informe de Todos los Modelos Entrenados</p>
+                <p className="text-xs mt-1.5" style={{color:'#54606E'}}>Genera el informe para ver Score Clínico, Recall Crítico, tabla comparativa y evolución por versión.</p>
               </div>
             </div>
           </div>
@@ -519,7 +576,7 @@ export default function ReportesADM() {
           <div className="rounded-xl p-4" style={{background:'rgba(13,71,161,0.05)',border:'1px solid rgba(13,71,161,0.15)'}}>
             <div className="flex items-start gap-2">
               <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5" style={{color:'#1565C0'}}/>
-              <p className="text-[11px]" style={{color:'#1565C0'}}>Incluye análisis IA del modelo activo y comparativa con versiones históricas.</p>
+              <p className="text-[11px]" style={{color:'#1565C0'}}>Incluye Score Clínico y Recall Crítico de todos los modelos entrenados, comparativa por algoritmo y evolución histórica.</p>
             </div>
           </div>
 
