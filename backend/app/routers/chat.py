@@ -155,6 +155,7 @@ class ChatMensaje(BaseModel):
     historial: list[dict] | None = Field(default=None, max_length=20)
     contexto_paciente: dict | None = None
     modo: str | None = None  # 'admin' para habilitar contexto de modelos ML
+    contexto_sistema: str | None = Field(default=None, max_length=4000)  # contexto adicional (ej. datos del dashboard ANL)
 
 
 class ChatRespuesta(BaseModel):
@@ -207,7 +208,7 @@ async def enviar_mensaje(
                     'pacientes':         candidatos,
                 }
 
-    contexto_sistema = None
+    contexto_sistema = body.contexto_sistema
     if body.modo == 'admin':
         contexto_sistema = _formatear_metricas_modelos()
 

@@ -11,6 +11,7 @@ import {
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../services/api'
+import { useAnlDashboard } from '../../context/AnlDashboardContext'
 
 const REFRESH_MS = 120_000
 
@@ -452,6 +453,7 @@ export default function HomeANL() {
   const [lastUpd,     setLastUpd]     = useState(null)
   const [vistaActual,  setVistaActual]  = useState(0)  // 0 = proyecciones, 1 = distribuciones
   const timerRef = useRef(null)
+  const { setData: setNiviData } = useAnlDashboard()
 
   const fetchProyecc = useCallback(async () => {
     setLoadingProj(true)
@@ -502,6 +504,11 @@ export default function HomeANL() {
       .then(r => setGeoOpts(r.data))
       .catch(() => {})
   }, [dpto])
+
+  // Publica los datos del dashboard para que NIVI (chat global) los use como contexto
+  useEffect(() => {
+    setNiviData({ stats, detalle, dpto, municipio, proyecc, metricaProj })
+  }, [stats, detalle, dpto, municipio, proyecc, metricaProj, setNiviData])
 
   const hayFiltros = dpto || municipio
   const zona = [dpto, municipio].filter(Boolean).join(' › ') || 'Colombia'

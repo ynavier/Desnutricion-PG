@@ -49,11 +49,18 @@ function MensajeMarkdown({ texto }) {
   return <div className="flex flex-col gap-0.5 text-base">{partes}</div>
 }
 
-// ── Formatea datos del dashboard ──────────────────────────────────────────────
-function formatearContexto(stats, detalle, dpto, municipio) {
+// ── Resumen de datos del dashboard (reutilizable) ──────────────────────────────
+const METRICA_LABELS = {
+  casos:         'casos nuevos',
+  tasa_severa:   'tasa de desnutrición severa (%)',
+  tasa_moderada: 'tasa de desnutrición moderada (%)',
+  tasa_total:    'tasa de desnutrición total (%)',
+}
+
+function construirResumenDatos(stats, detalle, dpto, municipio, proyecc, metricaProj) {
   const zona  = [dpto, municipio].filter(Boolean).join(' › ') || 'Colombia'
   const lines = [
-    `Analiza los siguientes datos epidemiológicos del dashboard de vigilancia nutricional infantil en ${zona}:`,
+    `ZONA: ${zona}`,
     ``,
     `ESTADÍSTICAS GENERALES:`,
     `- Total casos: ${stats?.total?.toLocaleString() ?? 'N/D'} (BD: ${stats?.total_bd ?? 0}, histórico: ${stats?.total_historico ?? 0})`,
@@ -83,8 +90,39 @@ function formatearContexto(stats, detalle, dpto, municipio) {
     lines.push(``, `POR GRUPO ETARIO:`)
     detalle.por_grupo_etario.forEach(g => lines.push(`- ${g.grupo}: ${g.total} casos, desnut. ${g.tasa}%`))
   }
-  lines.push(``, `Dame un análisis interpretativo: alertas críticas, tendencias y acciones prioritarias.`)
+  if (proyecc?.datos?.length) {
+    const hist = proyecc.datos.filter(d => d.tipo === 'historico')
+    const proy = proyecc.datos.filter(d => d.tipo === 'proyeccion')
+    if (proy.length) {
+      const valores = proy.map(p => p.valor)
+      const max = Math.max(...valores)
+      const min = Math.min(...valores)
+      const metricaLabel = METRICA_LABELS[metricaProj] || metricaProj || 'casos'
+      const ultimoProy = proy.at(-1)
+      lines.push(``, `PROYECCIÓN SARIMA (${metricaLabel}) para ${proyecc.zona_efectiva || zona}:`)
+      if (hist.length) {
+        const ultimoHist = hist.at(-1)
+        lines.push(`- Último dato histórico (${ultimoHist.anio_mes}): ${ultimoHist.valor}`)
+      }
+      lines.push(`- Periodo proyectado: ${proy[0].anio_mes} a ${ultimoProy.anio_mes} (${proy.length} meses)`)
+      lines.push(`- Valor proyectado inicial: ${proy[0].valor} | final: ${ultimoProy.valor}`)
+      lines.push(`- Rango proyectado: ${min} – ${max}`)
+      if (ultimoProy.limite_inf_95 != null) lines.push(`- IC 95% del último mes: ${ultimoProy.limite_inf_95} – ${ultimoProy.limite_sup_95}`)
+      if (proyecc.n_train) lines.push(`- Modelo entrenado con ${proyecc.n_train} meses de historia`)
+      if (proyecc.baja_densidad) lines.push(`- ⚠ Baja densidad de datos (${proyecc.total_casos} casos totales) — intervalos de confianza amplios`)
+    }
+  }
   return lines.join('\n')
+}
+
+function formatearContexto(stats, detalle, dpto, municipio, proyecc, metricaProj) {
+  const zona = [dpto, municipio].filter(Boolean).join(' › ') || 'Colombia'
+  const resumen = construirResumenDatos(stats, detalle, dpto, municipio, proyecc, metricaProj)
+  return (
+    `Analiza los siguientes datos epidemiológicos del dashboard de vigilancia nutricional infantil en ${zona}:\n\n` +
+    `${resumen}\n\n` +
+    `Dame un análisis interpretativo: alertas críticas, tendencias y acciones prioritarias.`
+  )
 }
 
 // ── Handle de redimensionado ──────────────────────────────────────────────────
@@ -103,6 +141,7 @@ function ResizeHandle({ onMouseDown }) {
 // ── Componente principal ──────────────────────────────────────────────────────
 export default function ChatDashboard({
   stats, detalle, dpto, municipio,
+  proyecc = null, metricaProj = null,
   mensajes, setMensajes,
   analizado, setAnalizado,
   onClose,
@@ -162,7 +201,7 @@ export default function ChatDashboard({
     async function analisisInicial() {
       setCargando(true)
       try {
-        const { data } = await api.post('/chat', { mensaje: formatearContexto(stats, detalle, dpto, municipio), historial: [] })
+        const { data } = await api.post('/chat', { mensaje: formatearContexto(stats, detalle, dpto, municipio, proyecc, metricaProj), historial: [] })
         setMensajes([{ role: 'assistant', content: data.respuesta }])
         setAnalizado(true)
       } catch {
@@ -252,6 +291,10 @@ export default function ChatDashboard({
     try {
       const payload = { mensaje: msg, historial: hist.slice(-16) }
       if (modo) payload.modo = modo
+      if (stats) {
+        payload.contexto_sistema = 'DATOS ACTUALES DEL DASHBOARD DE VIGILANCIA:\n' +
+          construirResumenDatos(stats, detalle, dpto, municipio, proyecc, metricaProj)
+      }
       const { data } = await api.post('/chat', payload)
       setMensajes(prev => [...prev, { role: 'assistant', content: data.respuesta }])
     } catch {

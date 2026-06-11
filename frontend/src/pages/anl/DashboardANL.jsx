@@ -5,6 +5,7 @@ import SidebarANL    from '../../components/anl/SidebarANL'
 import HomeANL       from './HomeANL'
 import ReportesANL   from './ReportesANL'
 import ChatDashboard from '../../components/anl/ChatDashboard'
+import { AnlDashboardProvider, useAnlDashboard } from '../../context/AnlDashboardContext'
 
 function NiviAvatarFloat({ size = 36 }) {
   const [parpadeando, setParpadeando] = useState(false)
@@ -28,9 +29,18 @@ function NiviAvatarFloat({ size = 36 }) {
 }
 
 export default function DashboardANL() {
+  return (
+    <AnlDashboardProvider>
+      <DashboardANLInner />
+    </AnlDashboardProvider>
+  )
+}
+
+function DashboardANLInner() {
   const [niviAbierto,   setNiviAbierto]   = useState(false)
   const [niviMensajes,  setNiviMensajes]  = useState([])
   const [niviAnalizado, setNiviAnalizado] = useState(false)
+  const { data } = useAnlDashboard()
 
   return (
     <div className="flex min-h-screen bg-neutral-bg">
@@ -60,7 +70,12 @@ export default function DashboardANL() {
       <AnimatePresence>
         {niviAbierto && (
           <ChatDashboard
-            stats={null} detalle={null} dpto="" municipio=""
+            stats={data?.stats ?? null}
+            detalle={data?.detalle ?? null}
+            dpto={data?.dpto ?? ''}
+            municipio={data?.municipio ?? ''}
+            proyecc={data?.proyecc ?? null}
+            metricaProj={data?.metricaProj ?? null}
             mensajes={niviMensajes}   setMensajes={setNiviMensajes}
             analizado={niviAnalizado} setAnalizado={setNiviAnalizado}
             onClose={() => setNiviAbierto(false)}
