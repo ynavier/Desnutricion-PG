@@ -62,7 +62,11 @@ async def registrar_control(
         'ruta_atenc':    body.ruta_atenc,
     }
 
-    pred      = predecir(datos)
+    try:
+        pred = predecir(datos)
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
     zscore    = calcular_zscore(body.peso_act, em, p['sexo'])
     imc       = pred.get('imc_calculado')
     muac_clas = clasificar_muac(body.per_braqui, em)
