@@ -469,9 +469,6 @@ export default function HomeANL() {
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
-    // Reset conversación de NIVI cuando cambian los filtros
-    setNiviMensajes([])
-    setNiviAnalizado(false)
     try {
       const params = {}
       if (dpto)      params.dpto      = dpto
